@@ -1,14 +1,55 @@
-import { Head } from '@inertiajs/react';
-import type { FormEvent } from 'react';
+import { Form, Head } from '@inertiajs/react';
+
+const inputClassName =
+    'mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-red-500/55 focus:ring-2 focus:ring-red-500/15';
+
+const labelClassName = 'block text-xs font-semibold tracking-wide text-gray-500 uppercase';
+
+const errorClassName = 'mt-2 text-xs font-medium text-red-600';
+
+type LoginFieldProps = {
+    id: 'email' | 'password';
+    label: string;
+    type: 'email' | 'password';
+    autoComplete: string;
+    placeholder: string;
+    error?: string;
+};
+
+function LoginField({
+    id,
+    label,
+    type,
+    autoComplete,
+    placeholder,
+    error,
+}: LoginFieldProps) {
+    return (
+        <div>
+            <label htmlFor={id} className={labelClassName}>
+                {label}
+            </label>
+            <input
+                id={id}
+                name={id}
+                type={type}
+                autoComplete={autoComplete}
+                required
+                placeholder={placeholder}
+                className={inputClassName}
+                aria-invalid={error ? 'true' : 'false'}
+                aria-describedby={error ? `${id}-error` : undefined}
+            />
+            {error ? (
+                <p id={`${id}-error`} className={errorClassName} role="alert">
+                    {error}
+                </p>
+            ) : null}
+        </div>
+    );
+}
 
 export default function Login() {
-    function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-    }
-
-    const inputClassName =
-        'mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-red-500/55 focus:ring-2 focus:ring-red-500/15';
-
     return (
         <>
             <Head title="Inloggen" />
@@ -29,53 +70,46 @@ export default function Login() {
                     </header>
 
                     <div className="rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/60 ring-1 ring-gray-950/5">
-                        <form
-                            onSubmit={handleSubmit}
-                            className="px-8 pt-8 pb-9"
-                        >
-                            <div className="space-y-6">
-                                <div>
-                                    <label
-                                        htmlFor="email"
-                                        className="block text-xs font-semibold tracking-wide text-gray-500 uppercase"
-                                    >
-                                        E-mailadres
-                                    </label>
-                                    <input
+                        <Form action="/login" method="post" className="px-8 pt-8 pb-9">
+                            {({ errors, processing }) => (
+                                <div className="space-y-6">
+                                    <LoginField
                                         id="email"
-                                        name="email"
+                                        label="E-mailadres"
                                         type="email"
                                         autoComplete="username"
-                                        placeholder="Please enter your email"
-                                        className={inputClassName}
+                                        placeholder="naam@voorbeeld.nl"
+                                        error={errors.email}
                                     />
-                                </div>
-
-                                <div>
-                                    <label
-                                        htmlFor="password"
-                                        className="block text-xs font-semibold tracking-wide text-gray-500 uppercase"
-                                    >
-                                        Wachtwoord
-                                    </label>
-                                    <input
+                                    <LoginField
                                         id="password"
-                                        name="password"
+                                        label="Wachtwoord"
                                         type="password"
                                         autoComplete="current-password"
                                         placeholder="••••••••"
-                                        className={inputClassName}
+                                        error={errors.password}
                                     />
-                                </div>
 
-                                <button
-                                    type="submit"
-                                    className="mt-2 flex w-full items-center justify-center rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 active:bg-red-800"
-                                >
-                                    Inloggen
-                                </button>
-                            </div>
-                        </form>
+                                    <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 select-none">
+                                        <input
+                                            name="remember"
+                                            type="checkbox"
+                                            value="1"
+                                            className="size-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                                        />
+                                        Ingelogd blijven
+                                    </label>
+
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="mt-2 flex w-full items-center justify-center rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 enabled:active:bg-red-800 disabled:pointer-events-none disabled:opacity-60"
+                                    >
+                                        {processing ? 'Bezig…' : 'Inloggen'}
+                                    </button>
+                                </div>
+                            )}
+                        </Form>
                     </div>
                 </div>
             </div>
