@@ -32,6 +32,6 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended('/workspace');
+        return redirect()->intended(route('home'));
     }
 }
