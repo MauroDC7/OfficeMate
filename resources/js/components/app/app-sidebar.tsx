@@ -31,11 +31,16 @@ function pathOnly(url: string): string {
 export function AppSidebar() {
     const page = usePage();
     const here = pathOnly(page.url);
+    const role = page.props.auth.user?.role;
+    const roleLabel = role === 'admin' ? 'Beheerder' : role === 'employee' ? 'Medewerker' : null;
 
     return (
         <aside className="flex w-64 shrink-0 flex-col border-r border-gray-200 bg-gray-100/90">
             <div className="border-b border-gray-200/80 px-5 py-6">
                 <p className="text-base font-semibold tracking-tight text-gray-900">OfficeMate</p>
+                {roleLabel !== null ? (
+                    <p className="mt-1 text-xs font-medium text-red-600">{roleLabel}</p>
+                ) : null}
             </div>
 
             <nav className="flex flex-1 flex-col gap-1 px-3 py-4" aria-label="Navigatie">
