@@ -1,5 +1,7 @@
-import { AuthField, AuthPage, authSubmitClassName } from '@/components/auth-page';
 import { Form, Head, Link } from '@inertiajs/react';
+
+import { AuthField, AuthPage, authSubmitClassName } from '@/components/auth-page';
+import { cn } from '@/lib/utils';
 
 const footerLinkClassName = 'font-medium text-red-600 hover:text-red-700';
 
@@ -41,7 +43,16 @@ export default function Login() {
                                 Ingelogd blijven
                             </label>
 
-                            <button type="submit" disabled={processing} className={authSubmitClassName}>
+                            <button type="submit" disabled={processing} className={cn(authSubmitClassName, 'gap-2')}>
+                                <img
+                                    src="/img/Login Icons Material Outlined.png"
+                                    alt=""
+                                    className="size-5 shrink-0 object-contain brightness-0 invert"
+                                    width={20}
+                                    height={20}
+                                    decoding="async"
+                                    draggable={false}
+                                />
                                 {processing ? 'Bezig…' : 'Inloggen'}
                             </button>
 
