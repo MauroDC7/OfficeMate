@@ -1,9 +1,13 @@
 import { usePage } from '@inertiajs/react';
 
+import { getUserDisplayFullName, getUserFirstName, getUserInitials } from '@/lib/user-display';
+
 export function AppHeader() {
-    const name = usePage().props.auth.user?.name?.trim();
-    const title = name ? `Welkom, ${name}` : 'Welkom, daar';
-    const initial = name ? name.charAt(0).toUpperCase() : '?';
+    const user = usePage().props.auth.user;
+    const firstName = getUserFirstName(user);
+    const fullName = getUserDisplayFullName(user);
+    const title = firstName !== '' ? `Welkom, ${firstName}` : 'Welkom, daar';
+    const initials = getUserInitials(user);
 
     return (
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
@@ -29,10 +33,11 @@ export function AppHeader() {
                 </button>
 
                 <div
-                    className="flex size-10 items-center justify-center rounded-full bg-violet-600 text-sm font-semibold text-white shadow-sm"
+                    className="flex size-10 shrink-0 items-center justify-center rounded-full bg-violet-600 text-xs font-semibold tracking-tight text-white shadow-sm sm:text-sm"
+                    title={fullName !== '' ? fullName : undefined}
                     aria-hidden
                 >
-                    {initial}
+                    {initials}
                 </div>
             </div>
         </header>
