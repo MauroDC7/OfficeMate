@@ -3,6 +3,7 @@
 use App\Http\Controllers\AppPageController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Settings\AccountSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function (): void {
@@ -12,6 +13,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/leave-requests', [AppPageController::class, 'leaveRequests'])->name('leaveRequests');
     Route::get('/shift-planning', [AppPageController::class, 'shiftPlanning'])->name('shiftPlanning');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
+    Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
 
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });

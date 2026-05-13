@@ -5,9 +5,10 @@ export type User = {
     first_name: string;
     last_name: string;
     name: string;
+    username: string | null;
     role: UserRole;
     email: string;
-    avatar?: string;
+    avatar: string | null;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
