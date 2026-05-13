@@ -11,13 +11,21 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['first_name', 'last_name', 'email', 'password', 'role'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable(['first_name', 'last_name', 'username', 'email', 'password', 'role'])]
+#[Hidden(['password', 'remember_token', 'avatar_path'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * @var list<string>
+     */
+    protected $appends = [
+        'avatar',
+    ];
 
     /**
      * Get the attributes that should be cast.
@@ -39,5 +47,21 @@ class User extends Authenticatable
     protected function name(): Attribute
     {
         return Attribute::get(fn (): string => trim($this->first_name.' '.$this->last_name));
+    }
+
+    /**
+     * Publieke URL van de profielfoto, of null als er geen foto is.
+     */
+    protected function avatar(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            $path = $this->avatar_path;
+
+            if ($path === null || $path === '') {
+                return null;
+            }
+
+            return Storage::disk('public')->url($path);
+        });
     }
 }

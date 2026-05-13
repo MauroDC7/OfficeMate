@@ -1,13 +1,13 @@
 import { usePage } from '@inertiajs/react';
 
-import { getUserDisplayFullName, getUserFirstName, getUserInitials } from '@/lib/user-display';
+import { UserAvatar } from '@/components/user-avatar';
+import { getUserDisplayFullName, getUserFirstName } from '@/lib/user-display';
 
 export function AppHeader() {
     const user = usePage().props.auth.user;
     const firstName = getUserFirstName(user);
     const fullName = getUserDisplayFullName(user);
     const title = firstName !== '' ? `Welkom, ${firstName}` : 'Welkom, daar';
-    const initials = getUserInitials(user);
 
     return (
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
@@ -32,13 +32,12 @@ export function AppHeader() {
                     <span className="absolute end-1.5 top-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white" />
                 </button>
 
-                <div
-                    className="flex size-10 shrink-0 items-center justify-center rounded-full bg-violet-600 text-xs font-semibold tracking-tight text-white shadow-sm sm:text-sm"
+                <UserAvatar
+                    user={user}
+                    className="size-10"
+                    textClassName="text-xs sm:text-sm"
                     title={fullName !== '' ? fullName : undefined}
-                    aria-hidden
-                >
-                    {initials}
-                </div>
+                />
             </div>
         </header>
     );
