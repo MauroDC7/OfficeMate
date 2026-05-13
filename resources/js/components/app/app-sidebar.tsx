@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils';
 import {
     dashboard,
     leaveRequests,
-    logout,
     projects,
     settings,
     shiftPlanning,
@@ -74,29 +73,6 @@ export function AppSidebar() {
                     );
                 })}
             </nav>
-
-            <div className="mt-auto border-t border-gray-200/80 px-3 py-4">
-                <Link
-                    href={logout.url()}
-                    method="post"
-                    as="button"
-                    className={cn(
-                        row,
-                        'text-red-600 hover:bg-red-50 hover:text-red-700',
-                    )}
-                >
-                    <img
-                        src="/img/Logout Icons Material Outlined.png"
-                        alt=""
-                        className="size-5 shrink-0 object-contain"
-                        width={20}
-                        height={20}
-                        decoding="async"
-                        draggable={false}
-                    />
-                    Uitloggen
-                </Link>
-            </div>
         </aside>
     );
 }
