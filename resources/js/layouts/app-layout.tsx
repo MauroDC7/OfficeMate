@@ -9,7 +9,7 @@ export function AppLayout({ children }: PropsWithChildren) {
             <AppSidebar />
             <div className="flex min-w-0 flex-1 flex-col">
                 <AppHeader />
-                <div className="flex-1 bg-gray-50/40">{children}</div>
+                <div className="flex min-h-0 flex-1 flex-col bg-gray-50/40">{children}</div>
             </div>
         </div>
     );
