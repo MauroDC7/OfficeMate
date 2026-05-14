@@ -15,18 +15,14 @@ export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
                 <TimesheetWeekHeader
                     weekRangeLabel={c.weekRangeLabel}
                     onPrevWeek={() => c.navigateWeek(-1)}
-                    onThisWeek={c.goToThisWeek}
                     onNextWeek={() => c.navigateWeek(1)}
                     weekDays={c.weekDays}
                     minutesPerDay={c.minutesPerDay}
-                    slotHeightIndex={c.slotHeightIndex}
-                    onBumpSlotHeight={c.bumpSlotHeight}
                 />
                 <TimesheetWeekBody
                     weekDays={c.weekDays}
                     entriesByDay={c.entriesByDay}
                     weekHasToday={c.weekHasToday}
-                    slotHeightIndex={c.slotHeightIndex}
                     onSlotClick={c.openModalForSlot}
                     onEntryClick={c.openModalForEntry}
                 />

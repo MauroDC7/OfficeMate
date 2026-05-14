@@ -1,11 +1,10 @@
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { SLOT_HEIGHT_OPTIONS, WORKDAY_INDICES } from '@/components/timesheets/timesheet-grid-config';
+import { WORKDAY_INDICES } from '@/components/timesheets/timesheet-grid-config';
 import {
     addDays,
     addWeeksToYmd,
-    clampSlotHeightIndex,
     dayKey,
     dayTotalMinutes,
     flattenFormErrors,
@@ -13,7 +12,6 @@ import {
     minutesToTimeInput,
     parseTimeInputToMinutes,
     parseYmdLocal,
-    startOfMonday,
 } from '@/components/timesheets/timesheet-helpers';
 import type { TimesheetDraft, TimesheetModalState, TimesheetWeekCalendarProps } from '@/components/timesheets/week-calendar-types';
 import { emptyDraft } from '@/components/timesheets/week-calendar-types';
@@ -22,7 +20,6 @@ import { destroy, store, update } from '@/routes/timesheets/entries';
 import type { TimesheetEntryPayload } from '@/types/timesheets';
 
 export function useTimesheetWeekCalendar({ weekStart, entriesByDay }: TimesheetWeekCalendarProps) {
-    const [slotHeightIndex, setSlotHeightIndex] = useState(1);
     const [modal, setModal] = useState<TimesheetModalState | null>(null);
     const [draft, setDraft] = useState<TimesheetDraft>(emptyDraft);
     const [formError, setFormError] = useState<string | null>(null);
@@ -89,11 +86,6 @@ export function useTimesheetWeekCalendar({ weekStart, entriesByDay }: TimesheetW
         },
         [weekStart],
     );
-
-    const goToThisWeek = useCallback(() => {
-        const thisMonday = dayKey(startOfMonday(new Date()));
-        router.get(timesheets.url({ query: { week: thisMonday } }), {}, { preserveScroll: true });
-    }, []);
 
     const openModalForSlot = useCallback(
         (dayKeyValue: string, startMin: number, endMin: number) => {
@@ -210,21 +202,12 @@ export function useTimesheetWeekCalendar({ weekStart, entriesByDay }: TimesheetW
         });
     }, [modal, closeModal]);
 
-    const bumpSlotHeight = useCallback((delta: number) => {
-        setSlotHeightIndex((i) =>
-            clampSlotHeightIndex(i + delta, SLOT_HEIGHT_OPTIONS.length - 1),
-        );
-    }, []);
-
     return {
         weekDays,
         weekRangeLabel,
         weekHasToday,
         minutesPerDay,
-        slotHeightIndex,
-        bumpSlotHeight,
         navigateWeek,
-        goToThisWeek,
         modal,
         draft,
         setDraftField,

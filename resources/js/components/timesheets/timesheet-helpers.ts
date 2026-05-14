@@ -137,7 +137,3 @@ export function flattenFormErrors(errors: Record<string, string | string[]>): Re
 
     return flat;
 }
-
-export function clampSlotHeightIndex(index: number, maxIndex: number): number {
-    return Math.min(Math.max(index, 0), maxIndex);
-}

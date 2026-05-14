@@ -7,7 +7,7 @@ import {
     DISPLAY_HOUR_INDICES,
     DISPLAY_SLOT_COUNT,
     GRID_TEMPLATE,
-    SLOT_HEIGHT_OPTIONS,
+    SLOT_HEIGHT_PX,
 } from '@/components/timesheets/timesheet-grid-config';
 import {
     currentMinutesSinceMidnight,
@@ -23,7 +23,6 @@ type TimesheetWeekBodyProps = {
     weekDays: Date[];
     entriesByDay: Record<string, TimesheetEntryPayload[]>;
     weekHasToday: boolean;
-    slotHeightIndex: number;
     onSlotClick: (dayKey: string, startMin: number, endMin: number) => void;
     onEntryClick: (dayKey: string, entry: TimesheetEntryPayload) => void;
 };
@@ -56,7 +55,6 @@ export function TimesheetWeekBody({
     weekDays,
     entriesByDay,
     weekHasToday,
-    slotHeightIndex,
     onSlotClick,
     onEntryClick,
 }: TimesheetWeekBodyProps) {
@@ -68,7 +66,7 @@ export function TimesheetWeekBody({
         return () => window.clearInterval(id);
     }, []);
 
-    const slotHeightPx = SLOT_HEIGHT_OPTIONS[slotHeightIndex];
+    const slotHeightPx = SLOT_HEIGHT_PX;
     const timelineHeightPx = DISPLAY_SLOT_COUNT * slotHeightPx;
     const slotIndices = Array.from({ length: DISPLAY_SLOT_COUNT }, (_, i) => i);
 
