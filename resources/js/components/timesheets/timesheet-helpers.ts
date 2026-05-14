@@ -7,7 +7,11 @@ import {
 import type { TimesheetEntryPayload } from '@/types/timesheets';
 
 export function startOfMonday(reference: Date): Date {
-    const d = new Date(reference.getFullYear(), reference.getMonth(), reference.getDate());
+    const d = new Date(
+        reference.getFullYear(),
+        reference.getMonth(),
+        reference.getDate(),
+    );
     const weekday = d.getDay();
     const offset = weekday === 0 ? -6 : 1 - weekday;
     d.setDate(d.getDate() + offset);
@@ -16,7 +20,10 @@ export function startOfMonday(reference: Date): Date {
 }
 
 export function addDays(date: Date, days: number): Date {
-    return new Date(date.getTime() + days * 86_400_000);
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+
+    return next;
 }
 
 export function dayKey(date: Date): string {
@@ -43,7 +50,11 @@ export function addWeeksToYmd(ymd: string, deltaWeeks: number): string {
 export function isToday(date: Date): boolean {
     const a = new Date();
 
-    return a.getFullYear() === date.getFullYear() && a.getMonth() === date.getMonth() && a.getDate() === date.getDate();
+    return (
+        a.getFullYear() === date.getFullYear() &&
+        a.getMonth() === date.getMonth() &&
+        a.getDate() === date.getDate()
+    );
 }
 
 export function minutesToTimeLabel(total: number): string {
@@ -72,7 +83,14 @@ export function parseTimeInputToMinutes(value: string): number | null {
     const h = Number(parts[0]);
     const m = Number(parts[1]);
 
-    if (!Number.isFinite(h) || !Number.isFinite(m) || h < 0 || h > 23 || m < 0 || m > 59) {
+    if (
+        !Number.isFinite(h) ||
+        !Number.isFinite(m) ||
+        h < 0 ||
+        h > 23 ||
+        m < 0 ||
+        m > 59
+    ) {
         return null;
     }
 
@@ -80,7 +98,10 @@ export function parseTimeInputToMinutes(value: string): number | null {
 }
 
 export function dayTotalMinutes(entries: TimesheetEntryPayload[]): number {
-    return entries.reduce((sum, e) => sum + Math.max(0, e.end_minutes - e.start_minutes), 0);
+    return entries.reduce(
+        (sum, e) => sum + Math.max(0, e.end_minutes - e.start_minutes),
+        0,
+    );
 }
 
 export function formatDayTotal(total: number): string {
@@ -104,7 +125,10 @@ export function currentMinutesSinceMidnight(): number {
     return n.getHours() * 60 + n.getMinutes() + n.getSeconds() / 60;
 }
 
-export function minutesToTimelineY(minutesSinceMidnight: number, timelineHeightPx: number): number {
+export function minutesToTimelineY(
+    minutesSinceMidnight: number,
+    timelineHeightPx: number,
+): number {
     const rel = Math.max(0, minutesSinceMidnight - DISPLAY_DAY_START_MIN);
 
     return (rel / DISPLAY_MINUTES_SPAN) * timelineHeightPx;
@@ -124,7 +148,9 @@ export function visibleEntrySegment(
     return { visStart, visEnd };
 }
 
-export function flattenFormErrors(errors: Record<string, string | string[]>): Record<string, string> {
+export function flattenFormErrors(
+    errors: Record<string, string | string[]>,
+): Record<string, string> {
     const flat: Record<string, string> = {};
 
     for (const [key, val] of Object.entries(errors)) {
