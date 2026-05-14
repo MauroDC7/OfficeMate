@@ -157,6 +157,10 @@ export function useTimesheetWeekCalendar({
             return;
         }
 
+        openedEntryKeyRef.current = key;
+
+        let match: { dayKey: string; entry: TimesheetEntryPayload } | null = null;
+
         for (const day of weekDays) {
             const dk = dayKey(day);
             const entry = (entriesByDay[dk] ?? []).find(
@@ -164,15 +168,23 @@ export function useTimesheetWeekCalendar({
             );
 
             if (entry !== undefined) {
-                openedEntryKeyRef.current = key;
-                // Defer to avoid setState during the render-phase effect run.
-                queueMicrotask(() => openModalForEntry(dk, entry));
-
-                return;
+                match = { dayKey: dk, entry };
+                break;
             }
         }
 
-        openedEntryKeyRef.current = key;
+        queueMicrotask(() => {
+            if (match !== null) {
+                openModalForEntry(match.dayKey, match.entry);
+            }
+
+            const cleanedUrl = timesheets.url({ query: { week: weekStart } });
+            window.history.replaceState(
+                window.history.state,
+                '',
+                cleanedUrl,
+            );
+        });
     }, [openEntryId, weekStart, weekDays, entriesByDay, openModalForEntry]);
 
     const navigateWeek = useCallback(
