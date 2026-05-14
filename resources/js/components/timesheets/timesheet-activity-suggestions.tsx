@@ -37,18 +37,6 @@ function Svg({ className, children }: IconProps & { children: ReactNode }) {
     );
 }
 
-function IconPencil({ className }: IconProps) {
-    return (
-        <Svg className={className}>
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-            />
-        </Svg>
-    );
-}
-
 function IconTrash({ className }: IconProps) {
     return (
         <Svg className={className}>
@@ -101,7 +89,11 @@ function ActivityRow({ item, onEdit, onDelete }: ActivityRowProps) {
                     aria-label="Bewerken"
                     onClick={() => onEdit(item.id, item.worked_on)}
                 >
-                    <IconPencil className="h-4 w-4" />
+                    <img
+                        src="/img/Edit Icon 48.png"
+                        alt=""
+                        className="h-4 w-4"
+                    />
                 </button>
                 <button
                     type="button"
