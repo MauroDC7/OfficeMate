@@ -56,9 +56,34 @@ final class AppPageController extends Controller
             )
             ->all();
 
+        $recentActivity = TimesheetEntry::query()
+            ->where('user_id', $user->id)
+            ->orderByDesc('updated_at')
+            ->limit(12)
+            ->get()
+            ->map(fn (TimesheetEntry $e): array => [
+                'id' => $e->id,
+                'title' => $e->title,
+                'worked_on' => $e->worked_on->format('Y-m-d'),
+                'start_minutes' => $e->start_minutes,
+                'end_minutes' => $e->end_minutes,
+                'created_at' => $e->created_at?->toIso8601String() ?? '',
+                'updated_at' => $e->updated_at?->toIso8601String() ?? '',
+                'kind' => $e->created_at !== null && $e->updated_at !== null
+                    && abs($e->created_at->diffInSeconds($e->updated_at)) <= 1
+                    ? 'created'
+                    : 'updated',
+            ])
+            ->all();
+
+        $rawEntry = $request->query('entry');
+        $openEntryId = is_scalar($rawEntry) ? (filter_var($rawEntry, FILTER_VALIDATE_INT) ?: null) : null;
+
         return Inertia::render('timesheets', [
             'weekStart' => $monday->toDateString(),
             'entriesByDay' => $entriesByDay,
+            'recentActivity' => $recentActivity,
+            'openEntryId' => $openEntryId,
         ]);
     }
 
