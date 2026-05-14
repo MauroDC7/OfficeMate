@@ -17,8 +17,8 @@ export const DISPLAY_HOUR_INDICES = Array.from(
     (_, i) => FIRST_DISPLAY_HOUR + i,
 );
 
-export const SLOT_HEIGHT_OPTIONS = [28, 36, 44] as const;
-export const DEFAULT_SLOT_HEIGHT_INDEX = 1;
+/** Pixel height per 30-minute slot in the week timeline (fixed). */
+export const SLOT_HEIGHT_PX = 36;
 
 export const GRID_TEMPLATE =
     'grid-cols-[minmax(3rem,3.75rem)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]';

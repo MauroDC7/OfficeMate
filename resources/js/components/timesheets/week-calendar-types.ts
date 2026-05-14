@@ -7,6 +7,7 @@ export type TimesheetModalState =
 export type TimesheetWeekCalendarProps = {
     weekStart: string;
     entriesByDay: Record<string, TimesheetEntryPayload[]>;
+    openEntryId?: number | null;
 };
 
 export type TimesheetDraft = {
