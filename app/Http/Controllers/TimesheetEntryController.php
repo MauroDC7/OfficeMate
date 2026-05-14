@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\TimesheetEntryChanged;
 use App\Http\Requests\StoreTimesheetEntryRequest;
 use App\Http\Requests\UpdateTimesheetEntryRequest;
 use App\Models\TimesheetEntry;
@@ -12,29 +13,44 @@ final class TimesheetEntryController extends CrudController
 {
     public function store(StoreTimesheetEntryRequest $request): RedirectResponse
     {
-        $data = $request->safe()->only([
-            'title',
-            'description',
-            'client_name',
-            'worked_on',
-            'start_minutes',
-            'end_minutes',
-        ]);
+        $entry = $request->user()->timesheetEntries()->create($this->fields($request));
 
-        $request->user()->timesheetEntries()->create($data);
+        TimesheetEntryChanged::dispatch($entry->user_id);
 
-        $workedOn = CarbonImmutable::parse((string) $data['worked_on']);
-
-        return redirect()->route('timesheets', [
-            'week' => $workedOn->startOfWeek(CarbonImmutable::MONDAY)->toDateString(),
-        ]);
+        return $this->redirectToWeek($entry->worked_on->toDateString());
     }
 
     public function update(UpdateTimesheetEntryRequest $request, TimesheetEntry $timesheetEntry): RedirectResponse
     {
         $this->mustOwn($request->user(), $timesheetEntry);
 
-        $data = $request->safe()->only([
+        $timesheetEntry->update($this->fields($request));
+
+        TimesheetEntryChanged::dispatch($timesheetEntry->user_id);
+
+        return $this->redirectToWeek($timesheetEntry->worked_on->toDateString());
+    }
+
+    public function destroy(TimesheetEntry $timesheetEntry): RedirectResponse
+    {
+        $this->mustOwn(request()->user(), $timesheetEntry);
+
+        $workedOn = $timesheetEntry->worked_on->toDateString();
+        $userId = $timesheetEntry->user_id;
+
+        $timesheetEntry->delete();
+
+        TimesheetEntryChanged::dispatch($userId);
+
+        return $this->redirectToWeek($workedOn);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fields(StoreTimesheetEntryRequest|UpdateTimesheetEntryRequest $request): array
+    {
+        return $request->safe()->only([
             'title',
             'description',
             'client_name',
@@ -42,28 +58,14 @@ final class TimesheetEntryController extends CrudController
             'start_minutes',
             'end_minutes',
         ]);
-
-        $timesheetEntry->update($data);
-
-        $workedOn = CarbonImmutable::parse((string) $data['worked_on']);
-
-        return redirect()->route('timesheets', [
-            'week' => $workedOn->startOfWeek(CarbonImmutable::MONDAY)->toDateString(),
-        ]);
     }
 
-    public function destroy(TimesheetEntry $timesheetEntry): RedirectResponse
+    private function redirectToWeek(string $workedOnYmd): RedirectResponse
     {
-        $this->mustOwn(request()->user(), $timesheetEntry);
-
-        $weekMonday = CarbonImmutable::parse($timesheetEntry->worked_on->toDateString())
+        $week = CarbonImmutable::parse($workedOnYmd)
             ->startOfWeek(CarbonImmutable::MONDAY)
             ->toDateString();
 
-        $timesheetEntry->delete();
-
-        return redirect()->route('timesheets', [
-            'week' => $weekMonday,
-        ]);
+        return redirect()->route('timesheets', ['week' => $week]);
     }
 }
