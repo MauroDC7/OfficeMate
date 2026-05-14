@@ -7,38 +7,37 @@ import type { TimesheetWeekCalendarProps } from '@/components/timesheets/week-ca
 export type { TimesheetWeekCalendarProps } from '@/components/timesheets/week-calendar-types';
 
 export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
-    const c = useTimesheetWeekCalendar(props);
+    const calendar = useTimesheetWeekCalendar(props);
 
     return (
         <div className="space-y-4">
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
                 <TimesheetWeekHeader
-                    weekRangeLabel={c.weekRangeLabel}
-                    onPrevWeek={() => c.navigateWeek(-1)}
-                    onNextWeek={() => c.navigateWeek(1)}
-                    weekDays={c.weekDays}
-                    minutesPerDay={c.minutesPerDay}
+                    weekRangeLabel={calendar.weekRangeLabel}
+                    onPrevWeek={() => calendar.navigateWeek(-1)}
+                    onNextWeek={() => calendar.navigateWeek(1)}
+                    weekDays={calendar.weekDays}
+                    minutesPerDay={calendar.minutesPerDay}
                 />
                 <TimesheetWeekBody
-                    weekDays={c.weekDays}
-                    entriesByDay={c.entriesByDay}
-                    weekHasToday={c.weekHasToday}
-                    onSlotClick={c.openModalForSlot}
-                    onEntryClick={c.openModalForEntry}
+                    weekDays={calendar.weekDays}
+                    entriesByDay={props.entriesByDay}
+                    onSlotClick={calendar.openModalForSlot}
+                    onEntryClick={calendar.openModalForEntry}
                 />
             </div>
 
-            {c.modal !== null ? (
+            {calendar.modal !== null ? (
                 <TimesheetFormPopup
-                    modal={c.modal}
-                    draft={c.draft}
-                    formError={c.formError}
-                    serverErrors={c.serverErrors}
-                    submitting={c.submitting}
-                    onDraftChange={c.setDraftField}
-                    onClose={c.closeModal}
-                    onSave={c.saveModal}
-                    onDelete={c.deleteEntry}
+                    modal={calendar.modal}
+                    draft={calendar.draft}
+                    formError={calendar.formError}
+                    serverErrors={calendar.serverErrors}
+                    submitting={calendar.submitting}
+                    onDraftChange={calendar.setDraftField}
+                    onClose={calendar.closeModal}
+                    onSave={calendar.saveModal}
+                    onDelete={calendar.deleteEntry}
                 />
             ) : null}
         </div>
