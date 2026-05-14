@@ -10,7 +10,7 @@ export function AppHeader() {
     const title = firstName !== '' ? `Welkom, ${firstName}` : 'Welkom, daar';
 
     return (
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
+        <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
             <h1 className="text-lg font-semibold tracking-tight text-gray-900">{title}</h1>
 
             <div className="flex items-center gap-4">
