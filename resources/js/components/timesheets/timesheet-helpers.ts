@@ -164,10 +164,6 @@ export function flattenFormErrors(
     return flat;
 }
 
-export function clampSlotHeightIndex(index: number, maxIndex: number): number {
-    return Math.min(Math.max(index, 0), maxIndex);
-}
-
 export function formatActivityDayLabel(ymd: string): string {
     return new Date(`${ymd}T12:00:00`).toLocaleDateString('nl-BE', {
         weekday: 'short',
