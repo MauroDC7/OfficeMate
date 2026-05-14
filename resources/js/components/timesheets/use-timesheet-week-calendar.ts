@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { WORKDAY_INDICES } from '@/components/timesheets/timesheet-grid-config';
 import {
@@ -8,45 +8,82 @@ import {
     dayKey,
     dayTotalMinutes,
     flattenFormErrors,
-    isToday,
     minutesToTimeInput,
     parseTimeInputToMinutes,
     parseYmdLocal,
 } from '@/components/timesheets/timesheet-helpers';
-import type { TimesheetDraft, TimesheetModalState, TimesheetWeekCalendarProps } from '@/components/timesheets/week-calendar-types';
+import type {
+    TimesheetDraft,
+    TimesheetModalState,
+    TimesheetWeekCalendarProps,
+} from '@/components/timesheets/week-calendar-types';
 import { emptyDraft } from '@/components/timesheets/week-calendar-types';
 import { timesheets } from '@/routes';
 import { destroy, store, update } from '@/routes/timesheets/entries';
 import type { TimesheetEntryPayload } from '@/types/timesheets';
 
-export function useTimesheetWeekCalendar({ weekStart, entriesByDay }: TimesheetWeekCalendarProps) {
+type ServerErrors = Record<string, string | string[]>;
+
+function buildEntryPayload(
+    draft: TimesheetDraft,
+    workedOn: string,
+    start: number,
+    end: number,
+) {
+    const trimmedDescription = draft.description.trim();
+    const trimmedClient = draft.client.trim();
+
+    return {
+        title: draft.title.trim(),
+        description: trimmedDescription === '' ? null : trimmedDescription,
+        client_name: trimmedClient === '' ? null : trimmedClient,
+        worked_on: workedOn,
+        start_minutes: start,
+        end_minutes: end,
+    };
+}
+
+export function useTimesheetWeekCalendar({
+    weekStart,
+    entriesByDay,
+    openEntryId = null,
+}: TimesheetWeekCalendarProps) {
     const [modal, setModal] = useState<TimesheetModalState | null>(null);
-    const [draft, setDraft] = useState<TimesheetDraft>(emptyDraft);
+    const [draft, setDraft] = useState<TimesheetDraft>(() => emptyDraft());
     const [formError, setFormError] = useState<string | null>(null);
-    const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
+    const [serverErrors, setServerErrors] = useState<Record<string, string>>(
+        {},
+    );
     const [submitting, setSubmitting] = useState(false);
 
-    const monday = useMemo(() => parseYmdLocal(weekStart), [weekStart]);
-    const weekDays = useMemo(() => WORKDAY_INDICES.map((i) => addDays(monday, i)), [monday]);
+    const openedEntryKeyRef = useRef<string | null>(null);
+
+    const weekDays = useMemo(() => {
+        const monday = parseYmdLocal(weekStart);
+
+        return WORKDAY_INDICES.map((i) => addDays(monday, i));
+    }, [weekStart]);
 
     const weekRangeLabel = useMemo(() => {
         const from = weekDays[0];
-        const to = weekDays[4];
+        const to = weekDays[weekDays.length - 1];
 
-        return `${from.toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })} – ${to.toLocaleDateString('nl-BE', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-        })}`;
+        return `${from.toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })} – ${to.toLocaleDateString(
+            'nl-BE',
+            {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+            },
+        )}`;
     }, [weekDays]);
-
-    const weekHasToday = useMemo(() => weekDays.some((d) => isToday(d)), [weekDays]);
 
     const minutesPerDay = useMemo(() => {
         const map: Record<string, number> = {};
 
-        for (const d of weekDays) {
-            map[dayKey(d)] = dayTotalMinutes(entriesByDay[dayKey(d)] ?? []);
+        for (const day of weekDays) {
+            const key = dayKey(day);
+            map[key] = dayTotalMinutes(entriesByDay[key] ?? []);
         }
 
         return map;
@@ -68,8 +105,8 @@ export function useTimesheetWeekCalendar({ weekStart, entriesByDay }: TimesheetW
             return;
         }
 
-        function onKeyDown(e: KeyboardEvent): void {
-            if (e.key === 'Escape') {
+        function onKeyDown(event: KeyboardEvent): void {
+            if (event.key === 'Escape') {
                 closeModal();
             }
         }
@@ -78,27 +115,6 @@ export function useTimesheetWeekCalendar({ weekStart, entriesByDay }: TimesheetW
 
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [modal, closeModal]);
-
-    const navigateWeek = useCallback(
-        (deltaWeeks: number) => {
-            const next = addWeeksToYmd(weekStart, deltaWeeks);
-            router.get(timesheets.url({ query: { week: next } }), {}, { preserveScroll: true });
-        },
-        [weekStart],
-    );
-
-    const openModalForSlot = useCallback(
-        (dayKeyValue: string, startMin: number, endMin: number) => {
-            clearErrors();
-            setDraft({
-                ...emptyDraft(),
-                start: minutesToTimeInput(startMin),
-                end: minutesToTimeInput(endMin),
-            });
-            setModal({ mode: 'create', dayKey: dayKeyValue, startMin, endMin });
-        },
-        [clearErrors],
-    );
 
     const openModalForEntry = useCallback(
         (dayKeyValue: string, entry: TimesheetEntryPayload) => {
@@ -115,55 +131,109 @@ export function useTimesheetWeekCalendar({ weekStart, entriesByDay }: TimesheetW
         [clearErrors],
     );
 
-    const setDraftField = useCallback((field: keyof TimesheetDraft, value: string) => {
-        setDraft((d) => ({ ...d, [field]: value }));
-    }, []);
+    const openModalForSlot = useCallback(
+        (dayKeyValue: string, startMin: number, endMin: number) => {
+            clearErrors();
+            setDraft({
+                ...emptyDraft(),
+                start: minutesToTimeInput(startMin),
+                end: minutesToTimeInput(endMin),
+            });
+            setModal({ mode: 'create', dayKey: dayKeyValue, startMin, endMin });
+        },
+        [clearErrors],
+    );
+
+    useEffect(() => {
+        if (openEntryId === null) {
+            openedEntryKeyRef.current = null;
+
+            return;
+        }
+
+        const key = `${weekStart}:${openEntryId}`;
+
+        if (openedEntryKeyRef.current === key) {
+            return;
+        }
+
+        for (const day of weekDays) {
+            const dk = dayKey(day);
+            const entry = (entriesByDay[dk] ?? []).find(
+                (e) => e.id === openEntryId,
+            );
+
+            if (entry !== undefined) {
+                openedEntryKeyRef.current = key;
+                // Defer to avoid setState during the render-phase effect run.
+                queueMicrotask(() => openModalForEntry(dk, entry));
+
+                return;
+            }
+        }
+
+        openedEntryKeyRef.current = key;
+    }, [openEntryId, weekStart, weekDays, entriesByDay, openModalForEntry]);
+
+    const navigateWeek = useCallback(
+        (deltaWeeks: number) => {
+            const nextWeek = addWeeksToYmd(weekStart, deltaWeeks);
+            router.get(
+                timesheets.url({ query: { week: nextWeek } }),
+                {},
+                { preserveScroll: true },
+            );
+        },
+        [weekStart],
+    );
+
+    const setDraftField = useCallback(
+        (field: keyof TimesheetDraft, value: string) => {
+            setDraft((current) => ({ ...current, [field]: value }));
+        },
+        [],
+    );
 
     const saveModal = useCallback(() => {
         if (modal === null) {
             return;
         }
 
-        const title = draft.title.trim();
-
-        if (title === '') {
+        if (draft.title.trim() === '') {
             setFormError('Titel is verplicht.');
 
             return;
         }
 
-        const start = parseTimeInputToMinutes(draft.start);
-        const end = parseTimeInputToMinutes(draft.end);
+        const startMinutes = parseTimeInputToMinutes(draft.start);
+        const endMinutes = parseTimeInputToMinutes(draft.end);
 
-        if (start === null || end === null) {
+        if (startMinutes === null || endMinutes === null) {
             setFormError('Vul geldige tijden in (uu:mm).');
 
             return;
         }
 
-        if (end <= start) {
+        if (endMinutes <= startMinutes) {
             setFormError('Eindtijd moet na de starttijd liggen.');
 
             return;
         }
 
-        const dayKeyValue = modal.dayKey;
-        const payload = {
-            title,
-            description: draft.description.trim() === '' ? null : draft.description.trim(),
-            client_name: draft.client.trim() === '' ? null : draft.client.trim(),
-            worked_on: dayKeyValue,
-            start_minutes: start,
-            end_minutes: end,
-        };
+        const payload = buildEntryPayload(
+            draft,
+            modal.dayKey,
+            startMinutes,
+            endMinutes,
+        );
 
         clearErrors();
         setSubmitting(true);
 
-        const options = {
+        const requestOptions = {
             preserveScroll: true,
             onSuccess: closeModal,
-            onError: (errors: Record<string, string | string[]>) => {
+            onError: (errors: ServerErrors) => {
                 setServerErrors(flattenFormErrors(errors));
             },
             onFinish: () => {
@@ -172,10 +242,16 @@ export function useTimesheetWeekCalendar({ weekStart, entriesByDay }: TimesheetW
         };
 
         if (modal.mode === 'create') {
-            router.post(store.url(), payload, options);
-        } else {
-            router.patch(update.url({ timesheet_entry: modal.entry.id }), payload, options);
+            router.post(store.url(), payload, requestOptions);
+
+            return;
         }
+
+        router.patch(
+            update.url({ timesheet_entry: modal.entry.id }),
+            payload,
+            requestOptions,
+        );
     }, [modal, draft, clearErrors, closeModal]);
 
     const deleteEntry = useCallback(() => {
@@ -193,7 +269,7 @@ export function useTimesheetWeekCalendar({ weekStart, entriesByDay }: TimesheetW
         router.delete(destroy.url({ timesheet_entry: modal.entry.id }), {
             preserveScroll: true,
             onSuccess: closeModal,
-            onError: (errors: Record<string, string | string[]>) => {
+            onError: (errors: ServerErrors) => {
                 setServerErrors(flattenFormErrors(errors));
             },
             onFinish: () => {
@@ -205,7 +281,6 @@ export function useTimesheetWeekCalendar({ weekStart, entriesByDay }: TimesheetW
     return {
         weekDays,
         weekRangeLabel,
-        weekHasToday,
         minutesPerDay,
         navigateWeek,
         modal,
@@ -219,6 +294,5 @@ export function useTimesheetWeekCalendar({ weekStart, entriesByDay }: TimesheetW
         deleteEntry,
         openModalForSlot,
         openModalForEntry,
-        entriesByDay,
     };
 }

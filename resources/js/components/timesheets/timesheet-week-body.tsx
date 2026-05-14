@@ -1,4 +1,4 @@
-import { useReducer, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { OneDayCalendarColumn } from '@/components/timesheets/one-day-calendar-column';
 import {
@@ -19,10 +19,11 @@ import {
 import { cn } from '@/lib/utils';
 import type { TimesheetEntryPayload } from '@/types/timesheets';
 
+const NOW_LINE_REFRESH_MS = 30_000;
+
 type TimesheetWeekBodyProps = {
     weekDays: Date[];
     entriesByDay: Record<string, TimesheetEntryPayload[]>;
-    weekHasToday: boolean;
     onSlotClick: (dayKey: string, startMin: number, endMin: number) => void;
     onEntryClick: (dayKey: string, entry: TimesheetEntryPayload) => void;
 };
@@ -30,16 +31,19 @@ type TimesheetWeekBodyProps = {
 function HourLabelsColumn({ timelineHeightPx }: { timelineHeightPx: number }) {
     return (
         <div className="relative shrink-0 border-e border-gray-200 bg-gray-50/80">
-            {DISPLAY_HOUR_INDICES.map((h) => {
-                const startMin = h * 60;
+            {DISPLAY_HOUR_INDICES.map((hour) => {
+                const startMin = hour * 60;
                 const top = minutesToTimelineY(startMin, timelineHeightPx);
+                const isFirstHour = hour === DISPLAY_HOUR_INDICES[0];
 
                 return (
                     <span
-                        key={h}
+                        key={hour}
                         className={cn(
-                            'absolute end-1 start-0 text-end text-[0.65rem] tabular-nums text-gray-500 sm:text-xs',
-                            h === 7 ? 'translate-y-0.5' : '-translate-y-1/2',
+                            'absolute start-0 end-1 text-end text-[0.65rem] text-gray-500 tabular-nums sm:text-xs',
+                            isFirstHour
+                                ? 'translate-y-0.5'
+                                : '-translate-y-1/2',
                         )}
                         style={{ top }}
                     >
@@ -51,44 +55,54 @@ function HourLabelsColumn({ timelineHeightPx }: { timelineHeightPx: number }) {
     );
 }
 
-export function TimesheetWeekBody({
-    weekDays,
-    entriesByDay,
-    weekHasToday,
-    onSlotClick,
-    onEntryClick,
-}: TimesheetWeekBodyProps) {
-    const [, refreshNow] = useReducer((n: number) => n + 1, 0);
+function useNowMinutes(): number {
+    const [nowMinutes, setNowMinutes] = useState(currentMinutesSinceMidnight);
 
     useEffect(() => {
-        const id = window.setInterval(() => refreshNow(), 30_000);
+        const id = window.setInterval(() => {
+            setNowMinutes(currentMinutesSinceMidnight());
+        }, NOW_LINE_REFRESH_MS);
 
         return () => window.clearInterval(id);
     }, []);
 
-    const slotHeightPx = SLOT_HEIGHT_PX;
-    const timelineHeightPx = DISPLAY_SLOT_COUNT * slotHeightPx;
-    const slotIndices = Array.from({ length: DISPLAY_SLOT_COUNT }, (_, i) => i);
+    return nowMinutes;
+}
 
-    const nowMin = currentMinutesSinceMidnight();
-    const nowWithinDisplay = nowMin >= DISPLAY_DAY_START_MIN && nowMin < DISPLAY_DAY_END_MIN;
-    const nowTopPx = minutesToTimelineY(nowMin, timelineHeightPx);
+export function TimesheetWeekBody({
+    weekDays,
+    entriesByDay,
+    onSlotClick,
+    onEntryClick,
+}: TimesheetWeekBodyProps) {
+    const timelineHeightPx = DISPLAY_SLOT_COUNT * SLOT_HEIGHT_PX;
+
+    const slotIndices = useMemo(
+        () => Array.from({ length: DISPLAY_SLOT_COUNT }, (_, i) => i),
+        [],
+    );
+
+    const nowMinutes = useNowMinutes();
+    const nowWithinDisplay =
+        nowMinutes >= DISPLAY_DAY_START_MIN && nowMinutes < DISPLAY_DAY_END_MIN;
+    const nowTopPx = minutesToTimelineY(nowMinutes, timelineHeightPx);
 
     return (
         <div className="max-h-[min(72vh,56rem)] overflow-y-auto overscroll-contain rounded-b-xl">
-            <div className={cn('grid bg-white', GRID_TEMPLATE)} style={{ minHeight: timelineHeightPx }}>
+            <div
+                className={cn('grid bg-white', GRID_TEMPLATE)}
+                style={{ minHeight: timelineHeightPx }}
+            >
                 <HourLabelsColumn timelineHeightPx={timelineHeightPx} />
                 {weekDays.map((day) => {
                     const key = dayKey(day);
-                    const today = isToday(day);
-                    const entries = entriesByDay[key] ?? [];
-                    const showNowLine = weekHasToday && today && nowWithinDisplay;
+                    const showNowLine = nowWithinDisplay && isToday(day);
 
                     return (
                         <OneDayCalendarColumn
                             key={key}
                             day={day}
-                            entries={entries}
+                            entries={entriesByDay[key] ?? []}
                             timelineHeightPx={timelineHeightPx}
                             slotIndices={slotIndices}
                             showNowLine={showNowLine}
