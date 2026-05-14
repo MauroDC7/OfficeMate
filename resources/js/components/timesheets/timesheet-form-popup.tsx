@@ -1,7 +1,10 @@
 import { createPortal } from 'react-dom';
 
 import { minutesToTimeLabel } from '@/components/timesheets/timesheet-helpers';
-import type { TimesheetDraft, TimesheetModalState } from '@/components/timesheets/week-calendar-types';
+import type {
+    TimesheetDraft,
+    TimesheetModalState,
+} from '@/components/timesheets/week-calendar-types';
 
 type TimesheetFormPopupProps = {
     modal: TimesheetModalState;
@@ -43,96 +46,154 @@ export function TimesheetFormPopup({
                 className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-xl"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h3 id="timesheet-modal-title" className="text-lg font-semibold text-gray-900">
-                    {modal.mode === 'create' ? 'Timesheet toevoegen' : 'Timesheet bewerken'}
+                <h3
+                    id="timesheet-modal-title"
+                    className="text-lg font-semibold text-gray-900"
+                >
+                    {modal.mode === 'create'
+                        ? 'Timesheet toevoegen'
+                        : 'Timesheet bewerken'}
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                    {minutesToTimeLabel(modal.mode === 'create' ? modal.startMin : modal.entry.start_minutes)} –{' '}
-                    {minutesToTimeLabel(modal.mode === 'create' ? modal.endMin : modal.entry.end_minutes)}{' '}
-                    <span className="text-gray-400">(pas aan indien nodig)</span>
+                    {minutesToTimeLabel(
+                        modal.mode === 'create'
+                            ? modal.startMin
+                            : modal.entry.start_minutes,
+                    )}{' '}
+                    –{' '}
+                    {minutesToTimeLabel(
+                        modal.mode === 'create'
+                            ? modal.endMin
+                            : modal.entry.end_minutes,
+                    )}{' '}
+                    <span className="text-gray-400">
+                        (pas aan indien nodig)
+                    </span>
                 </p>
 
                 <div className="mt-4 space-y-4">
                     <div>
-                        <label htmlFor="ts-title" className="text-sm font-medium text-gray-800">
+                        <label
+                            htmlFor="ts-title"
+                            className="text-sm font-medium text-gray-800"
+                        >
                             Titel <span className="text-red-600">*</span>
                         </label>
                         <input
                             id="ts-title"
                             type="text"
                             value={draft.title}
-                            onChange={(e) => onDraftChange('title', e.target.value)}
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                            onChange={(e) =>
+                                onDraftChange('title', e.target.value)
+                            }
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
                             autoComplete="off"
                         />
                         {serverErrors.title !== undefined ? (
-                            <p className="mt-1 text-sm text-red-600">{serverErrors.title}</p>
+                            <p className="mt-1 text-sm text-red-600">
+                                {serverErrors.title}
+                            </p>
                         ) : null}
                     </div>
                     <div>
-                        <label htmlFor="ts-desc" className="text-sm font-medium text-gray-800">
+                        <label
+                            htmlFor="ts-desc"
+                            className="text-sm font-medium text-gray-800"
+                        >
                             Beschrijving
                         </label>
                         <textarea
                             id="ts-desc"
                             value={draft.description}
-                            onChange={(e) => onDraftChange('description', e.target.value)}
+                            onChange={(e) =>
+                                onDraftChange('description', e.target.value)
+                            }
                             rows={3}
-                            className="mt-1 w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                            className="mt-1 w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
                         />
                         {serverErrors.description !== undefined ? (
-                            <p className="mt-1 text-sm text-red-600">{serverErrors.description}</p>
+                            <p className="mt-1 text-sm text-red-600">
+                                {serverErrors.description}
+                            </p>
                         ) : null}
                     </div>
                     <div>
-                        <label htmlFor="ts-client" className="text-sm font-medium text-gray-800">
-                            Klantnaam <span className="font-normal text-gray-500">(optioneel)</span>
+                        <label
+                            htmlFor="ts-client"
+                            className="text-sm font-medium text-gray-800"
+                        >
+                            Klantnaam{' '}
+                            <span className="font-normal text-gray-500">
+                                (optioneel)
+                            </span>
                         </label>
                         <input
                             id="ts-client"
                             type="text"
                             value={draft.client}
-                            onChange={(e) => onDraftChange('client', e.target.value)}
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                            onChange={(e) =>
+                                onDraftChange('client', e.target.value)
+                            }
+                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
                             autoComplete="organization"
                         />
                         {serverErrors.client_name !== undefined ? (
-                            <p className="mt-1 text-sm text-red-600">{serverErrors.client_name}</p>
+                            <p className="mt-1 text-sm text-red-600">
+                                {serverErrors.client_name}
+                            </p>
                         ) : null}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label htmlFor="ts-start" className="text-sm font-medium text-gray-800">
+                            <label
+                                htmlFor="ts-start"
+                                className="text-sm font-medium text-gray-800"
+                            >
                                 Van
                             </label>
                             <input
                                 id="ts-start"
                                 type="time"
                                 value={draft.start}
-                                onChange={(e) => onDraftChange('start', e.target.value)}
-                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                onChange={(e) =>
+                                    onDraftChange('start', e.target.value)
+                                }
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
                             />
                         </div>
                         <div>
-                            <label htmlFor="ts-end" className="text-sm font-medium text-gray-800">
+                            <label
+                                htmlFor="ts-end"
+                                className="text-sm font-medium text-gray-800"
+                            >
                                 Tot
                             </label>
                             <input
                                 id="ts-end"
                                 type="time"
                                 value={draft.end}
-                                onChange={(e) => onDraftChange('end', e.target.value)}
-                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                onChange={(e) =>
+                                    onDraftChange('end', e.target.value)
+                                }
+                                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
                             />
                         </div>
                     </div>
-                    {(serverErrors.start_minutes !== undefined || serverErrors.end_minutes !== undefined) && (
-                        <p className="text-sm text-red-600">{serverErrors.start_minutes ?? serverErrors.end_minutes}</p>
+                    {(serverErrors.start_minutes !== undefined ||
+                        serverErrors.end_minutes !== undefined) && (
+                        <p className="text-sm text-red-600">
+                            {serverErrors.start_minutes ??
+                                serverErrors.end_minutes}
+                        </p>
                     )}
                     {serverErrors.worked_on !== undefined ? (
-                        <p className="text-sm text-red-600">{serverErrors.worked_on}</p>
+                        <p className="text-sm text-red-600">
+                            {serverErrors.worked_on}
+                        </p>
                     ) : null}
-                    {formError !== null ? <p className="text-sm text-red-600">{formError}</p> : null}
+                    {formError !== null ? (
+                        <p className="text-sm text-red-600">{formError}</p>
+                    ) : null}
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center justify-between gap-2">

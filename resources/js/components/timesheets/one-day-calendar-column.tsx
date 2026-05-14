@@ -42,7 +42,10 @@ export function OneDayCalendarColumn({
 
     return (
         <div
-            className={cn('relative min-w-0 border-s border-gray-200', today && 'bg-violet-50/15')}
+            className={cn(
+                'relative min-w-0 border-s border-gray-200',
+                today && 'bg-violet-50/15',
+            )}
             style={{ height: timelineHeightPx }}
         >
             {DISPLAY_HOUR_INDICES.map((h) => {
@@ -50,7 +53,9 @@ export function OneDayCalendarColumn({
                 const topHour = minutesToTimelineY(startMin, timelineHeightPx);
                 const halfMin = startMin + 30;
                 const topHalf =
-                    halfMin < DISPLAY_DAY_END_MIN ? minutesToTimelineY(halfMin, timelineHeightPx) : null;
+                    halfMin < DISPLAY_DAY_END_MIN
+                        ? minutesToTimelineY(halfMin, timelineHeightPx)
+                        : null;
 
                 return (
                     <div key={h}>
@@ -72,7 +77,8 @@ export function OneDayCalendarColumn({
                 const startMin = DISPLAY_DAY_START_MIN + i * SLOT_MINUTES;
                 const endMin = startMin + SLOT_MINUTES;
                 const top = minutesToTimelineY(startMin, timelineHeightPx);
-                const height = (SLOT_MINUTES / DISPLAY_MINUTES_SPAN) * timelineHeightPx;
+                const height =
+                    (SLOT_MINUTES / DISPLAY_MINUTES_SPAN) * timelineHeightPx;
 
                 return (
                     <button
@@ -91,14 +97,21 @@ export function OneDayCalendarColumn({
             })}
 
             {entries.map((entry) => {
-                const seg = visibleEntrySegment(entry.start_minutes, entry.end_minutes);
+                const seg = visibleEntrySegment(
+                    entry.start_minutes,
+                    entry.end_minutes,
+                );
 
                 if (seg === null) {
                     return null;
                 }
 
                 const top = minutesToTimelineY(seg.visStart, timelineHeightPx);
-                const height = Math.max(((seg.visEnd - seg.visStart) / DISPLAY_MINUTES_SPAN) * timelineHeightPx, 20);
+                const height = Math.max(
+                    ((seg.visEnd - seg.visStart) / DISPLAY_MINUTES_SPAN) *
+                        timelineHeightPx,
+                    20,
+                );
 
                 return (
                     <div
@@ -116,24 +129,29 @@ export function OneDayCalendarColumn({
                                 onEntryClick(key, entry);
                             }
                         }}
-                        className="pointer-events-auto absolute start-1 end-1 z-10 flex cursor-pointer flex-col gap-0.5 overflow-hidden rounded-md border border-violet-200 bg-violet-100/95 px-1.5 py-1 shadow-sm outline-none ring-violet-400/40 transition hover:border-violet-300 hover:shadow-md focus-visible:ring-2 sm:start-1.5 sm:end-1.5 sm:px-2 sm:py-1.5"
+                        className="pointer-events-auto absolute start-1 end-1 z-10 flex cursor-pointer flex-col gap-0.5 overflow-hidden rounded-md border border-violet-200 bg-violet-100/95 px-1.5 py-1 shadow-sm ring-violet-400/40 transition outline-none hover:border-violet-300 hover:shadow-md focus-visible:ring-2 sm:start-1.5 sm:end-1.5 sm:px-2 sm:py-1.5"
                         style={{ top, height }}
                     >
-                        <p className="shrink-0 truncate text-[0.65rem] font-semibold leading-tight text-violet-950 sm:text-xs">
+                        <p className="shrink-0 truncate text-[0.65rem] leading-tight font-semibold text-violet-950 sm:text-xs">
                             {entry.title}
                         </p>
-                        {entry.description !== null && entry.description.trim() !== '' ? (
+                        {entry.description !== null &&
+                        entry.description.trim() !== '' ? (
                             <p className="line-clamp-2 min-h-0 shrink text-[0.58rem] leading-snug text-violet-900/90 sm:text-[0.62rem]">
                                 {entry.description.trim()}
                             </p>
                         ) : null}
-                        {entry.client_name !== null && entry.client_name !== '' ? (
+                        {entry.client_name !== null &&
+                        entry.client_name !== '' ? (
                             <p className="shrink-0 truncate text-[0.6rem] text-violet-800 sm:text-[0.65rem]">
                                 {entry.client_name}
                             </p>
                         ) : null}
-                        <p className="mt-auto shrink-0 text-[0.6rem] tabular-nums text-violet-700 sm:text-[0.65rem]">
-                            {formatMinutesRange(entry.start_minutes, entry.end_minutes)}
+                        <p className="mt-auto shrink-0 text-[0.6rem] text-violet-700 tabular-nums sm:text-[0.65rem]">
+                            {formatMinutesRange(
+                                entry.start_minutes,
+                                entry.end_minutes,
+                            )}
                         </p>
                     </div>
                 );
