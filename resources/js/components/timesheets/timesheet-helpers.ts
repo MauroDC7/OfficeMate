@@ -137,3 +137,56 @@ export function flattenFormErrors(errors: Record<string, string | string[]>): Re
 
     return flat;
 }
+
+export function clampSlotHeightIndex(index: number, maxIndex: number): number {
+    return Math.min(Math.max(index, 0), maxIndex);
+}
+
+export function formatActivityDayLabel(ymd: string): string {
+    return new Date(`${ymd}T12:00:00`).toLocaleDateString('nl-BE', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+    });
+}
+
+export function formatShortRelativeNl(iso: string): string {
+    const t = new Date(iso).getTime();
+
+    if (Number.isNaN(t)) {
+        return '';
+    }
+
+    const sec = Math.round((Date.now() - t) / 1000);
+
+    if (sec < 45) {
+        return 'Zojuist';
+    }
+
+    const rtf = new Intl.RelativeTimeFormat('nl-BE', { numeric: 'auto' });
+    const min = Math.floor(sec / 60);
+
+    if (min < 60) {
+        return rtf.format(-min, 'minute');
+    }
+
+    const hr = Math.floor(min / 60);
+
+    if (hr < 24) {
+        return rtf.format(-hr, 'hour');
+    }
+
+    const day = Math.floor(hr / 24);
+
+    if (day < 7) {
+        return rtf.format(-day, 'day');
+    }
+
+    const week = Math.floor(day / 7);
+
+    if (week < 8) {
+        return rtf.format(-week, 'week');
+    }
+
+    return rtf.format(-Math.max(1, Math.floor(day / 30)), 'month');
+}
