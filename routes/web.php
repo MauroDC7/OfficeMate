@@ -4,11 +4,15 @@ use App\Http\Controllers\AppPageController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Settings\AccountSettingsController;
+use App\Http\Controllers\TimesheetEntryController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/', [AppPageController::class, 'dashboard'])->name('dashboard');
     Route::get('/timesheets', [AppPageController::class, 'timesheets'])->name('timesheets');
+    Route::post('/timesheets/entries', [TimesheetEntryController::class, 'store'])->name('timesheets.entries.store');
+    Route::patch('/timesheets/entries/{timesheet_entry}', [TimesheetEntryController::class, 'update'])->name('timesheets.entries.update');
+    Route::delete('/timesheets/entries/{timesheet_entry}', [TimesheetEntryController::class, 'destroy'])->name('timesheets.entries.destroy');
     Route::get('/projects', [AppPageController::class, 'projects'])->name('projects');
     Route::get('/leave-requests', [AppPageController::class, 'leaveRequests'])->name('leaveRequests');
     Route::get('/shift-planning', [AppPageController::class, 'shiftPlanning'])->name('shiftPlanning');
