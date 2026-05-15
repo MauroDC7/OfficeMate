@@ -9,6 +9,7 @@ import {
 } from '@/components/timesheets/timesheet-helpers';
 import { TimesheetWeekCalendar } from '@/components/timesheets/timesheet-week-calendar';
 import { AppLayout } from '@/layouts/app-layout';
+import { usePrivateChannel } from '@/lib/use-private-channel';
 import { timesheets } from '@/routes';
 import type {
     TimesheetActivityItem,
@@ -22,9 +23,12 @@ type TimesheetsPageProps = {
     openEntryId: number | null;
 };
 
+const RELOAD_PROPS = ['entriesByDay', 'recentActivity'];
+
 export default function Timesheets() {
-    const { weekStart, entriesByDay, recentActivity, openEntryId } =
-        usePage<TimesheetsPageProps>().props;
+    const page = usePage<TimesheetsPageProps>();
+    const { weekStart, entriesByDay, recentActivity, openEntryId } = page.props;
+    const userId = page.props.auth.user?.id ?? null;
 
     const navigateToEntryEdit = useCallback(
         (entryId: number, workedOn: string) => {
@@ -36,6 +40,16 @@ export default function Timesheets() {
             );
         },
         [],
+    );
+
+    const onTimesheetChanged = useCallback(() => {
+        router.reload({ only: RELOAD_PROPS });
+    }, []);
+
+    usePrivateChannel(
+        userId !== null ? `user.${userId}` : null,
+        'timesheet.changed',
+        onTimesheetChanged,
     );
 
     return (
