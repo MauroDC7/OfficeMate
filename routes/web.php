@@ -1,13 +1,31 @@
 <?php
 
+use App\Http\Controllers\AppPageController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Settings\AccountSettingsController;
+use App\Http\Controllers\TimesheetEntryController;
+use App\Http\Controllers\TimesheetEntryProposalController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::middleware('auth')->get('/', function () {
-    return Inertia::render('home');
-})->name('home');
+Route::middleware('auth')->group(function (): void {
+    Route::get('/', [AppPageController::class, 'dashboard'])->name('dashboard');
+    Route::get('/timesheets', [AppPageController::class, 'timesheets'])->name('timesheets');
+    Route::post('/timesheets/entries', [TimesheetEntryController::class, 'store'])->name('timesheets.entries.store');
+    Route::patch('/timesheets/entries/{timesheet_entry}', [TimesheetEntryController::class, 'update'])->name('timesheets.entries.update');
+    Route::delete('/timesheets/entries/{timesheet_entry}', [TimesheetEntryController::class, 'destroy'])->name('timesheets.entries.destroy');
+    Route::post('/timesheets/proposals', [TimesheetEntryProposalController::class, 'store'])->name('timesheets.proposals.store');
+    Route::patch('/timesheets/proposals/{timesheet_entry_proposal}', [TimesheetEntryProposalController::class, 'update'])->name('timesheets.proposals.update');
+    Route::post('/timesheets/proposals/{timesheet_entry_proposal}/approve', [TimesheetEntryProposalController::class, 'approve'])->name('timesheets.proposals.approve');
+    Route::delete('/timesheets/proposals/{timesheet_entry_proposal}', [TimesheetEntryProposalController::class, 'destroy'])->name('timesheets.proposals.destroy');
+    Route::get('/projects', [AppPageController::class, 'projects'])->name('projects');
+    Route::get('/leave-requests', [AppPageController::class, 'leaveRequests'])->name('leaveRequests');
+    Route::get('/shift-planning', [AppPageController::class, 'shiftPlanning'])->name('shiftPlanning');
+    Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
+    Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
+
+    Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+});
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
