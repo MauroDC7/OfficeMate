@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+    ],
+
+    'activitywatch' => [
+        'export_path' => env('ACTIVITYWATCH_EXPORT_PATH'),
+    ],
+
+    'timesheets' => [
+        'timezone' => env('TIMESHEETS_TIMEZONE', 'Europe/Brussels'),
+    ],
+
 ];

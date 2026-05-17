@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
 use App\Models\TimesheetEntry;
+use App\Models\TimesheetEntryProposal;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -33,6 +34,7 @@ final class AppPageController extends Controller
 
         $monday = $this->resolveTimesheetWeekMonday($request);
         $weekEnd = $monday->addDays(4);
+        $proposalWeekEnd = $monday->addDays(6);
 
         $entries = TimesheetEntry::query()
             ->where('user_id', $user->id)
@@ -76,6 +78,23 @@ final class AppPageController extends Controller
             ])
             ->all();
 
+        $proposals = TimesheetEntryProposal::query()
+            ->where('user_id', $user->id)
+            ->whereBetween('worked_on', [$monday->toDateString(), $proposalWeekEnd->toDateString()])
+            ->orderBy('worked_on')
+            ->orderBy('start_minutes')
+            ->get()
+            ->map(fn (TimesheetEntryProposal $p): array => [
+                'id' => $p->id,
+                'title' => $p->title,
+                'description' => $p->description,
+                'client_name' => $p->client_name,
+                'worked_on' => $p->worked_on->format('Y-m-d'),
+                'start_minutes' => $p->start_minutes,
+                'end_minutes' => $p->end_minutes,
+            ])
+            ->all();
+
         $rawEntry = $request->query('entry');
         $openEntryId = is_scalar($rawEntry) ? (filter_var($rawEntry, FILTER_VALIDATE_INT) ?: null) : null;
 
@@ -83,6 +102,7 @@ final class AppPageController extends Controller
             'weekStart' => $monday->toDateString(),
             'entriesByDay' => $entriesByDay,
             'recentActivity' => $recentActivity,
+            'proposals' => $proposals,
             'openEntryId' => $openEntryId,
         ]);
     }
