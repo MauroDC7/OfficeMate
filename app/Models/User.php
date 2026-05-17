@@ -13,13 +13,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['first_name', 'last_name', 'username', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token', 'avatar_path'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * @var list<string>
@@ -72,5 +73,21 @@ class User extends Authenticatable
     public function timesheetEntries(): HasMany
     {
         return $this->hasMany(TimesheetEntry::class);
+    }
+
+    /**
+     * @return HasMany<TimesheetEntryProposal, $this>
+     */
+    public function timesheetEntryProposals(): HasMany
+    {
+        return $this->hasMany(TimesheetEntryProposal::class);
+    }
+
+    /**
+     * @return HasMany<DesktopActivity, $this>
+     */
+    public function desktopActivities(): HasMany
+    {
+        return $this->hasMany(DesktopActivity::class);
     }
 }
