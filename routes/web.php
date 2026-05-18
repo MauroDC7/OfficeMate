@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AppPageController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Settings\AccountSettingsController;
@@ -32,4 +33,11 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/login', [LoginController::class, 'store']);
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
+
+    Route::middleware('throttle:10,1')->group(function (): void {
+        Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])
+            ->name('auth.google.redirect');
+        Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])
+            ->name('auth.google.callback');
+    });
 });
