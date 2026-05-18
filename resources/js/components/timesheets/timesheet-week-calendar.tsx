@@ -13,14 +13,18 @@ export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
         <div className="space-y-4">
             <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
                 <TimesheetWeekHeader
-                    weekRangeLabel={calendar.weekRangeLabel}
-                    onPrevWeek={() => calendar.navigateWeek(-1)}
-                    onNextWeek={() => calendar.navigateWeek(1)}
-                    weekDays={calendar.weekDays}
+                    rangeLabel={calendar.rangeLabel}
+                    calendarView={calendar.calendarView}
+                    focusDayYmd={calendar.focusDayYmd}
+                    onPrev={calendar.navigatePrevious}
+                    onNext={calendar.navigateNext}
+                    onViewChange={calendar.setCalendarView}
+                    onDaySelect={calendar.selectDay}
+                    visibleDays={calendar.visibleDays}
                     minutesPerDay={calendar.minutesPerDay}
                 />
                 <TimesheetWeekBody
-                    weekDays={calendar.weekDays}
+                    visibleDays={calendar.visibleDays}
                     entriesByDay={props.entriesByDay}
                     onSlotClick={calendar.openModalForSlot}
                     onEntryClick={calendar.openModalForEntry}

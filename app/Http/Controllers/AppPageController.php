@@ -33,8 +33,8 @@ final class AppPageController extends Controller
         }
 
         $monday = $this->resolveTimesheetWeekMonday($request);
-        $weekEnd = $monday->addDays(4);
-        $proposalWeekEnd = $monday->addDays(6);
+        $weekEnd = $monday->addDays(6);
+        $proposalWeekEnd = $weekEnd;
 
         $entries = TimesheetEntry::query()
             ->where('user_id', $user->id)

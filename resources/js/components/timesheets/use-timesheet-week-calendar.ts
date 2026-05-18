@@ -1,16 +1,22 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { WORKDAY_INDICES } from '@/components/timesheets/timesheet-grid-config';
 import {
-    addDays,
+    type CalendarView,
+    parseCalendarQueryFromUrl,
+} from '@/components/timesheets/calendar-view';
+import {
+    addDaysToYmd,
     addWeeksToYmd,
+    calendarDaysForView,
     dayKey,
     dayTotalMinutes,
     flattenFormErrors,
     minutesToTimeInput,
+    mondayYmdForYmd,
     parseTimeInputToMinutes,
     parseYmdLocal,
+    resolveFocusDayYmd,
 } from '@/components/timesheets/timesheet-helpers';
 import type {
     TimesheetDraft,
@@ -43,11 +49,55 @@ function buildEntryPayload(
     };
 }
 
+function buildTimesheetsQuery(options: {
+    weekStart: string;
+    calendarView: CalendarView;
+    focusDayYmd: string;
+    entryId?: number | null;
+}): Record<string, string | number> {
+    const query: Record<string, string | number> = {
+        week: options.weekStart,
+        view: options.calendarView,
+    };
+
+    if (options.calendarView === 'day') {
+        query.day = options.focusDayYmd;
+    }
+
+    if (options.entryId != null) {
+        query.entry = options.entryId;
+    }
+
+    return query;
+}
+
+type CalendarViewState = {
+    calendarView: CalendarView;
+    focusDayYmd: string;
+};
+
+function readViewState(weekStart: string, pageUrl: string): CalendarViewState {
+    const { calendarView, focusDay } = parseCalendarQueryFromUrl(pageUrl);
+
+    return {
+        calendarView,
+        focusDayYmd: resolveFocusDayYmd(weekStart, focusDay),
+    };
+}
+
 export function useTimesheetWeekCalendar({
     weekStart,
     entriesByDay,
     openEntryId = null,
 }: TimesheetWeekCalendarProps) {
+    const pageUrl = usePage().url;
+
+    const [viewState, setViewState] = useState<CalendarViewState>(() =>
+        readViewState(weekStart, pageUrl),
+    );
+
+    const { calendarView, focusDayYmd } = viewState;
+
     const [modal, setModal] = useState<TimesheetModalState | null>(null);
     const [draft, setDraft] = useState<TimesheetDraft>(() => emptyDraft());
     const [formError, setFormError] = useState<string | null>(null);
@@ -58,15 +108,29 @@ export function useTimesheetWeekCalendar({
 
     const openedEntryKeyRef = useRef<string | null>(null);
 
-    const weekDays = useMemo(() => {
-        const monday = parseYmdLocal(weekStart);
+    useEffect(() => {
+        setViewState(readViewState(weekStart, pageUrl));
+    }, [weekStart, pageUrl]);
 
-        return WORKDAY_INDICES.map((i) => addDays(monday, i));
-    }, [weekStart]);
+    const visibleDays = useMemo(
+        () => calendarDaysForView(weekStart, calendarView, focusDayYmd),
+        [weekStart, calendarView, focusDayYmd],
+    );
 
-    const weekRangeLabel = useMemo(() => {
-        const from = weekDays[0];
-        const to = weekDays[weekDays.length - 1];
+    const rangeLabel = useMemo(() => {
+        if (calendarView === 'day') {
+            const day = parseYmdLocal(focusDayYmd);
+
+            return day.toLocaleDateString('nl-BE', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+            });
+        }
+
+        const from = visibleDays[0];
+        const to = visibleDays[visibleDays.length - 1];
 
         return `${from.toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' })} – ${to.toLocaleDateString(
             'nl-BE',
@@ -76,18 +140,164 @@ export function useTimesheetWeekCalendar({
                 year: 'numeric',
             },
         )}`;
-    }, [weekDays]);
+    }, [calendarView, focusDayYmd, visibleDays]);
 
     const minutesPerDay = useMemo(() => {
         const map: Record<string, number> = {};
 
-        for (const day of weekDays) {
+        for (const day of visibleDays) {
             const key = dayKey(day);
             map[key] = dayTotalMinutes(entriesByDay[key] ?? []);
         }
 
         return map;
-    }, [entriesByDay, weekDays]);
+    }, [entriesByDay, visibleDays]);
+
+    const replaceCalendarInHistory = useCallback(
+        (next: CalendarViewState) => {
+            const url = timesheets.url({
+                query: buildTimesheetsQuery({
+                    weekStart,
+                    calendarView: next.calendarView,
+                    focusDayYmd: next.focusDayYmd,
+                }),
+            });
+
+            window.history.replaceState(window.history.state, '', url);
+        },
+        [weekStart],
+    );
+
+    const applyViewState = useCallback(
+        (next: CalendarViewState) => {
+            setViewState(next);
+            replaceCalendarInHistory(next);
+        },
+        [replaceCalendarInHistory],
+    );
+
+    const visitWeek = useCallback(
+        (options: {
+            weekStart: string;
+            calendarView: CalendarView;
+            focusDayYmd: string;
+        }) => {
+            const scrollY = window.scrollY;
+
+            router.get(
+                timesheets.url({
+                    query: buildTimesheetsQuery({
+                        weekStart: options.weekStart,
+                        calendarView: options.calendarView,
+                        focusDayYmd: options.focusDayYmd,
+                    }),
+                }),
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => {
+                        window.scrollTo(0, scrollY);
+                    },
+                },
+            );
+        },
+        [],
+    );
+
+    const setCalendarView = useCallback(
+        (view: CalendarView) => {
+            applyViewState({
+                calendarView: view,
+                focusDayYmd:
+                    view === 'day'
+                        ? resolveFocusDayYmd(weekStart, focusDayYmd)
+                        : focusDayYmd,
+            });
+        },
+        [weekStart, focusDayYmd, applyViewState],
+    );
+
+    const selectDay = useCallback(
+        (ymd: string) => {
+            const next: CalendarViewState = {
+                calendarView: 'day',
+                focusDayYmd: ymd,
+            };
+
+            if (mondayYmdForYmd(ymd) === weekStart) {
+                applyViewState(next);
+
+                return;
+            }
+
+            visitWeek({ weekStart: mondayYmdForYmd(ymd), ...next });
+        },
+        [weekStart, applyViewState, visitWeek],
+    );
+
+    const navigatePrevious = useCallback(() => {
+        if (calendarView === 'day') {
+            const previousDay = addDaysToYmd(focusDayYmd, -1);
+            const previousWeekStart = mondayYmdForYmd(previousDay);
+            const next: CalendarViewState = {
+                calendarView: 'day',
+                focusDayYmd: previousDay,
+            };
+
+            if (previousWeekStart === weekStart) {
+                applyViewState(next);
+
+                return;
+            }
+
+            visitWeek({ weekStart: previousWeekStart, ...next });
+
+            return;
+        }
+
+        const previousWeek = addWeeksToYmd(weekStart, -1);
+
+        visitWeek({
+            weekStart: previousWeek,
+            calendarView,
+            focusDayYmd: resolveFocusDayYmd(previousWeek, focusDayYmd),
+        });
+    }, [
+        calendarView,
+        focusDayYmd,
+        weekStart,
+        applyViewState,
+        visitWeek,
+    ]);
+
+    const navigateNext = useCallback(() => {
+        if (calendarView === 'day') {
+            const nextDay = addDaysToYmd(focusDayYmd, 1);
+            const nextWeekStart = mondayYmdForYmd(nextDay);
+            const next: CalendarViewState = {
+                calendarView: 'day',
+                focusDayYmd: nextDay,
+            };
+
+            if (nextWeekStart === weekStart) {
+                applyViewState(next);
+
+                return;
+            }
+
+            visitWeek({ weekStart: nextWeekStart, ...next });
+
+            return;
+        }
+
+        const nextWeek = addWeeksToYmd(weekStart, 1);
+
+        visitWeek({
+            weekStart: nextWeek,
+            calendarView,
+            focusDayYmd: resolveFocusDayYmd(nextWeek, focusDayYmd),
+        });
+    }, [calendarView, focusDayYmd, weekStart, applyViewState, visitWeek]);
 
     const clearErrors = useCallback(() => {
         setFormError(null);
@@ -161,11 +371,8 @@ export function useTimesheetWeekCalendar({
 
         let match: { dayKey: string; entry: TimesheetEntryPayload } | null = null;
 
-        for (const day of weekDays) {
-            const dk = dayKey(day);
-            const entry = (entriesByDay[dk] ?? []).find(
-                (e) => e.id === openEntryId,
-            );
+        for (const [dk, entries] of Object.entries(entriesByDay)) {
+            const entry = entries.find((e) => e.id === openEntryId);
 
             if (entry !== undefined) {
                 match = { dayKey: dk, entry };
@@ -178,26 +385,27 @@ export function useTimesheetWeekCalendar({
                 openModalForEntry(match.dayKey, match.entry);
             }
 
-            const cleanedUrl = timesheets.url({ query: { week: weekStart } });
+            const cleanedUrl = timesheets.url({
+                query: buildTimesheetsQuery({
+                    weekStart,
+                    calendarView,
+                    focusDayYmd,
+                }),
+            });
             window.history.replaceState(
                 window.history.state,
                 '',
                 cleanedUrl,
             );
         });
-    }, [openEntryId, weekStart, weekDays, entriesByDay, openModalForEntry]);
-
-    const navigateWeek = useCallback(
-        (deltaWeeks: number) => {
-            const nextWeek = addWeeksToYmd(weekStart, deltaWeeks);
-            router.get(
-                timesheets.url({ query: { week: nextWeek } }),
-                {},
-                { preserveScroll: true },
-            );
-        },
-        [weekStart],
-    );
+    }, [
+        openEntryId,
+        weekStart,
+        calendarView,
+        focusDayYmd,
+        entriesByDay,
+        openModalForEntry,
+    ]);
 
     const setDraftField = useCallback(
         (field: keyof TimesheetDraft, value: string) => {
@@ -291,10 +499,15 @@ export function useTimesheetWeekCalendar({
     }, [modal, closeModal]);
 
     return {
-        weekDays,
-        weekRangeLabel,
+        calendarView,
+        focusDayYmd,
+        visibleDays,
+        rangeLabel,
         minutesPerDay,
-        navigateWeek,
+        navigatePrevious,
+        navigateNext,
+        setCalendarView,
+        selectDay,
         modal,
         draft,
         setDraftField,

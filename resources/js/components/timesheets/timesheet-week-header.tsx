@@ -1,4 +1,9 @@
-import { GRID_TEMPLATE } from '@/components/timesheets/timesheet-grid-config';
+import {
+    CALENDAR_VIEW_LABELS,
+    CALENDAR_VIEWS,
+    type CalendarView,
+} from '@/components/timesheets/calendar-view';
+import { gridTemplateColumnsForDayCount } from '@/components/timesheets/timesheet-grid-config';
 import {
     dayKey,
     formatDayTotal,
@@ -10,19 +15,30 @@ const NAV_BUTTON_CLASS =
     'rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50';
 
 type TimesheetWeekHeaderProps = {
-    weekRangeLabel: string;
-    onPrevWeek: () => void;
-    onNextWeek: () => void;
-    weekDays: Date[];
+    rangeLabel: string;
+    calendarView: CalendarView;
+    focusDayYmd: string;
+    onPrev: () => void;
+    onNext: () => void;
+    onViewChange: (view: CalendarView) => void;
+    onDaySelect: (ymd: string) => void;
+    visibleDays: Date[];
     minutesPerDay: Record<string, number>;
 };
 
 type DayHeaderCellProps = {
     day: Date;
     totalMinutes: number;
+    isSelected: boolean;
+    onSelect: () => void;
 };
 
-function DayHeaderCell({ day, totalMinutes }: DayHeaderCellProps) {
+function DayHeaderCell({
+    day,
+    totalMinutes,
+    isSelected,
+    onSelect,
+}: DayHeaderCellProps) {
     const today = isToday(day);
     const longTitle = day.toLocaleDateString('nl-BE', {
         weekday: 'long',
@@ -32,10 +48,15 @@ function DayHeaderCell({ day, totalMinutes }: DayHeaderCellProps) {
     });
 
     return (
-        <div
+        <button
+            type="button"
+            onClick={onSelect}
             className={cn(
-                'border-s border-gray-200 px-2 py-3 text-center sm:px-3',
+                'border-s border-gray-200 px-2 py-3 text-center transition sm:px-3',
                 today && 'bg-violet-50/40',
+                isSelected &&
+                    'bg-violet-50 ring-1 ring-inset ring-violet-300/70',
+                !isSelected && 'hover:bg-gray-50',
             )}
             title={longTitle}
         >
@@ -60,17 +81,60 @@ function DayHeaderCell({ day, totalMinutes }: DayHeaderCellProps) {
             <p className="mt-1 text-xs text-gray-500 tabular-nums">
                 {formatDayTotal(totalMinutes)}
             </p>
+        </button>
+    );
+}
+
+function CalendarViewToggle({
+    calendarView,
+    onViewChange,
+}: {
+    calendarView: CalendarView;
+    onViewChange: (view: CalendarView) => void;
+}) {
+    return (
+        <div
+            role="group"
+            aria-label="Kalenderweergave"
+            className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5"
+        >
+            {CALENDAR_VIEWS.map((view) => (
+                <button
+                    key={view}
+                    type="button"
+                    onClick={() => onViewChange(view)}
+                    aria-pressed={calendarView === view}
+                    className={cn(
+                        'rounded-md px-2.5 py-1.5 text-xs font-medium transition sm:px-3 sm:text-sm',
+                        calendarView === view
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900',
+                    )}
+                >
+                    {CALENDAR_VIEW_LABELS[view]}
+                </button>
+            ))}
         </div>
     );
 }
 
 export function TimesheetWeekHeader({
-    weekRangeLabel,
-    onPrevWeek,
-    onNextWeek,
-    weekDays,
+    rangeLabel,
+    calendarView,
+    focusDayYmd,
+    onPrev,
+    onNext,
+    onViewChange,
+    onDaySelect,
+    visibleDays,
     minutesPerDay,
 }: TimesheetWeekHeaderProps) {
+    const prevLabel = calendarView === 'day' ? 'Vorige dag' : 'Vorige week';
+    const nextLabel = calendarView === 'day' ? 'Volgende dag' : 'Volgende week';
+    const gridStyle = {
+        gridTemplateColumns: gridTemplateColumnsForDayCount(visibleDays.length),
+    };
+
     return (
         <>
             <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
@@ -79,35 +143,37 @@ export function TimesheetWeekHeader({
                         Timesheets
                     </p>
                     <p className="mt-0.5 text-base font-semibold text-gray-900">
-                        {weekRangeLabel}
+                        {rangeLabel}
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                    <CalendarViewToggle
+                        calendarView={calendarView}
+                        onViewChange={onViewChange}
+                    />
                     <button
                         type="button"
-                        onClick={onPrevWeek}
+                        onClick={onPrev}
                         className={NAV_BUTTON_CLASS}
                     >
-                        Vorige week
+                        {prevLabel}
                     </button>
                     <button
                         type="button"
-                        onClick={onNextWeek}
+                        onClick={onNext}
                         className={NAV_BUTTON_CLASS}
                     >
-                        Volgende week
+                        {nextLabel}
                     </button>
                 </div>
             </div>
 
             <div
-                className={cn(
-                    'grid border-b border-gray-200 bg-white',
-                    GRID_TEMPLATE,
-                )}
+                className="grid border-b border-gray-200 bg-white"
+                style={gridStyle}
             >
                 <div className="border-e border-gray-100" aria-hidden />
-                {weekDays.map((day) => {
+                {visibleDays.map((day) => {
                     const key = dayKey(day);
 
                     return (
@@ -115,6 +181,10 @@ export function TimesheetWeekHeader({
                             key={key}
                             day={day}
                             totalMinutes={minutesPerDay[key] ?? 0}
+                            isSelected={
+                                calendarView === 'day' && key === focusDayYmd
+                            }
+                            onSelect={() => onDaySelect(key)}
                         />
                     );
                 })}
