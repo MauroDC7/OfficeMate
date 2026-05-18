@@ -70,9 +70,22 @@ it('approves a proposal by creating a timesheet entry and deleting the proposal'
 
     $entry = TimesheetEntry::query()->where('user_id', $user->id)->first();
     expect($entry->title)->toBe('OfficeMate ontwikkeling')
+        ->and($entry->description)->toBe('AI module')
         ->and($entry->worked_on->format('Y-m-d'))->toBe('2026-05-11')
         ->and($entry->start_minutes)->toBe(9 * 60)
         ->and($entry->end_minutes)->toBe(11 * 60);
+});
+
+it('redirects to the monday of the worked-on week after approval', function () {
+    $user = User::factory()->create();
+
+    $proposal = TimesheetEntryProposal::factory()->for($user)->create([
+        'worked_on' => '2026-05-13', // Wednesday — should redirect to Monday 2026-05-11
+    ]);
+
+    $this->actingAs($user)
+        ->post("/timesheets/proposals/{$proposal->id}/approve")
+        ->assertRedirect(route('timesheets', ['week' => '2026-05-11']));
 });
 
 it('blocks approval when the proposal overlaps an existing entry', function () {

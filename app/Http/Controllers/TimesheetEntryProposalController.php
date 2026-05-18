@@ -49,7 +49,8 @@ final class TimesheetEntryProposalController extends Controller
             $result = $this->generator->generateForWeek($user, $weekMonday);
         }
 
-        return back(fallback: route('timesheets', ['week' => $weekMonday->toDateString()]))
+        return redirect()
+            ->route('timesheets', ['week' => $weekMonday->toDateString()])
             ->with('proposalsStatus', $result['status'])
             ->with('proposalsMessage', $result['message']);
     }
@@ -79,9 +80,8 @@ final class TimesheetEntryProposalController extends Controller
         abort_unless($user instanceof User && $user->id === $timesheetEntryProposal->user_id, 403);
 
         $workedOnYmd = $timesheetEntryProposal->worked_on->toDateString();
-        $workedOn = $timesheetEntryProposal->worked_on;
 
-        if ($workedOn->isWeekend()) {
+        if ($timesheetEntryProposal->worked_on->isWeekend()) {
             throw ValidationException::withMessages([
                 'worked_on' => 'Voorstellen voor weekenddagen kunnen niet worden goedgekeurd.',
             ]);
@@ -135,6 +135,6 @@ final class TimesheetEntryProposalController extends Controller
             ->startOfWeek(CarbonImmutable::MONDAY)
             ->toDateString();
 
-        return back(fallback: route('timesheets', ['week' => $week]));
+        return redirect()->route('timesheets', ['week' => $week]);
     }
 }

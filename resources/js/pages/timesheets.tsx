@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 
 import { TimesheetActivitySuggestions } from '@/components/timesheets/timesheet-activity-suggestions';
 import { TimesheetAiProposals } from '@/components/timesheets/timesheet-ai-proposals';
+import { TIMESHEET_LIST_PROPS } from '@/components/timesheets/timesheet-list-props';
 import { TimesheetWeekCalendar } from '@/components/timesheets/timesheet-week-calendar';
 import { AppLayout } from '@/layouts/app-layout';
 import { usePrivateChannel } from '@/lib/use-private-channel';
@@ -22,8 +23,6 @@ type TimesheetsPageProps = {
     auth: { user: { id: number } | null };
 };
 
-const RELOAD_PROPS = ['entriesByDay', 'proposals', 'recentActivity'];
-
 export default function Timesheets() {
     const page = usePage<TimesheetsPageProps>();
     const {
@@ -36,7 +35,7 @@ export default function Timesheets() {
     const userId = page.props.auth.user?.id ?? null;
 
     const onTimesheetChanged = useCallback(() => {
-        router.reload({ only: RELOAD_PROPS });
+        router.reload({ only: [...TIMESHEET_LIST_PROPS] });
     }, []);
 
     const onNavigateToEntryEdit = useCallback(

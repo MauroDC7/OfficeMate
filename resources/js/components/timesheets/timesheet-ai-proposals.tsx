@@ -333,12 +333,12 @@ function ProposalRow({
                 <SecondaryButton onClick={onEdit} disabled={busy}>
                     Aanpassen
                 </SecondaryButton>
-                <PrimaryButton onClick={onApprove} disabled={busy}>
+                <ApproveButton onClick={onApprove} disabled={busy}>
                     Goedkeuren
-                </PrimaryButton>
-                <DangerButton onClick={onDelete} disabled={busy}>
+                </ApproveButton>
+                <DeleteButton onClick={onDelete} disabled={busy}>
                     Verwijderen
-                </DangerButton>
+                </DeleteButton>
             </div>
         </div>
     );
@@ -469,6 +469,32 @@ function Field({
 const BASE_BUTTON =
     'inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
 
+function ApproveButton({
+    children,
+    onClick,
+    disabled,
+    type = 'button',
+}: {
+    children: ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+    type?: 'button' | 'submit';
+}) {
+    return (
+        <button
+            type={type}
+            onClick={onClick}
+            disabled={disabled}
+            className={cn(
+                BASE_BUTTON,
+                'bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600',
+            )}
+        >
+            {children}
+        </button>
+    );
+}
+
 function PrimaryButton({
     children,
     onClick,
@@ -488,6 +514,32 @@ function PrimaryButton({
             className={cn(
                 BASE_BUTTON,
                 'bg-gray-900 text-white hover:bg-gray-800 focus-visible:outline-gray-900',
+            )}
+        >
+            {children}
+        </button>
+    );
+}
+
+function DeleteButton({
+    children,
+    onClick,
+    disabled,
+    type = 'button',
+}: {
+    children: ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+    type?: 'button' | 'submit';
+}) {
+    return (
+        <button
+            type={type}
+            onClick={onClick}
+            disabled={disabled}
+            className={cn(
+                BASE_BUTTON,
+                'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:outline-red-600',
             )}
         >
             {children}
@@ -521,28 +573,3 @@ function SecondaryButton({
     );
 }
 
-function DangerButton({
-    children,
-    onClick,
-    disabled,
-    type = 'button',
-}: {
-    children: ReactNode;
-    onClick?: () => void;
-    disabled?: boolean;
-    type?: 'button' | 'submit';
-}) {
-    return (
-        <button
-            type={type}
-            onClick={onClick}
-            disabled={disabled}
-            className={cn(
-                BASE_BUTTON,
-                'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:outline-red-600',
-            )}
-        >
-            {children}
-        </button>
-    );
-}
