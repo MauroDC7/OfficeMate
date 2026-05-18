@@ -2,40 +2,75 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { useCallback } from 'react';
 
 import { TimesheetActivitySuggestions } from '@/components/timesheets/timesheet-activity-suggestions';
-import {
-    dayKey,
-    parseYmdLocal,
-    startOfMonday,
-} from '@/components/timesheets/timesheet-helpers';
+import { TimesheetAiProposals } from '@/components/timesheets/timesheet-ai-proposals';
 import { TimesheetWeekCalendar } from '@/components/timesheets/timesheet-week-calendar';
 import { AppLayout } from '@/layouts/app-layout';
+import { usePrivateChannel } from '@/lib/use-private-channel';
 import { timesheets } from '@/routes';
 import type {
     TimesheetActivityItem,
     TimesheetEntryPayload,
+    TimesheetProposalPayload,
 } from '@/types/timesheets';
 
 type TimesheetsPageProps = {
     weekStart: string;
     entriesByDay: Record<string, TimesheetEntryPayload[]>;
     recentActivity: TimesheetActivityItem[];
+    proposals: TimesheetProposalPayload[];
     openEntryId: number | null;
+    auth: { user: { id: number } | null };
 };
 
-export default function Timesheets() {
-    const { weekStart, entriesByDay, recentActivity, openEntryId } =
-        usePage<TimesheetsPageProps>().props;
+const RELOAD_PROPS = ['entriesByDay', 'proposals', 'recentActivity'];
 
-    const navigateToEntryEdit = useCallback(
-        (entryId: number, workedOn: string) => {
-            const weekKey = dayKey(startOfMonday(parseYmdLocal(workedOn)));
-            router.get(
-                timesheets.url({ query: { week: weekKey, entry: entryId } }),
-                {},
-                { preserveScroll: true },
+export default function Timesheets() {
+    const page = usePage<TimesheetsPageProps>();
+    const {
+        weekStart,
+        entriesByDay,
+        recentActivity,
+        proposals,
+        openEntryId,
+    } = page.props;
+    const userId = page.props.auth.user?.id ?? null;
+
+    const onTimesheetChanged = useCallback(() => {
+        router.reload({ only: RELOAD_PROPS });
+    }, []);
+
+    const onNavigateToEntryEdit = useCallback(
+        (entryId: number, workedOnYmd: string) => {
+            router.visit(
+                timesheets.url({
+                    query: { week: weekStart, entry: entryId },
+                }),
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        const dayEntries = entriesByDay[workedOnYmd] ?? [];
+
+                        if (dayEntries.some((e) => e.id === entryId)) {
+                            return;
+                        }
+
+                        router.visit(
+                            timesheets.url({
+                                query: { week: workedOnYmd, entry: entryId },
+                            }),
+                            { preserveScroll: true },
+                        );
+                    },
+                },
             );
         },
-        [],
+        [weekStart, entriesByDay],
+    );
+
+    usePrivateChannel(
+        userId !== null ? `user.${userId}` : null,
+        'timesheet.changed',
+        onTimesheetChanged,
     );
 
     return (
@@ -47,9 +82,13 @@ export default function Timesheets() {
                 </h1>
 
                 <div className="mt-5 flex w-full min-w-0 flex-col gap-8 sm:mt-6 lg:mt-7">
+                    <TimesheetAiProposals
+                        weekStart={weekStart}
+                        proposals={proposals}
+                    />
                     <TimesheetActivitySuggestions
                         recentActivity={recentActivity}
-                        onNavigateToEntryEdit={navigateToEntryEdit}
+                        onNavigateToEntryEdit={onNavigateToEntryEdit}
                     />
                     <TimesheetWeekCalendar
                         weekStart={weekStart}

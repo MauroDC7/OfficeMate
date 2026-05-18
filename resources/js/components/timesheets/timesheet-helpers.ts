@@ -173,42 +173,30 @@ export function formatActivityDayLabel(ymd: string): string {
 }
 
 export function formatShortRelativeNl(iso: string): string {
-    const t = new Date(iso).getTime();
-
-    if (Number.isNaN(t)) {
+    if (iso === '') {
         return '';
     }
 
-    const sec = Math.round((Date.now() - t) / 1000);
+    const then = new Date(iso).getTime();
+    const diffSec = Math.round((Date.now() - then) / 1000);
 
-    if (sec < 45) {
-        return 'Zojuist';
+    if (diffSec < 60) {
+        return 'zojuist';
     }
 
-    const rtf = new Intl.RelativeTimeFormat('nl-BE', { numeric: 'auto' });
-    const min = Math.floor(sec / 60);
+    const diffMin = Math.round(diffSec / 60);
 
-    if (min < 60) {
-        return rtf.format(-min, 'minute');
+    if (diffMin < 60) {
+        return `${diffMin} min geleden`;
     }
 
-    const hr = Math.floor(min / 60);
+    const diffHour = Math.round(diffMin / 60);
 
-    if (hr < 24) {
-        return rtf.format(-hr, 'hour');
+    if (diffHour < 24) {
+        return `${diffHour} u geleden`;
     }
 
-    const day = Math.floor(hr / 24);
+    const diffDay = Math.round(diffHour / 24);
 
-    if (day < 7) {
-        return rtf.format(-day, 'day');
-    }
-
-    const week = Math.floor(day / 7);
-
-    if (week < 8) {
-        return rtf.format(-week, 'week');
-    }
-
-    return rtf.format(-Math.max(1, Math.floor(day / 30)), 'month');
+    return `${diffDay} dag${diffDay === 1 ? '' : 'en'} geleden`;
 }
