@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils';
 import {
     dashboard,
     leaveRequests,
-    logout,
     projects,
     settings,
     shiftPlanning,
@@ -31,14 +30,22 @@ function pathOnly(url: string): string {
 export function AppSidebar() {
     const page = usePage();
     const here = pathOnly(page.url);
+    const role = page.props.auth.user?.role;
+    const roleLabel = role === 'admin' ? 'Beheerder' : role === 'employee' ? 'Medewerker' : null;
 
     return (
-        <aside className="flex w-64 shrink-0 flex-col border-r border-gray-200 bg-gray-100/90">
-            <div className="border-b border-gray-200/80 px-5 py-6">
+        <aside className="flex h-full w-64 shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-gray-100/90">
+            <div className="shrink-0 border-b border-gray-200/80 px-5 py-6">
                 <p className="text-base font-semibold tracking-tight text-gray-900">OfficeMate</p>
+                {roleLabel !== null ? (
+                    <p className="mt-1 text-xs font-medium text-red-600">{roleLabel}</p>
+                ) : null}
             </div>
 
-            <nav className="flex flex-1 flex-col gap-1 px-3 py-4" aria-label="Navigatie">
+            <nav
+                className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
+                aria-label="Navigatie"
+            >
                 {links.map(({ label, route, src }) => {
                     const href = route.url();
                     const active = here === pathOnly(href);
@@ -69,29 +76,6 @@ export function AppSidebar() {
                     );
                 })}
             </nav>
-
-            <div className="mt-auto border-t border-gray-200/80 px-3 py-4">
-                <Link
-                    href={logout.url()}
-                    method="post"
-                    as="button"
-                    className={cn(
-                        row,
-                        'text-red-600 hover:bg-red-50 hover:text-red-700',
-                    )}
-                >
-                    <img
-                        src="/img/Logout Icons Material Outlined.png"
-                        alt=""
-                        className="size-5 shrink-0 object-contain"
-                        width={20}
-                        height={20}
-                        decoding="async"
-                        draggable={false}
-                    />
-                    Uitloggen
-                </Link>
-            </div>
         </aside>
     );
 }
