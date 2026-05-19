@@ -29,7 +29,8 @@ export function DashboardNotificationsPanel({
 
             {notifications.length === 0 ? (
                 <p className="px-4 py-8 text-center text-sm text-gray-500 sm:px-5">
-                    Geen notificaties.
+                    Meldingen uit OfficeMate verschijnen hier zodra ze
+                    beschikbaar zijn.
                 </p>
             ) : (
                 <ul className="divide-y divide-gray-100">

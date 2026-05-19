@@ -2,9 +2,10 @@ import { Head, usePage } from '@inertiajs/react';
 
 import { DashboardNotificationsPanel } from '@/components/dashboard/dashboard-notifications-panel';
 import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
+import { DashboardTeamAgendaSnippet } from '@/components/dashboard/dashboard-team-agenda-snippet';
 import { formatDayTotal } from '@/components/timesheets/timesheet-helpers';
 import { AppLayout } from '@/layouts/app-layout';
-import { projects, timesheets } from '@/routes';
+import { leaveRequests, projects, timesheets } from '@/routes';
 import type { EmployeeDashboardProps } from '@/types/dashboard';
 
 function projectDetail(projects: EmployeeDashboardProps['activeProjects']): string {
@@ -40,11 +41,30 @@ function pendingDetail(count: number): string {
     return `${count} AI-voorstellen wachten op goedkeuring`;
 }
 
+function leaveDetail(
+    openLeaveDays: number,
+    pendingLeaveRequestCount: number,
+): string {
+    if (pendingLeaveRequestCount > 0) {
+        return pendingLeaveRequestCount === 1
+            ? '1 aanvraag in behandeling'
+            : `${pendingLeaveRequestCount} aanvragen in behandeling`;
+    }
+
+    if (openLeaveDays === 0) {
+        return 'Geen goedgekeurd verlof gepland';
+    }
+
+    return 'Goedgekeurd verlof vanaf vandaag';
+}
+
 export default function Dashboard() {
     const {
         activeProjects,
         pendingTimesheetCount,
         hoursThisWeekMinutes,
+        openLeaveDays,
+        pendingLeaveRequestCount,
         weekStart,
         recentNotifications,
     } = usePage<EmployeeDashboardProps>().props;
@@ -57,11 +77,11 @@ export default function Dashboard() {
                     Dashboard
                 </h1>
                 <p className="mt-1 text-sm text-gray-500">
-                    Overzicht van je projecten, timesheets en meldingen.
+                    Overzicht van je projecten, timesheets, verlof en meldingen.
                 </p>
 
                 <div className="mt-5 space-y-5">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <DashboardStatCard
                             label="Actieve projecten"
                             value={activeProjects.length}
@@ -82,7 +102,18 @@ export default function Dashboard() {
                                 query: { week: weekStart },
                             })}
                         />
+                        <DashboardStatCard
+                            label="Open verlofdagen"
+                            value={openLeaveDays}
+                            detail={leaveDetail(
+                                openLeaveDays,
+                                pendingLeaveRequestCount,
+                            )}
+                            href={leaveRequests.url()}
+                        />
                     </div>
+
+                    <DashboardTeamAgendaSnippet />
 
                     <DashboardNotificationsPanel
                         notifications={recentNotifications}

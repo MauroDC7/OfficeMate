@@ -15,6 +15,8 @@ export type EmployeeDashboardProps = {
     activeProjects: DashboardProject[];
     pendingTimesheetCount: number;
     hoursThisWeekMinutes: number;
+    openLeaveDays: number;
+    pendingLeaveRequestCount: number;
     weekStart: string;
     recentNotifications: DashboardNotification[];
 };
