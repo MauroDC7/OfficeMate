@@ -1,8 +1,7 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { useCallback } from 'react';
 
-import { TimesheetActivitySuggestions } from '@/components/timesheets/timesheet-activity-suggestions';
-import { TimesheetAiProposals } from '@/components/timesheets/timesheet-ai-proposals';
+import { TimesheetSuggestionsPanel } from '@/components/timesheets/timesheet-suggestions-panel';
 import { TIMESHEET_LIST_PROPS } from '@/components/timesheets/timesheet-list-props';
 import { TimesheetWeekCalendar } from '@/components/timesheets/timesheet-week-calendar';
 import { AppLayout } from '@/layouts/app-layout';
@@ -80,12 +79,10 @@ export default function Timesheets() {
                     Timesheets
                 </h1>
 
-                <div className="mt-5 flex w-full min-w-0 flex-col gap-8 sm:mt-6 lg:mt-7">
-                    <TimesheetAiProposals
+                <div className="mt-5 flex w-full min-w-0 flex-col gap-5 sm:mt-6 lg:mt-7">
+                    <TimesheetSuggestionsPanel
                         weekStart={weekStart}
                         proposals={proposals}
-                    />
-                    <TimesheetActivitySuggestions
                         recentActivity={recentActivity}
                         onNavigateToEntryEdit={onNavigateToEntryEdit}
                     />
