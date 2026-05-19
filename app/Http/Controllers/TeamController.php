@@ -1,0 +1,204 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Enums\TeamMembershipStatus;
+use App\Enums\UserRole;
+use App\Http\Requests\Teams\StoreTeamRequest;
+use App\Http\Requests\Teams\UpdateTeamRequest;
+use App\Models\Team;
+use App\Models\TeamMembership;
+use App\Models\User;
+use App\Services\OrganizationContext;
+use App\Services\TeamTreeBuilder;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+final class TeamController extends Controller
+{
+    public function __construct(
+        private readonly OrganizationContext $organizationContext,
+        private readonly TeamTreeBuilder $teamTreeBuilder,
+    ) {}
+
+    public function index(Request $request): Response
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        $organization = $this->organizationContext->forUser($user);
+        $isAdmin = $user->role === UserRole::Admin;
+
+        if ($organization === null) {
+            return Inertia::render('teams', [
+                'organization' => null,
+                'teams' => [],
+                'myMemberships' => [],
+                'pendingMemberships' => [],
+                'isAdmin' => $isAdmin,
+            ]);
+        }
+
+        $myMemberships = TeamMembership::query()
+            ->with('team:id,name,parent_id')
+            ->where('user_id', $user->id)
+            ->orderByDesc('updated_at')
+            ->get()
+            ->map(fn (TeamMembership $membership): array => $this->membershipPayload($membership))
+            ->all();
+
+        $pendingForApproval = $isAdmin
+            ? TeamMembership::query()
+                ->with(['team:id,name', 'user:id,first_name,last_name,email'])
+                ->where('status', TeamMembershipStatus::Pending)
+                ->whereHas(
+                    'team',
+                    fn ($query) => $query->where('organization_id', $organization->id),
+                )
+                ->orderBy('created_at')
+                ->get()
+                ->map(fn (TeamMembership $membership): array => $this->pendingPayload($membership))
+                ->all()
+            : [];
+
+        return Inertia::render('teams', [
+            'organization' => [
+                'id' => $organization->id,
+                'name' => $organization->name,
+            ],
+            'teams' => $this->teamTreeBuilder->flatList($organization),
+            'myMemberships' => $myMemberships,
+            'pendingMemberships' => $pendingForApproval,
+            'isAdmin' => $isAdmin,
+        ]);
+    }
+
+    public function store(StoreTeamRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        $organization = $this->organizationContext->forUserOrFail($user);
+        $parentId = $request->validated('parent_id');
+
+        if ($parentId !== null) {
+            $parent = Team::query()->findOrFail($parentId);
+            abort_unless($parent->organization_id === $organization->id, 404);
+        }
+
+        Team::query()->create([
+            'organization_id' => $organization->id,
+            'name' => $request->validated('name'),
+            'parent_id' => $parentId,
+        ]);
+
+        return redirect()->route('teams');
+    }
+
+    public function update(UpdateTeamRequest $request, Team $team): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        $organization = $this->organizationContext->forUserOrFail($user);
+        abort_unless($team->organization_id === $organization->id, 404);
+
+        $validated = $request->validated();
+        $parentId = $validated['parent_id'] ?? null;
+
+        if ($parentId !== null && $this->isDescendant($team, (int) $parentId)) {
+            return redirect()
+                ->route('teams')
+                ->withErrors(['parent_id' => 'Een team kan niet onder zichzelf hangen.']);
+        }
+
+        $team->update([
+            'name' => $validated['name'],
+            'parent_id' => $parentId,
+        ]);
+
+        return redirect()->route('teams');
+    }
+
+    public function destroy(Request $request, Team $team): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        $organization = $this->organizationContext->forUserOrFail($user);
+        abort_unless($team->organization_id === $organization->id, 404);
+
+        if ($team->children()->exists()) {
+            return redirect()
+                ->route('teams')
+                ->withErrors(['team' => 'Verwijder eerst de subteams.']);
+        }
+
+        $team->delete();
+
+        return redirect()->route('teams');
+    }
+
+    /**
+     * @return array{
+     *     id: int,
+     *     status: string,
+     *     team: array{id: int, name: string}
+     * }
+     */
+    private function membershipPayload(TeamMembership $membership): array
+    {
+        return [
+            'id' => $membership->id,
+            'status' => $membership->status->value,
+            'team' => [
+                'id' => $membership->team->id,
+                'name' => $membership->team->name,
+            ],
+        ];
+    }
+
+    /**
+     * @return array{
+     *     id: int,
+     *     status: string,
+     *     team: array{id: int, name: string},
+     *     user: array{id: int, name: string, email: string}
+     * }
+     */
+    private function pendingPayload(TeamMembership $membership): array
+    {
+        return [
+            'id' => $membership->id,
+            'status' => $membership->status->value,
+            'team' => [
+                'id' => $membership->team->id,
+                'name' => $membership->team->name,
+            ],
+            'user' => [
+                'id' => $membership->user->id,
+                'name' => $membership->user->name,
+                'email' => $membership->user->email,
+            ],
+        ];
+    }
+
+    private function isDescendant(Team $team, int $parentId): bool
+    {
+        $current = Team::query()->find($parentId);
+
+        while ($current !== null) {
+            if ($current->id === $team->id) {
+                return true;
+            }
+
+            $current = $current->parent_id !== null
+                ? Team::query()->find($current->parent_id)
+                : null;
+        }
+
+        return false;
+    }
+}
