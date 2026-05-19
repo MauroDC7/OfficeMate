@@ -90,4 +90,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(DesktopActivity::class);
     }
+
+    /**
+     * @return HasMany<LeaveRequest, $this>
+     */
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
 }
