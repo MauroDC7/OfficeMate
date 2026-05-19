@@ -5,6 +5,11 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Settings\AccountSettingsController;
+use App\Http\Controllers\Settings\OrganizationInviteController;
+use App\Http\Controllers\Settings\OrganizationSettingsController;
+use App\Http\Controllers\Settings\RedeemOrganizationInviteController;
+use App\Http\Controllers\TeamController;
+use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
 use App\Http\Controllers\TimesheetEntryProposalController;
 use App\Http\Controllers\TimesheetTrackerWindowTitlesController;
@@ -27,6 +32,28 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/shift-planning', [AppPageController::class, 'shiftPlanning'])->name('shiftPlanning');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
+    Route::patch('/settings/organization/{organization}', OrganizationSettingsController::class)
+        ->middleware('admin')
+        ->name('settings.organization.update');
+    Route::post('/settings/organization-invites', [OrganizationInviteController::class, 'store'])
+        ->middleware('admin')
+        ->name('settings.organization-invites.store');
+    Route::post('/settings/organization-invite/redeem', RedeemOrganizationInviteController::class)
+        ->name('settings.organization-invite.redeem');
+
+    Route::get('/teams', [TeamController::class, 'index'])->name('teams');
+    Route::post('/teams', [TeamController::class, 'store'])->middleware('admin')->name('teams.store');
+    Route::patch('/teams/{team}', [TeamController::class, 'update'])->middleware('admin')->name('teams.update');
+    Route::delete('/teams/{team}', [TeamController::class, 'destroy'])->middleware('admin')->name('teams.destroy');
+    Route::post('/teams/{team}/join', [TeamMembershipController::class, 'store'])->name('teams.join');
+    Route::post('/team-memberships/{team_membership}/approve', [TeamMembershipController::class, 'approve'])
+        ->middleware('admin')
+        ->name('team-memberships.approve');
+    Route::post('/team-memberships/{team_membership}/reject', [TeamMembershipController::class, 'reject'])
+        ->middleware('admin')
+        ->name('team-memberships.reject');
+    Route::delete('/team-memberships/{team_membership}', [TeamMembershipController::class, 'destroy'])
+        ->name('team-memberships.destroy');
 
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });

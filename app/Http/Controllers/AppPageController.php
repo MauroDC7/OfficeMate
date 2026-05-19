@@ -7,6 +7,7 @@ use App\Models\TimesheetEntry;
 use App\Models\TimesheetEntryProposal;
 use App\Models\User;
 use App\Services\EmployeeDashboardStats;
+use App\Services\OrganizationContext;
 use App\Services\TimesheetEntryWindowTitlesResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -150,8 +151,20 @@ final class AppPageController extends Controller
         return Inertia::render('shiftPlanning');
     }
 
-    public function settings(): Response
+    public function settings(Request $request, OrganizationContext $organizationContext): Response
     {
-        return Inertia::render('settings');
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        $org = $organizationContext->forUser($user);
+
+        return Inertia::render('settings', [
+            'organization' => $org !== null
+                ? ['id' => $org->id, 'name' => $org->name]
+                : null,
+            'canRedeemInvite' => $user->role !== UserRole::Admin && $user->organization_id === null,
+            'organizationInviteCode' => $request->session()->get('organizationInviteCode'),
+            'status' => $request->session()->get('status'),
+        ]);
     }
 }
