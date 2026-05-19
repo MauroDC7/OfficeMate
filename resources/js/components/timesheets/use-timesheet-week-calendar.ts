@@ -24,6 +24,7 @@ import type {
     TimesheetWeekCalendarProps,
 } from '@/components/timesheets/week-calendar-types';
 import { emptyDraft } from '@/components/timesheets/week-calendar-types';
+import { fetchTrackerWindowTitles } from '@/components/timesheets/fetch-tracker-window-titles';
 import { timesheets } from '@/routes';
 import { destroy, store, update } from '@/routes/timesheets/entries';
 import type { TimesheetEntryPayload } from '@/types/timesheets';
@@ -336,7 +337,11 @@ export function useTimesheetWeekCalendar({
                 start: minutesToTimeInput(entry.start_minutes),
                 end: minutesToTimeInput(entry.end_minutes),
             });
-            setModal({ mode: 'edit', dayKey: dayKeyValue, entry });
+            setModal({
+                mode: 'edit',
+                dayKey: dayKeyValue,
+                entry,
+            });
         },
         [clearErrors],
     );
@@ -349,7 +354,20 @@ export function useTimesheetWeekCalendar({
                 start: minutesToTimeInput(startMin),
                 end: minutesToTimeInput(endMin),
             });
-            setModal({ mode: 'create', dayKey: dayKeyValue, startMin, endMin });
+
+            void fetchTrackerWindowTitles(
+                dayKeyValue,
+                startMin,
+                endMin,
+            ).then((trackerWindowTitles) => {
+                setModal({
+                    mode: 'create',
+                    dayKey: dayKeyValue,
+                    startMin,
+                    endMin,
+                    trackerWindowTitles,
+                });
+            });
         },
         [clearErrors],
     );
