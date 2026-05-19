@@ -5,10 +5,18 @@ import { AppLayout } from '@/layouts/app-layout';
 import { getUserDisplayFullName, getUserInitials } from '@/lib/user-display';
 import { logout } from '@/routes';
 import { update as updateSettingsAccount } from '@/routes/settings/account';
+import { store as generateOrganizationInvite } from '@/routes/settings/organization-invites';
+import { redeem as redeemOrganizationInvite } from '@/routes/settings/organization-invite';
+import { update as updateOrganization } from '@/routes/settings/organization';
 import type { Auth, User } from '@/types/auth';
+import type { OrganizationSummary } from '@/types/teams';
 
 type SettingsPageProps = {
     auth: Auth;
+    organization: OrganizationSummary | null;
+    canRedeemInvite: boolean;
+    organizationInviteCode: string | null;
+    status: string | null;
 };
 
 function IconUserOutline({ className }: { className?: string }) {
@@ -55,8 +63,15 @@ function formalName(user: User | null): string {
 }
 
 export default function Settings() {
-    const { auth } = usePage<SettingsPageProps>().props;
+    const {
+        auth,
+        organization,
+        canRedeemInvite,
+        organizationInviteCode,
+        status,
+    } = usePage<SettingsPageProps>().props;
     const user = auth.user;
+    const isAdmin = auth.isAdmin;
 
     const primaryNameLine = formalName(user);
     const initials = getUserInitials(user);
@@ -209,6 +224,136 @@ export default function Settings() {
                         </div>
                     </div>
                 </section>
+
+                {status !== null && status !== '' ? (
+                    <p className="mt-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                        {status}
+                    </p>
+                ) : null}
+
+                {canRedeemInvite ? (
+                    <section className="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:mt-6">
+                        <h2 className="text-base font-semibold text-gray-900">Bedrijf</h2>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Voer de eenmalige code in die je van je beheerder hebt gekregen.
+                        </p>
+                        <Form
+                            {...redeemOrganizationInvite.form.post()}
+                            options={{ preserveScroll: true }}
+                            className="mt-4 max-w-md space-y-4"
+                        >
+                            {({ errors, processing }) => (
+                                <>
+                                    <div>
+                                        <label
+                                            htmlFor="invite-code"
+                                            className="text-sm font-medium text-gray-900"
+                                        >
+                                            Uitnodigingscode
+                                        </label>
+                                        <input
+                                            id="invite-code"
+                                            name="code"
+                                            required
+                                            autoComplete="off"
+                                            placeholder="bijv. A1B2C3D4"
+                                            className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm uppercase tracking-wider"
+                                        />
+                                        {errors.code !== undefined ? (
+                                            <p className="mt-1 text-sm text-red-600">{errors.code}</p>
+                                        ) : null}
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
+                                    >
+                                        {processing ? 'Bezig…' : 'Deelnemen'}
+                                    </button>
+                                </>
+                            )}
+                        </Form>
+                    </section>
+                ) : null}
+
+                {organization !== null && !canRedeemInvite && !isAdmin ? (
+                    <section className="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:mt-6">
+                        <h2 className="text-base font-semibold text-gray-900">Bedrijf</h2>
+                        <p className="mt-2 text-sm text-gray-800">{organization.name}</p>
+                    </section>
+                ) : null}
+
+                {isAdmin && organization !== null ? (
+                    <section
+                        className="mt-5 w-full min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6 sm:rounded-2xl"
+                        aria-labelledby="organization-card-title"
+                    >
+                        <div className="flex items-center gap-2.5 border-b border-gray-200 px-5 py-4 sm:px-6 sm:py-5">
+                            <h2 id="organization-card-title" className="text-base font-semibold text-gray-900">
+                                Organisatie
+                            </h2>
+                        </div>
+                        <Form
+                            key={`organization-${organization.id}`}
+                            {...updateOrganization.form.patch({ organization: organization.id })}
+                            options={{ preserveScroll: true }}
+                            className="border-b border-gray-200 px-5 py-5 sm:px-6"
+                        >
+                            {({ errors, processing }) => (
+                                <div className="max-w-md space-y-4">
+                                    <div>
+                                        <label
+                                            htmlFor="organization-name"
+                                            className="text-sm font-medium text-gray-900"
+                                        >
+                                            Bedrijfsnaam
+                                        </label>
+                                        <input
+                                            id="organization-name"
+                                            type="text"
+                                            name="name"
+                                            required
+                                            defaultValue={organization.name}
+                                            className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                        />
+                                        {errors.name !== undefined ? (
+                                            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                                        ) : null}
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {processing ? 'Opslaan…' : 'Opslaan'}
+                                    </button>
+                                </div>
+                            )}
+                        </Form>
+                        <div className="px-5 py-5 sm:px-6">
+                            <p className="text-sm font-medium text-gray-900">Uitnodigingscode</p>
+                            <p className="mt-1 text-xs text-gray-500">
+                                Genereer een code voor één medewerker. De code werkt één keer.
+                            </p>
+                            {organizationInviteCode !== null && organizationInviteCode !== '' ? (
+                                <p className="mt-3 rounded-lg bg-gray-100 px-3 py-2 font-mono text-sm tracking-wider text-gray-900">
+                                    {organizationInviteCode}
+                                </p>
+                            ) : null}
+                            <Form {...generateOrganizationInvite.form.post()} className="mt-4">
+                                {({ processing }) => (
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-60"
+                                    >
+                                        {processing ? 'Genereren…' : 'Nieuwe code genereren'}
+                                    </button>
+                                )}
+                            </Form>
+                        </div>
+                    </section>
+                ) : null}
             </main>
         </AppLayout>
     );
