@@ -1,6 +1,7 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 
 import { AuthField, AuthPage, authLabelClassName, authSubmitClassName } from '@/components/auth-page';
+import { PasswordFieldWithHints } from '@/components/password-field-with-hints';
 
 type ResetPasswordPageProps = {
     email: string;
@@ -36,12 +37,8 @@ export default function ResetPassword() {
                                     ) : null}
                                 </div>
 
-                                <AuthField
-                                    id="password"
+                                <PasswordFieldWithHints
                                     label="Nieuw wachtwoord"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    placeholder="••••••••"
                                     error={errors.password}
                                 />
                                 <AuthField

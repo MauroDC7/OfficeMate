@@ -51,13 +51,13 @@ it('resets the password with a valid token', function () {
     $this->post(route('password.update'), [
         'token' => $token,
         'email' => $user->email,
-        'password' => 'nieuw-wachtwoord-9',
-        'password_confirmation' => 'nieuw-wachtwoord-9',
+        'password' => 'Nieuw-wachtwoord9!',
+        'password_confirmation' => 'Nieuw-wachtwoord9!',
     ])
         ->assertRedirect(route('login'))
         ->assertSessionHas('status');
 
-    expect(Hash::check('nieuw-wachtwoord-9', $user->fresh()->password))->toBeTrue();
+    expect(Hash::check('Nieuw-wachtwoord9!', $user->fresh()->password))->toBeTrue();
 });
 
 it('rejects an invalid password reset token', function () {
@@ -67,8 +67,8 @@ it('rejects an invalid password reset token', function () {
         ->post(route('password.update'), [
             'token' => 'ongeldig',
             'email' => $user->email,
-            'password' => 'nieuw-wachtwoord-9',
-            'password_confirmation' => 'nieuw-wachtwoord-9',
+            'password' => 'Nieuw-wachtwoord9!',
+            'password_confirmation' => 'Nieuw-wachtwoord9!',
         ])
         ->assertRedirect(route('password.reset', ['token' => 'ongeldig', 'email' => $user->email]))
         ->assertSessionHasErrors('email');

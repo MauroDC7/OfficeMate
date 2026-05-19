@@ -2,6 +2,7 @@ import { Form, Head, Link } from '@inertiajs/react';
 
 import { AuthGoogleSection } from '@/components/auth-google';
 import { AuthField, AuthPage, authLabelClassName, authSubmitClassName } from '@/components/auth-page';
+import { PasswordFieldWithHints } from '@/components/password-field-with-hints';
 import { cn } from '@/lib/utils';
 
 const footerLinkClassName = 'font-medium text-red-600 hover:text-red-700';
@@ -90,12 +91,8 @@ export default function Register() {
                                     placeholder="naam@voorbeeld.nl"
                                     error={errors.email}
                                 />
-                                <AuthField
-                                    id="password"
+                                <PasswordFieldWithHints
                                     label="Wachtwoord"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    placeholder="••••••••"
                                     error={errors.password}
                                 />
                                 <AuthField

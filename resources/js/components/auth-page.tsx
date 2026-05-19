@@ -19,6 +19,10 @@ type AuthFieldProps = {
     autoComplete: string;
     placeholder: string;
     error?: string;
+    onChange?: (value: string) => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
+    describedBy?: string;
 };
 
 export function AuthField({
@@ -29,6 +33,10 @@ export function AuthField({
     autoComplete,
     placeholder,
     error,
+    onChange,
+    onFocus,
+    onBlur,
+    describedBy,
 }: AuthFieldProps): ReactNode {
     return (
         <div>
@@ -44,7 +52,19 @@ export function AuthField({
                 placeholder={placeholder}
                 className={authInputClassName}
                 aria-invalid={error ? 'true' : 'false'}
-                aria-describedby={error ? `${id}-error` : undefined}
+                aria-describedby={
+                    [describedBy, error ? `${id}-error` : null].filter(Boolean).join(' ') ||
+                    undefined
+                }
+                onChange={
+                    onChange
+                        ? (event) => {
+                              onChange(event.target.value);
+                          }
+                        : undefined
+                }
+                onFocus={onFocus}
+                onBlur={onBlur}
             />
             {error ? (
                 <p id={`${id}-error`} className={authErrorClassName} role="alert">
