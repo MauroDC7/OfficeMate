@@ -130,6 +130,11 @@ export default function Register() {
                                         Inloggen
                                     </Link>
                                 </p>
+                                <p className="text-center text-sm text-gray-500">
+                                    <Link href="/forgot-password" className={footerLinkClassName}>
+                                        Wachtwoord vergeten?
+                                    </Link>
+                                </p>
                             </div>
                         )}
                     </Form>
