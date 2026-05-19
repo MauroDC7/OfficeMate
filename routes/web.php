@@ -7,11 +7,14 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Settings\AccountSettingsController;
 use App\Http\Controllers\TimesheetEntryController;
 use App\Http\Controllers\TimesheetEntryProposalController;
+use App\Http\Controllers\TimesheetTrackerWindowTitlesController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/', [AppPageController::class, 'dashboard'])->name('dashboard');
     Route::get('/timesheets', [AppPageController::class, 'timesheets'])->name('timesheets');
+    Route::get('/timesheets/tracker-window-titles', TimesheetTrackerWindowTitlesController::class)
+        ->name('timesheets.tracker-window-titles');
     Route::post('/timesheets/entries', [TimesheetEntryController::class, 'store'])->name('timesheets.entries.store');
     Route::patch('/timesheets/entries/{timesheet_entry}', [TimesheetEntryController::class, 'update'])->name('timesheets.entries.update');
     Route::delete('/timesheets/entries/{timesheet_entry}', [TimesheetEntryController::class, 'destroy'])->name('timesheets.entries.destroy');
