@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\TimesheetEntry;
 use App\Models\TimesheetEntryProposal;
 use App\Models\User;
+use App\Services\EmployeeDashboardStats;
 use App\Services\TimesheetEntryWindowTitlesResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ use Inertia\Response;
 
 final class AppPageController extends Controller
 {
-    public function dashboard(Request $request): Response
+    public function dashboard(Request $request, EmployeeDashboardStats $dashboardStats): Response
     {
         $user = $request->user();
 
@@ -22,7 +23,11 @@ final class AppPageController extends Controller
             return Inertia::render('admin/dashboard');
         }
 
-        return Inertia::render('dashboard');
+        if (! $user instanceof User) {
+            abort(401);
+        }
+
+        return Inertia::render('dashboard', $dashboardStats->forUser($user));
     }
 
     public function timesheets(
