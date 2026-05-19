@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\LeaveRequestStatus;
+use App\Models\LeaveRequest;
 use App\Models\Project;
 use App\Models\TimesheetEntry;
 use App\Models\TimesheetEntryProposal;
@@ -15,13 +17,17 @@ final class EmployeeDashboardStats
      *     activeProjects: list<array{id: int, name: string, client_name: string|null}>,
      *     pendingTimesheetCount: int,
      *     hoursThisWeekMinutes: int,
+     *     openLeaveDays: int,
+     *     pendingLeaveRequestCount: int,
      *     weekStart: string,
      *     recentNotifications: list<array{id: string, title: string, message: string, created_at: string}>
      * }
      */
     public function forUser(User $user): array
     {
-        $monday = CarbonImmutable::now()->startOfWeek(CarbonImmutable::MONDAY);
+        $timezone = config('services.timesheets.timezone', 'Europe/Brussels');
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+        $monday = $today->startOfWeek(CarbonImmutable::MONDAY);
         $weekEnd = $monday->addDays(6);
 
         $activeProjects = Project::query()
@@ -49,12 +55,40 @@ final class EmployeeDashboardStats
             ->where('user_id', $user->id)
             ->count();
 
+        $pendingLeaveRequestCount = LeaveRequest::query()
+            ->where('user_id', $user->id)
+            ->where('status', LeaveRequestStatus::Pending)
+            ->count();
+
+        $openLeaveDays = (int) LeaveRequest::query()
+            ->where('user_id', $user->id)
+            ->where('status', LeaveRequestStatus::Approved)
+            ->where('ends_on', '>=', $today->toDateString())
+            ->get()
+            ->sum(fn (LeaveRequest $request): int => $this->remainingLeaveDays($request, $today));
+
         return [
             'activeProjects' => $activeProjects,
             'pendingTimesheetCount' => $pendingTimesheetCount,
             'hoursThisWeekMinutes' => $hoursThisWeekMinutes,
+            'openLeaveDays' => $openLeaveDays,
+            'pendingLeaveRequestCount' => $pendingLeaveRequestCount,
             'weekStart' => $monday->toDateString(),
             'recentNotifications' => [],
         ];
+    }
+
+    private function remainingLeaveDays(LeaveRequest $request, CarbonImmutable $today): int
+    {
+        $start = CarbonImmutable::parse($request->starts_on->format('Y-m-d'));
+        $end = CarbonImmutable::parse($request->ends_on->format('Y-m-d'));
+
+        if ($end->lessThan($today)) {
+            return 0;
+        }
+
+        $effectiveStart = $start->greaterThan($today) ? $start : $today;
+
+        return max(1, $effectiveStart->diffInDays($end) + 1);
     }
 }

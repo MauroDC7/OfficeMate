@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Models\LeaveRequest;
 use App\Models\Project;
 use App\Models\TimesheetEntry;
 use App\Models\TimesheetEntryProposal;
@@ -30,6 +31,13 @@ it('shows employee dashboard stats', function () {
         'end_minutes' => 12 * 60,
     ]);
 
+    LeaveRequest::factory()->for($user)->approved()->create([
+        'starts_on' => $monday->addDays(10)->toDateString(),
+        'ends_on' => $monday->addDays(12)->toDateString(),
+    ]);
+
+    LeaveRequest::factory()->for($user)->pending()->create();
+
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertOk()
@@ -38,6 +46,8 @@ it('shows employee dashboard stats', function () {
             ->has('activeProjects', 2)
             ->where('pendingTimesheetCount', 3)
             ->where('hoursThisWeekMinutes', 180)
+            ->where('openLeaveDays', 3)
+            ->where('pendingLeaveRequestCount', 1)
             ->where('weekStart', $monday->toDateString())
             ->has('recentNotifications', 0));
 });
