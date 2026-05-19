@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\AppPageController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Settings\AccountSettingsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
@@ -63,6 +65,15 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/login', [LoginController::class, 'store']);
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
+
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('password.update');
 
     Route::middleware('throttle:10,1')->group(function (): void {
         Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])
