@@ -1,6 +1,9 @@
 import { createPortal } from 'react-dom';
 
-import { minutesToTimeLabel } from '@/components/timesheets/timesheet-helpers';
+import {
+    formatActivityDayLabel,
+    formatMinutesRange,
+} from '@/components/timesheets/timesheet-helpers';
 import type {
     TimesheetDraft,
     TimesheetModalState,
@@ -9,6 +12,7 @@ import type {
 type TimesheetFormPopupProps = {
     modal: TimesheetModalState;
     draft: TimesheetDraft;
+    trackerWindowTitles: string[];
     formError: string | null;
     serverErrors: Record<string, string>;
     submitting: boolean;
@@ -18,9 +22,24 @@ type TimesheetFormPopupProps = {
     onDelete: () => void;
 };
 
+function modalTimeRange(modal: TimesheetModalState): {
+    startMin: number;
+    endMin: number;
+} {
+    if (modal.mode === 'create') {
+        return { startMin: modal.startMin, endMin: modal.endMin };
+    }
+
+    return {
+        startMin: modal.entry.start_minutes,
+        endMin: modal.entry.end_minutes,
+    };
+}
+
 export function TimesheetFormPopup({
     modal,
     draft,
+    trackerWindowTitles,
     formError,
     serverErrors,
     submitting,
@@ -29,6 +48,8 @@ export function TimesheetFormPopup({
     onSave,
     onDelete,
 }: TimesheetFormPopupProps) {
+    const { startMin, endMin } = modalTimeRange(modal);
+
     if (typeof document === 'undefined') {
         return null;
     }
@@ -55,20 +76,8 @@ export function TimesheetFormPopup({
                         : 'Timesheet bewerken'}
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                    {minutesToTimeLabel(
-                        modal.mode === 'create'
-                            ? modal.startMin
-                            : modal.entry.start_minutes,
-                    )}{' '}
-                    –{' '}
-                    {minutesToTimeLabel(
-                        modal.mode === 'create'
-                            ? modal.endMin
-                            : modal.entry.end_minutes,
-                    )}{' '}
-                    <span className="text-gray-400">
-                        (pas aan indien nodig)
-                    </span>
+                    {formatActivityDayLabel(modal.dayKey)} ·{' '}
+                    {formatMinutesRange(startMin, endMin)}
                 </p>
 
                 <div className="mt-4 space-y-4">
@@ -117,6 +126,23 @@ export function TimesheetFormPopup({
                             </p>
                         ) : null}
                     </div>
+                    {trackerWindowTitles.length > 0 ? (
+                        <div>
+                            <p className="text-sm font-medium text-gray-800">
+                                Vensters
+                            </p>
+                            <ul className="mt-2 max-h-36 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                                {trackerWindowTitles.map((title) => (
+                                    <li
+                                        key={title}
+                                        className="leading-snug break-words"
+                                    >
+                                        {title}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ) : null}
                     <div>
                         <label
                             htmlFor="ts-client"

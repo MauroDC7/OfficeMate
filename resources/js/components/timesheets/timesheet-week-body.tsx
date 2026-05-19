@@ -6,7 +6,7 @@ import {
     DISPLAY_DAY_START_MIN,
     DISPLAY_HOUR_INDICES,
     DISPLAY_SLOT_COUNT,
-    GRID_TEMPLATE,
+    gridTemplateColumnsForDayCount,
     SLOT_HEIGHT_PX,
 } from '@/components/timesheets/timesheet-grid-config';
 import {
@@ -22,7 +22,7 @@ import type { TimesheetEntryPayload } from '@/types/timesheets';
 const NOW_LINE_REFRESH_MS = 30_000;
 
 type TimesheetWeekBodyProps = {
-    weekDays: Date[];
+    visibleDays: Date[];
     entriesByDay: Record<string, TimesheetEntryPayload[]>;
     onSlotClick: (dayKey: string, startMin: number, endMin: number) => void;
     onEntryClick: (dayKey: string, entry: TimesheetEntryPayload) => void;
@@ -70,12 +70,15 @@ function useNowMinutes(): number {
 }
 
 export function TimesheetWeekBody({
-    weekDays,
+    visibleDays,
     entriesByDay,
     onSlotClick,
     onEntryClick,
 }: TimesheetWeekBodyProps) {
     const timelineHeightPx = DISPLAY_SLOT_COUNT * SLOT_HEIGHT_PX;
+    const gridStyle = {
+        gridTemplateColumns: gridTemplateColumnsForDayCount(visibleDays.length),
+    };
 
     const slotIndices = useMemo(
         () => Array.from({ length: DISPLAY_SLOT_COUNT }, (_, i) => i),
@@ -90,11 +93,11 @@ export function TimesheetWeekBody({
     return (
         <div className="max-h-[min(72vh,56rem)] overflow-y-auto overscroll-contain rounded-b-xl">
             <div
-                className={cn('grid bg-white', GRID_TEMPLATE)}
-                style={{ minHeight: timelineHeightPx }}
+                className="grid bg-white"
+                style={{ ...gridStyle, minHeight: timelineHeightPx }}
             >
                 <HourLabelsColumn timelineHeightPx={timelineHeightPx} />
-                {weekDays.map((day) => {
+                {visibleDays.map((day) => {
                     const key = dayKey(day);
                     const showNowLine = nowWithinDisplay && isToday(day);
 

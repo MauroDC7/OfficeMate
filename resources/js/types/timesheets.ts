@@ -6,6 +6,8 @@ export type TimesheetEntryPayload = {
     worked_on: string;
     start_minutes: number;
     end_minutes: number;
+    /** Desktop-tracker window titles for this slot (edit dialog only). */
+    tracker_window_titles: string[];
 };
 
 export type TimesheetProposalPayload = {

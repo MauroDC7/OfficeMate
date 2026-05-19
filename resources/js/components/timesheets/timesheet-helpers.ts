@@ -1,8 +1,11 @@
+import type { CalendarView } from '@/components/timesheets/calendar-view';
 import {
     DISPLAY_DAY_END_MIN,
     DISPLAY_DAY_START_MIN,
     DISPLAY_MINUTES_SPAN,
     MINUTES_IN_DAY,
+    WEEKDAY_INDICES,
+    WORKDAY_INDICES,
 } from '@/components/timesheets/timesheet-grid-config';
 import type { TimesheetEntryPayload } from '@/types/timesheets';
 
@@ -45,6 +48,60 @@ export function addWeeksToYmd(ymd: string, deltaWeeks: number): string {
     d.setDate(d.getDate() + deltaWeeks * 7);
 
     return dayKey(d);
+}
+
+export function addDaysToYmd(ymd: string, days: number): string {
+    return dayKey(addDays(parseYmdLocal(ymd), days));
+}
+
+export function mondayYmdForDate(date: Date): string {
+    return dayKey(startOfMonday(date));
+}
+
+export function mondayYmdForYmd(ymd: string): string {
+    return mondayYmdForDate(parseYmdLocal(ymd));
+}
+
+export function isYmdInWeek(ymd: string, weekStartYmd: string): boolean {
+    const monday = parseYmdLocal(weekStartYmd);
+    const target = parseYmdLocal(ymd).getTime();
+    const weekStart = monday.getTime();
+    const weekEnd = addDays(monday, 6).getTime();
+
+    return target >= weekStart && target <= weekEnd;
+}
+
+export function resolveFocusDayYmd(
+    weekStartYmd: string,
+    focusDayYmd: string | null,
+): string {
+    if (focusDayYmd !== null && isYmdInWeek(focusDayYmd, weekStartYmd)) {
+        return focusDayYmd;
+    }
+
+    const todayYmd = dayKey(new Date());
+
+    if (isYmdInWeek(todayYmd, weekStartYmd)) {
+        return todayYmd;
+    }
+
+    return weekStartYmd;
+}
+
+export function calendarDaysForView(
+    weekStartYmd: string,
+    view: CalendarView,
+    focusDayYmd: string,
+): Date[] {
+    const monday = parseYmdLocal(weekStartYmd);
+
+    if (view === 'day') {
+        return [parseYmdLocal(focusDayYmd)];
+    }
+
+    const indices = view === 'workweek' ? WORKDAY_INDICES : WEEKDAY_INDICES;
+
+    return indices.map((i) => addDays(monday, i));
 }
 
 export function isToday(date: Date): boolean {

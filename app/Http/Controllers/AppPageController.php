@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\TimesheetEntry;
 use App\Models\TimesheetEntryProposal;
 use App\Models\User;
+use App\Services\TimesheetEntryWindowTitlesResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -24,8 +25,10 @@ final class AppPageController extends Controller
         return Inertia::render('dashboard');
     }
 
-    public function timesheets(Request $request): Response
-    {
+    public function timesheets(
+        Request $request,
+        TimesheetEntryWindowTitlesResolver $windowTitlesResolver,
+    ): Response {
         $user = $request->user();
 
         if (! $user instanceof User) {
@@ -33,8 +36,8 @@ final class AppPageController extends Controller
         }
 
         $monday = $this->resolveTimesheetWeekMonday($request);
-        $weekEnd = $monday->addDays(4);
-        $proposalWeekEnd = $monday->addDays(6);
+        $weekEnd = $monday->addDays(6);
+        $proposalWeekEnd = $weekEnd;
 
         $entries = TimesheetEntry::query()
             ->where('user_id', $user->id)
@@ -43,18 +46,23 @@ final class AppPageController extends Controller
             ->orderBy('start_minutes')
             ->get();
 
+        $trackerTitlesByEntryId = $windowTitlesResolver->forEntries($user, $entries);
+
         $entriesByDay = $entries
             ->groupBy(fn (TimesheetEntry $e) => $e->worked_on->format('Y-m-d'))
             ->map(
-                fn ($group) => $group->values()->map(fn (TimesheetEntry $e): array => [
-                    'id' => $e->id,
-                    'title' => $e->title,
-                    'description' => $e->description,
-                    'client_name' => $e->client_name,
-                    'worked_on' => $e->worked_on->format('Y-m-d'),
-                    'start_minutes' => $e->start_minutes,
-                    'end_minutes' => $e->end_minutes,
-                ])->all(),
+                fn ($group) => $group->values()->map(function (TimesheetEntry $e) use ($trackerTitlesByEntryId): array {
+                    return [
+                        'id' => $e->id,
+                        'title' => $e->title,
+                        'description' => $e->description,
+                        'client_name' => $e->client_name,
+                        'worked_on' => $e->worked_on->format('Y-m-d'),
+                        'start_minutes' => $e->start_minutes,
+                        'end_minutes' => $e->end_minutes,
+                        'tracker_window_titles' => $trackerTitlesByEntryId[$e->id] ?? [],
+                    ];
+                })->all(),
             )
             ->all();
 
