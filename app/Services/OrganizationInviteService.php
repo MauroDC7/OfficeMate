@@ -5,49 +5,91 @@ namespace App\Services;
 use App\Models\Organization;
 use App\Models\OrganizationInvite;
 use App\Models\User;
+use App\Notifications\OrganizationInviteNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 final class OrganizationInviteService
 {
-    public function generate(Organization $organization, User $createdBy): string
-    {
-        $code = $this->uniqueCode();
+    private const int EXPIRE_DAYS = 7;
 
-        OrganizationInvite::query()->create([
+    public function send(Organization $organization, User $createdBy, string $email): void
+    {
+        $email = strtolower(trim($email));
+
+        if ($email === '') {
+            throw ValidationException::withMessages([
+                'email' => 'Voer een geldig e-mailadres in.',
+            ]);
+        }
+
+        $existingUser = User::query()->where('email', $email)->first();
+
+        if ($existingUser !== null && $existingUser->organization_id !== null) {
+            throw ValidationException::withMessages([
+                'email' => 'Dit e-mailadres hoort al bij een organisatie.',
+            ]);
+        }
+
+        OrganizationInvite::query()
+            ->where('organization_id', $organization->id)
+            ->where('email', $email)
+            ->whereNull('redeemed_at')
+            ->delete();
+
+        $token = Str::random(64);
+
+        $invite = OrganizationInvite::query()->create([
             'organization_id' => $organization->id,
-            'code' => $code,
+            'email' => $email,
+            'token' => $token,
+            'expires_at' => now()->addDays(self::EXPIRE_DAYS),
             'created_by_user_id' => $createdBy->id,
         ]);
 
-        return $code;
+        $invite->load('organization');
+
+        Notification::route('mail', $email)
+            ->notify(new OrganizationInviteNotification($invite, $token));
     }
 
-    public function redeem(User $user, string $rawCode): Organization
+    public function findValidInvite(string $rawToken): ?OrganizationInvite
+    {
+        $token = trim($rawToken);
+
+        if ($token === '') {
+            return null;
+        }
+
+        return OrganizationInvite::query()
+            ->with('organization')
+            ->where('token', $token)
+            ->whereNull('redeemed_at')
+            ->where('expires_at', '>', now())
+            ->first();
+    }
+
+    public function accept(User $user, string $rawToken): Organization
     {
         if ($user->organization_id !== null) {
             throw ValidationException::withMessages([
-                'code' => 'Je bent al gekoppeld aan een organisatie.',
+                'email' => 'Je bent al gekoppeld aan een organisatie.',
             ]);
         }
 
-        $code = strtoupper(trim($rawCode));
-
-        if ($code === '') {
-            throw ValidationException::withMessages([
-                'code' => 'Voer een uitnodigingscode in.',
-            ]);
-        }
-
-        $invite = OrganizationInvite::query()
-            ->where('code', $code)
-            ->whereNull('redeemed_at')
-            ->first();
+        $invite = $this->findValidInvite($rawToken);
 
         if ($invite === null) {
             throw ValidationException::withMessages([
-                'code' => 'Deze code is ongeldig of al gebruikt.',
+                'email' => 'Deze uitnodiging is ongeldig of verlopen.',
+            ]);
+        }
+
+        if (strcasecmp($user->email, $invite->email) !== 0) {
+            throw ValidationException::withMessages([
+                'email' => 'Deze uitnodiging is bedoeld voor '.$invite->email.'.',
             ]);
         }
 
@@ -63,12 +105,22 @@ final class OrganizationInviteService
         });
     }
 
-    private function uniqueCode(): string
+    public function tryAcceptFromSession(User $user): bool
     {
-        do {
-            $code = strtoupper(Str::random(8));
-        } while (OrganizationInvite::query()->where('code', $code)->exists());
+        $token = session('organization_invite_token');
 
-        return $code;
+        if (! is_string($token) || $token === '') {
+            return false;
+        }
+
+        try {
+            $this->accept($user, $token);
+        } catch (ValidationException) {
+            return false;
+        }
+
+        session()->forget('organization_invite_token');
+
+        return true;
     }
 }

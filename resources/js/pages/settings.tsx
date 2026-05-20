@@ -6,8 +6,7 @@ import { AppLayout } from '@/layouts/app-layout';
 import { getUserDisplayFullName, getUserInitials } from '@/lib/user-display';
 import { logout } from '@/routes';
 import { update as updateSettingsAccount } from '@/routes/settings/account';
-import { store as generateOrganizationInvite } from '@/routes/settings/organization-invites';
-import { redeem as redeemOrganizationInvite } from '@/routes/settings/organization-invite';
+import { store as sendOrganizationInvite } from '@/routes/settings/organization-invites';
 import { update as updateOrganization } from '@/routes/settings/organization';
 import type { Auth, User } from '@/types/auth';
 import type { OrganizationSummary } from '@/types/teams';
@@ -15,8 +14,7 @@ import type { OrganizationSummary } from '@/types/teams';
 type SettingsPageProps = {
     auth: Auth;
     organization: OrganizationSummary | null;
-    canRedeemInvite: boolean;
-    organizationInviteCode: string | null;
+    awaitingOrganizationInvite: boolean;
 };
 
 function IconUserOutline({ className }: { className?: string }) {
@@ -66,8 +64,7 @@ export default function Settings() {
     const {
         auth,
         organization,
-        canRedeemInvite,
-        organizationInviteCode,
+        awaitingOrganizationInvite,
     } = usePage<SettingsPageProps>().props;
     const { success } = useAlert();
     const user = auth.user;
@@ -125,10 +122,8 @@ export default function Settings() {
                         <Form
                             key={`account-${user?.updated_at ?? '0'}`}
                             {...updateSettingsAccount.form.patch()}
-                            options={{
-                                preserveScroll: true,
-                                onSuccess: () => success('Profiel opgeslagen.'),
-                            }}
+                            options={{ preserveScroll: true }}
+                            onSuccess={() => success('Profiel opgeslagen.')}
                             encType="multipart/form-data"
                             className="border-t border-gray-200 py-5"
                         >
@@ -228,52 +223,17 @@ export default function Settings() {
                     </div>
                 </section>
 
-                {canRedeemInvite ? (
+                {awaitingOrganizationInvite ? (
                     <section className="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:mt-6">
                         <h2 className="text-base font-semibold text-gray-900">Bedrijf</h2>
                         <p className="mt-1 text-sm text-gray-500">
-                            Voer de eenmalige code in die je van je beheerder hebt gekregen.
+                            Je beheerder nodigt je per e-mail uit. Open de link in die mail om
+                            deel te nemen aan het bedrijf.
                         </p>
-                        <Form
-                            {...redeemOrganizationInvite.form.post()}
-                            options={{ preserveScroll: true }}
-                            className="mt-4 max-w-md space-y-4"
-                        >
-                            {({ errors, processing }) => (
-                                <>
-                                    <div>
-                                        <label
-                                            htmlFor="invite-code"
-                                            className="text-sm font-medium text-gray-900"
-                                        >
-                                            Uitnodigingscode
-                                        </label>
-                                        <input
-                                            id="invite-code"
-                                            name="code"
-                                            required
-                                            autoComplete="off"
-                                            placeholder="bijv. A1B2C3D4"
-                                            className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm uppercase tracking-wider"
-                                        />
-                                        {errors.code !== undefined ? (
-                                            <p className="mt-1 text-sm text-red-600">{errors.code}</p>
-                                        ) : null}
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
-                                    >
-                                        {processing ? 'Bezig…' : 'Deelnemen'}
-                                    </button>
-                                </>
-                            )}
-                        </Form>
                     </section>
                 ) : null}
 
-                {organization !== null && !canRedeemInvite && !isAdmin ? (
+                {organization !== null && !awaitingOrganizationInvite && !isAdmin ? (
                     <section className="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:mt-6">
                         <h2 className="text-base font-semibold text-gray-900">Bedrijf</h2>
                         <p className="mt-2 text-sm text-gray-800">{organization.name}</p>
@@ -293,10 +253,8 @@ export default function Settings() {
                         <Form
                             key={`organization-${organization.id}`}
                             {...updateOrganization.form.patch({ organization: organization.id })}
-                            options={{
-                                preserveScroll: true,
-                                onSuccess: () => success('Organisatie opgeslagen.'),
-                            }}
+                            options={{ preserveScroll: true }}
+                            onSuccess={() => success('Organisatie opgeslagen.')}
                             className="border-b border-gray-200 px-5 py-5 sm:px-6"
                         >
                             {({ errors, processing }) => (
@@ -331,30 +289,48 @@ export default function Settings() {
                             )}
                         </Form>
                         <div className="px-5 py-5 sm:px-6">
-                            <p className="text-sm font-medium text-gray-900">Uitnodigingscode</p>
+                            <p className="text-sm font-medium text-gray-900">Medewerker uitnodigen</p>
                             <p className="mt-1 text-xs text-gray-500">
-                                Genereer een code voor één medewerker. De code werkt één keer.
+                                Stuur een uitnodiging per e-mail. De link is 7 dagen geldig.
                             </p>
-                            {organizationInviteCode !== null && organizationInviteCode !== '' ? (
-                                <p className="mt-3 rounded-lg bg-gray-100 px-3 py-2 font-mono text-sm tracking-wider text-gray-900">
-                                    {organizationInviteCode}
-                                </p>
-                            ) : null}
                             <Form
-                                {...generateOrganizationInvite.form.post()}
-                                options={{
-                                    onSuccess: () => success('Uitnodigingscode gegenereerd.'),
-                                }}
-                                className="mt-4"
+                                {...sendOrganizationInvite.form.post()}
+                                options={{ preserveScroll: true }}
+                                onSuccess={() => success('Uitnodiging verstuurd.')}
+                                className="mt-4 max-w-md space-y-4"
                             >
-                                {({ processing }) => (
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-60"
-                                    >
-                                        {processing ? 'Genereren…' : 'Nieuwe code genereren'}
-                                    </button>
+                                {({ errors, processing }) => (
+                                    <>
+                                        <div>
+                                            <label
+                                                htmlFor="invite-email"
+                                                className="text-sm font-medium text-gray-900"
+                                            >
+                                                E-mailadres
+                                            </label>
+                                            <input
+                                                id="invite-email"
+                                                type="email"
+                                                name="email"
+                                                required
+                                                autoComplete="email"
+                                                placeholder="naam@voorbeeld.nl"
+                                                className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                                            />
+                                            {errors.email !== undefined ? (
+                                                <p className="mt-1 text-sm text-red-600">
+                                                    {errors.email}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            disabled={processing}
+                                            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
+                                        >
+                                            {processing ? 'Bezig…' : 'Uitnodiging versturen'}
+                                        </button>
+                                    </>
                                 )}
                             </Form>
                         </div>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\OrganizationInviteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,10 @@ use Laravel\Socialite\Two\InvalidStateException;
 
 final class GoogleAuthController extends Controller
 {
+    public function __construct(
+        private readonly OrganizationInviteService $organizationInviteService,
+    ) {}
+
     /**
      * Stuur de gebruiker naar Google voor OAuth-toestemming.
      */
@@ -71,6 +76,12 @@ final class GoogleAuthController extends Controller
 
         Auth::login($user, remember: true);
         $request->session()->regenerate();
+
+        if ($this->organizationInviteService->tryAcceptFromSession($user)) {
+            return redirect()
+                ->intended(route('dashboard'))
+                ->with('status', 'Je bent toegevoegd aan de organisatie.');
+        }
 
         return redirect()->intended(route('dashboard'));
     }

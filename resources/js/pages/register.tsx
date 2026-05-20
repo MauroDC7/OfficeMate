@@ -1,4 +1,4 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 
 import { AuthGoogleSection } from '@/components/auth-google';
 import { AuthField, AuthPage, authLabelClassName, authSubmitClassName } from '@/components/auth-page';
@@ -13,13 +13,24 @@ const roleRowClassName =
 const roleInputClassName =
     'size-4 shrink-0 border-gray-300 text-red-600 focus:ring-red-500/30';
 
+type RegisterPageProps = {
+    inviteEmail: string | null;
+};
+
 export default function Register() {
+    const inviteEmail = usePage<RegisterPageProps>().props.inviteEmail;
+    const fromInvite = inviteEmail !== null && inviteEmail !== '';
+
     return (
         <>
             <Head title="Registreren" />
             <AuthPage
-                title="Welkom bij OfficeMate"
-                subtitle="Maak een account om te beginnen."
+                title={fromInvite ? 'Uitnodiging accepteren' : 'Welkom bij OfficeMate'}
+                subtitle={
+                    fromInvite
+                        ? 'Maak je account aan om deel te nemen aan het bedrijf.'
+                        : 'Maak een account om te beginnen.'
+                }
             >
                 <div className="px-8 pt-8 pb-9">
                     <Form action="/register" method="post">
@@ -42,55 +53,84 @@ export default function Register() {
                                     error={errors.last_name}
                                 />
 
-                                <fieldset>
-                                    <legend className={authLabelClassName}>Rol</legend>
-                                    <div
-                                        className="mt-2 space-y-2"
-                                        role="radiogroup"
-                                        aria-label="Rol"
-                                    >
-                                        <label className={roleRowClassName}>
-                                            <input
-                                                type="radio"
-                                                name="role"
-                                                value="employee"
-                                                defaultChecked
-                                                className={roleInputClassName}
-                                            />
-                                            <span className="font-medium text-gray-800">
-                                                Medewerker
-                                            </span>
-                                        </label>
-                                        <label className={roleRowClassName}>
-                                            <input
-                                                type="radio"
-                                                name="role"
-                                                value="admin"
-                                                className={roleInputClassName}
-                                            />
-                                            <span className="font-medium text-gray-800">
-                                                Beheerder
-                                            </span>
-                                        </label>
-                                    </div>
-                                    {errors.role ? (
-                                        <p
-                                            className="mt-2 text-xs font-medium text-red-600"
-                                            role="alert"
+                                {fromInvite ? null : (
+                                    <fieldset>
+                                        <legend className={authLabelClassName}>Rol</legend>
+                                        <div
+                                            className="mt-2 space-y-2"
+                                            role="radiogroup"
+                                            aria-label="Rol"
                                         >
-                                            {errors.role}
-                                        </p>
-                                    ) : null}
-                                </fieldset>
+                                            <label className={roleRowClassName}>
+                                                <input
+                                                    type="radio"
+                                                    name="role"
+                                                    value="employee"
+                                                    defaultChecked
+                                                    className={roleInputClassName}
+                                                />
+                                                <span className="font-medium text-gray-800">
+                                                    Medewerker
+                                                </span>
+                                            </label>
+                                            <label className={roleRowClassName}>
+                                                <input
+                                                    type="radio"
+                                                    name="role"
+                                                    value="admin"
+                                                    className={roleInputClassName}
+                                                />
+                                                <span className="font-medium text-gray-800">
+                                                    Beheerder
+                                                </span>
+                                            </label>
+                                        </div>
+                                        {errors.role ? (
+                                            <p
+                                                className="mt-2 text-xs font-medium text-red-600"
+                                                role="alert"
+                                            >
+                                                {errors.role}
+                                            </p>
+                                        ) : null}
+                                    </fieldset>
+                                )}
 
-                                <AuthField
-                                    id="email"
-                                    label="E-mailadres"
-                                    type="email"
-                                    autoComplete="email"
-                                    placeholder="naam@voorbeeld.nl"
-                                    error={errors.email}
-                                />
+                                {fromInvite ? (
+                                    <div>
+                                        <label
+                                            htmlFor="email"
+                                            className={authLabelClassName}
+                                        >
+                                            E-mailadres
+                                        </label>
+                                        <input
+                                            id="email"
+                                            name="email"
+                                            type="email"
+                                            readOnly
+                                            value={inviteEmail}
+                                            className="mt-2 block w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700"
+                                        />
+                                        {errors.email ? (
+                                            <p
+                                                className="mt-2 text-xs font-medium text-red-600"
+                                                role="alert"
+                                            >
+                                                {errors.email}
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                ) : (
+                                    <AuthField
+                                        id="email"
+                                        label="E-mailadres"
+                                        type="email"
+                                        autoComplete="email"
+                                        placeholder="naam@voorbeeld.nl"
+                                        error={errors.email}
+                                    />
+                                )}
                                 <PasswordFieldWithHints
                                     label="Wachtwoord"
                                     error={errors.password}
@@ -135,7 +175,9 @@ export default function Register() {
                             </div>
                         )}
                     </Form>
-                    <AuthGoogleSection buttonLabel="Registreren met Google" />
+                    {fromInvite ? null : (
+                        <AuthGoogleSection buttonLabel="Registreren met Google" />
+                    )}
                 </div>
             </AuthPage>
         </>
