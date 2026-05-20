@@ -113,7 +113,7 @@ function AlertConfirmDialog({
 
     return (
         <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/40 p-4"
+            className="fixed inset-0 z-[10050] flex items-center justify-center bg-gray-900/40 p-4"
             role="presentation"
             onClick={onCancel}
         >
