@@ -1,5 +1,6 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 
+import { useAlert } from '@/components/alert';
 import { UserAvatar } from '@/components/user-avatar';
 import { AppLayout } from '@/layouts/app-layout';
 import { getUserDisplayFullName, getUserInitials } from '@/lib/user-display';
@@ -16,7 +17,6 @@ type SettingsPageProps = {
     organization: OrganizationSummary | null;
     canRedeemInvite: boolean;
     organizationInviteCode: string | null;
-    status: string | null;
 };
 
 function IconUserOutline({ className }: { className?: string }) {
@@ -68,8 +68,8 @@ export default function Settings() {
         organization,
         canRedeemInvite,
         organizationInviteCode,
-        status,
     } = usePage<SettingsPageProps>().props;
+    const { success } = useAlert();
     const user = auth.user;
     const isAdmin = auth.isAdmin;
 
@@ -125,7 +125,10 @@ export default function Settings() {
                         <Form
                             key={`account-${user?.updated_at ?? '0'}`}
                             {...updateSettingsAccount.form.patch()}
-                            options={{ preserveScroll: true }}
+                            options={{
+                                preserveScroll: true,
+                                onSuccess: () => success('Profiel opgeslagen.'),
+                            }}
                             encType="multipart/form-data"
                             className="border-t border-gray-200 py-5"
                         >
@@ -225,12 +228,6 @@ export default function Settings() {
                     </div>
                 </section>
 
-                {status !== null && status !== '' ? (
-                    <p className="mt-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-                        {status}
-                    </p>
-                ) : null}
-
                 {canRedeemInvite ? (
                     <section className="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:mt-6">
                         <h2 className="text-base font-semibold text-gray-900">Bedrijf</h2>
@@ -296,7 +293,10 @@ export default function Settings() {
                         <Form
                             key={`organization-${organization.id}`}
                             {...updateOrganization.form.patch({ organization: organization.id })}
-                            options={{ preserveScroll: true }}
+                            options={{
+                                preserveScroll: true,
+                                onSuccess: () => success('Organisatie opgeslagen.'),
+                            }}
                             className="border-b border-gray-200 px-5 py-5 sm:px-6"
                         >
                             {({ errors, processing }) => (
@@ -340,7 +340,13 @@ export default function Settings() {
                                     {organizationInviteCode}
                                 </p>
                             ) : null}
-                            <Form {...generateOrganizationInvite.form.post()} className="mt-4">
+                            <Form
+                                {...generateOrganizationInvite.form.post()}
+                                options={{
+                                    onSuccess: () => success('Uitnodigingscode gegenereerd.'),
+                                }}
+                                className="mt-4"
+                            >
                                 {({ processing }) => (
                                     <button
                                         type="submit"

@@ -1,7 +1,8 @@
-import { router, usePage } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
+import { useAlert } from '@/components/alert';
 import {
     formatActivityDayLabel,
     formatMinutesRange,
@@ -23,17 +24,6 @@ import type {
 } from '@/types/timesheets';
 
 const RELOAD_PROPS = ['recentActivity', 'entriesByDay', 'proposals'] as const;
-
-type ProposalsStatus = 'ready' | 'unconfigured' | 'no_activity' | 'error';
-
-type FlashProps = {
-    proposalsStatus?: ProposalsStatus | null;
-    proposalsMessage?: string | null;
-};
-
-type SharedProps = {
-    flash?: FlashProps;
-};
 
 type TimesheetSuggestionsPanelProps = {
     weekStart: string;
@@ -84,7 +74,7 @@ export function TimesheetSuggestionsPanel({
     recentActivity,
     onNavigateToEntryEdit,
 }: TimesheetSuggestionsPanelProps) {
-    const flash = usePage<SharedProps>().props.flash ?? {};
+    const { success, confirm } = useAlert();
     const [editingId, setEditingId] = useState<number | null>(null);
     const [busyId, setBusyId] = useState<number | null>(null);
     const [generating, setGenerating] = useState(false);
@@ -178,7 +168,10 @@ export function TimesheetSuggestionsPanel({
                 preserveScroll: true,
                 onError: (errs) =>
                     setDraftErrors(errs as Record<string, string>),
-                onSuccess: () => handleCancelEdit(),
+                onSuccess: () => {
+                    handleCancelEdit();
+                    success('Voorstel bijgewerkt.');
+                },
                 onFinish: () => setBusyId(null),
             },
         );
@@ -191,31 +184,48 @@ export function TimesheetSuggestionsPanel({
             {},
             {
                 preserveScroll: true,
+                onSuccess: () => success('Voorstel toegevoegd aan je timesheet.'),
                 onFinish: () => setBusyId(null),
             },
         );
     }
 
-    function handleDeleteProposal(proposalId: number): void {
-        if (!window.confirm('Voorstel verwijderen?')) {
+    async function handleDeleteProposal(proposalId: number): Promise<void> {
+        const accepted = await confirm({
+            message: 'Voorstel verwijderen?',
+            confirmLabel: 'Verwijderen',
+            variant: 'danger',
+        });
+
+        if (!accepted) {
             return;
         }
 
         setBusyId(proposalId);
         router.delete(destroyProposal.url({ timesheet_entry_proposal: proposalId }), {
             preserveScroll: true,
+            onSuccess: () => success('Voorstel verwijderd.'),
             onFinish: () => setBusyId(null),
         });
     }
 
-    function handleDeleteEntry(entryId: number): void {
-        if (!window.confirm('Deze registratie verwijderen?')) {
+    async function handleDeleteEntry(entryId: number): Promise<void> {
+        const accepted = await confirm({
+            message: 'Deze registratie verwijderen?',
+            confirmLabel: 'Verwijderen',
+            variant: 'danger',
+        });
+
+        if (!accepted) {
             return;
         }
 
         router.delete(destroyEntry.url({ timesheet_entry: entryId }), {
             preserveScroll: true,
-            onSuccess: () => router.reload({ only: [...RELOAD_PROPS] }),
+            onSuccess: () => {
+                router.reload({ only: [...RELOAD_PROPS] });
+                success('Registratie verwijderd.');
+            },
         });
     }
 
@@ -250,8 +260,6 @@ export function TimesheetSuggestionsPanel({
                     </SecondaryButton>
                 </div>
             </header>
-
-            <FlashBanner flash={flash} />
 
             {isEmpty ? (
                 <p className="px-3 py-3 text-center text-xs text-gray-500 sm:px-4">
@@ -325,32 +333,6 @@ function Subheading({ children }: { children: ReactNode }) {
         <h3 className="border-b border-gray-100 bg-gray-50 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-gray-600 uppercase sm:px-4">
             {children}
         </h3>
-    );
-}
-
-function FlashBanner({ flash }: { flash: FlashProps }) {
-    const status = flash.proposalsStatus ?? null;
-
-    if (status === null) {
-        return null;
-    }
-
-    const palettes: Record<ProposalsStatus, string> = {
-        ready: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-        unconfigured: 'border-amber-200 bg-amber-50 text-amber-800',
-        no_activity: 'border-blue-200 bg-blue-50 text-blue-800',
-        error: 'border-red-200 bg-red-50 text-red-700',
-    };
-
-    return (
-        <div
-            className={cn(
-                'border-b px-3 py-2 text-xs sm:px-4',
-                palettes[status],
-            )}
-        >
-            {flash.proposalsMessage ?? 'Er ging iets mis bij het genereren.'}
-        </div>
     );
 }
 

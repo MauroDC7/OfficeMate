@@ -25,6 +25,7 @@ import type {
 } from '@/components/timesheets/week-calendar-types';
 import { emptyDraft } from '@/components/timesheets/week-calendar-types';
 import { fetchTrackerWindowTitles } from '@/components/timesheets/fetch-tracker-window-titles';
+import { useAlert } from '@/components/alert';
 import { timesheets } from '@/routes';
 import { destroy, store, update } from '@/routes/timesheets/entries';
 import type { TimesheetEntryPayload } from '@/types/timesheets';
@@ -92,6 +93,7 @@ export function useTimesheetWeekCalendar({
     openEntryId = null,
 }: TimesheetWeekCalendarProps) {
     const pageUrl = usePage().url;
+    const { success, confirm } = useAlert();
 
     const [viewState, setViewState] = useState<CalendarViewState>(() =>
         readViewState(weekStart, pageUrl),
@@ -468,9 +470,18 @@ export function useTimesheetWeekCalendar({
         clearErrors();
         setSubmitting(true);
 
+        const isCreate = modal.mode === 'create';
+
         const requestOptions = {
             preserveScroll: true,
-            onSuccess: closeModal,
+            onSuccess: () => {
+                closeModal();
+                success(
+                    isCreate
+                        ? 'Timesheetregistratie toegevoegd.'
+                        : 'Timesheetregistratie bijgewerkt.',
+                );
+            },
             onError: (errors: ServerErrors) => {
                 setServerErrors(flattenFormErrors(errors));
             },
@@ -479,7 +490,7 @@ export function useTimesheetWeekCalendar({
             },
         };
 
-        if (modal.mode === 'create') {
+        if (isCreate) {
             router.post(store.url(), payload, requestOptions);
 
             return;
@@ -490,14 +501,20 @@ export function useTimesheetWeekCalendar({
             payload,
             requestOptions,
         );
-    }, [modal, draft, clearErrors, closeModal]);
+    }, [modal, draft, clearErrors, closeModal, success]);
 
-    const deleteEntry = useCallback(() => {
+    const deleteEntry = useCallback(async () => {
         if (modal === null || modal.mode !== 'edit') {
             return;
         }
 
-        if (!window.confirm('Deze timesheetregistratie verwijderen?')) {
+        const accepted = await confirm({
+            message: 'Deze timesheetregistratie verwijderen?',
+            confirmLabel: 'Verwijderen',
+            variant: 'danger',
+        });
+
+        if (!accepted) {
             return;
         }
 
@@ -506,7 +523,10 @@ export function useTimesheetWeekCalendar({
 
         router.delete(destroy.url({ timesheet_entry: modal.entry.id }), {
             preserveScroll: true,
-            onSuccess: closeModal,
+            onSuccess: () => {
+                closeModal();
+                success('Timesheetregistratie verwijderd.');
+            },
             onError: (errors: ServerErrors) => {
                 setServerErrors(flattenFormErrors(errors));
             },
@@ -514,7 +534,7 @@ export function useTimesheetWeekCalendar({
                 setSubmitting(false);
             },
         });
-    }, [modal, closeModal]);
+    }, [modal, closeModal, success, confirm]);
 
     return {
         calendarView,

@@ -164,7 +164,6 @@ final class AppPageController extends Controller
                 : null,
             'canRedeemInvite' => $user->role !== UserRole::Admin && $user->organization_id === null,
             'organizationInviteCode' => $request->session()->get('organizationInviteCode'),
-            'status' => $request->session()->get('status'),
         ]);
     }
 }
