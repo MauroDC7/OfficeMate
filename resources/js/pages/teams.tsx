@@ -1,6 +1,7 @@
 import { Form, Head, Link, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
+import { useAlert } from '@/components/alert';
 import { AppLayout } from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { settings } from '@/routes';
@@ -26,12 +27,20 @@ function TeamRowActions({
     membership,
     isAdmin,
     onEdit,
+    onDeleted,
+    onLeft,
+    onJoined,
 }: {
     teamId: number;
     membership: TeamMembershipRow | undefined;
     isAdmin: boolean;
     onEdit: () => void;
+    onDeleted: () => void;
+    onLeft: () => void;
+    onJoined: () => void;
 }) {
+    const { confirm } = useAlert();
+
     if (isAdmin) {
         return (
             <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -44,11 +53,20 @@ function TeamRowActions({
                 </button>
                 <button
                     type="button"
-                    onClick={() => {
-                        if (!window.confirm('Dit team verwijderen?')) {
+                    onClick={async () => {
+                        const accepted = await confirm({
+                            message: 'Dit team verwijderen?',
+                            confirmLabel: 'Verwijderen',
+                            variant: 'danger',
+                        });
+
+                        if (!accepted) {
                             return;
                         }
-                        router.delete(destroyTeam.url({ team: teamId }));
+
+                        router.delete(destroyTeam.url({ team: teamId }), {
+                            onSuccess: onDeleted,
+                        });
                     }}
                     className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
                 >
@@ -62,11 +80,20 @@ function TeamRowActions({
         return (
             <button
                 type="button"
-                onClick={() => {
-                    if (!window.confirm('Wil je dit team verlaten?')) {
+                onClick={async () => {
+                    const accepted = await confirm({
+                        message: 'Wil je dit team verlaten?',
+                        confirmLabel: 'Verlaten',
+                        variant: 'danger',
+                    });
+
+                    if (!accepted) {
                         return;
                     }
-                    router.delete(destroyMembership.url({ team_membership: membership.id }));
+
+                    router.delete(destroyMembership.url({ team_membership: membership.id }), {
+                        onSuccess: onLeft,
+                    });
                 }}
                 className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
             >
@@ -84,7 +111,11 @@ function TeamRowActions({
     return (
         <button
             type="button"
-            onClick={() => router.post(join.url({ team: teamId }))}
+            onClick={() =>
+                router.post(join.url({ team: teamId }), {
+                    onSuccess: onJoined,
+                })
+            }
             className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-semibold text-white hover:bg-gray-800"
         >
             Aanvragen
@@ -92,15 +123,37 @@ function TeamRowActions({
     );
 }
 
+type TeamsPageErrors = {
+    team?: string;
+    parent_id?: string;
+};
+
 export default function Teams() {
+    const { success, warning } = useAlert();
+    const page = usePage<TeamsPageProps & { errors?: TeamsPageErrors }>();
     const {
         organization,
         teams,
         myMemberships,
         pendingMemberships,
         isAdmin,
-    } = usePage<TeamsPageProps>().props;
+    } = page.props;
     const [editingTeamId, setEditingTeamId] = useState<number | null>(null);
+    const shownValidation = useRef<string | null>(null);
+    const validationMessage = page.props.errors?.team ?? page.props.errors?.parent_id;
+
+    useEffect(() => {
+        if (validationMessage === undefined || validationMessage === '') {
+            return;
+        }
+
+        if (validationMessage === shownValidation.current) {
+            return;
+        }
+
+        shownValidation.current = validationMessage;
+        warning(validationMessage);
+    }, [validationMessage, warning]);
 
     const parentOptions = teams.filter((t) => t.id !== editingTeamId);
 
@@ -187,6 +240,11 @@ export default function Teams() {
                                             onClick={() =>
                                                 router.post(
                                                     approve.url({ team_membership: m.id }),
+                                                    {},
+                                                    {
+                                                        onSuccess: () =>
+                                                            success('Lidmaatschap goedgekeurd.'),
+                                                    },
                                                 )
                                             }
                                             className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
@@ -198,6 +256,11 @@ export default function Teams() {
                                             onClick={() =>
                                                 router.post(
                                                     reject.url({ team_membership: m.id }),
+                                                    {},
+                                                    {
+                                                        onSuccess: () =>
+                                                            success('Lidmaatschap afgewezen.'),
+                                                    },
                                                 )
                                             }
                                             className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
@@ -216,6 +279,9 @@ export default function Teams() {
                         <h2 className="text-sm font-semibold text-gray-900">Nieuw team</h2>
                         <Form
                             {...store.form.post()}
+                            options={{
+                                onSuccess: () => success('Team toegevoegd.'),
+                            }}
                             className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
                         >
                             {({ errors, processing }) => (
@@ -294,8 +360,13 @@ export default function Teams() {
                                         {isAdmin && isEditing ? (
                                             <Form
                                                 {...update.form.patch({ team: team.id })}
+                                                options={{
+                                                    onSuccess: () => {
+                                                        setEditingTeamId(null);
+                                                        success('Team bijgewerkt.');
+                                                    },
+                                                }}
                                                 className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
-                                                onSuccess={() => setEditingTeamId(null)}
                                             >
                                                 {({ errors, processing }) => (
                                                     <>
@@ -369,6 +440,9 @@ export default function Teams() {
                                                     membership={membership}
                                                     isAdmin={isAdmin}
                                                     onEdit={() => setEditingTeamId(team.id)}
+                                                    onDeleted={() => success('Team verwijderd.')}
+                                                    onLeft={() => success('Je bent het team verlaten.')}
+                                                    onJoined={() => success('Aanvraag ingediend.')}
                                                 />
                                             </div>
                                         )}

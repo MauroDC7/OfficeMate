@@ -1,20 +1,12 @@
-import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { Form, Head, Link } from '@inertiajs/react';
 
 import { AuthGoogleSection } from '@/components/auth-google';
 import { AuthField, AuthPage, authSubmitClassName } from '@/components/auth-page';
 import { cn } from '@/lib/utils';
 
-type LoginPageProps = {
-    flash?: {
-        authError?: string | null;
-    };
-};
-
 const footerLinkClassName = 'font-medium text-red-600 hover:text-red-700';
 
 export default function Login() {
-    const authError = usePage<LoginPageProps>().props.flash?.authError;
-
     return (
         <>
             <Head title="Inloggen" />
@@ -23,14 +15,6 @@ export default function Login() {
                 subtitle="Log in met je account om verder te gaan."
             >
                 <div className="px-8 pt-8 pb-9">
-                    {authError ? (
-                        <p
-                            className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-                            role="alert"
-                        >
-                            {authError}
-                        </p>
-                    ) : null}
                     <Form action="/login" method="post">
                         {({ errors, processing }) => (
                             <div className="space-y-6">
@@ -50,6 +34,12 @@ export default function Login() {
                                     placeholder="••••••••"
                                     error={errors.password}
                                 />
+
+                                <p className="text-right text-sm">
+                                    <Link href="/forgot-password" className={footerLinkClassName}>
+                                        Wachtwoord vergeten?
+                                    </Link>
+                                </p>
 
                                 <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 select-none">
                                     <input

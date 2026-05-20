@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'organization_id',
-    'code',
+    'email',
+    'token',
+    'expires_at',
     'created_by_user_id',
     'redeemed_at',
     'redeemed_by_user_id',
@@ -21,6 +23,7 @@ class OrganizationInvite extends Model
     protected function casts(): array
     {
         return [
+            'expires_at' => 'datetime',
             'redeemed_at' => 'datetime',
         ];
     }

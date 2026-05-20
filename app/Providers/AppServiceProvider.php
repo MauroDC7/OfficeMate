@@ -42,15 +42,18 @@ class AppServiceProvider extends ServiceProvider
             app()->isProduction(),
         );
 
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
-                ->mixedCase()
-                ->letters()
+        Password::defaults(function (): Password {
+            $rule = Password::min(10)
                 ->numbers()
                 ->symbols()
-                ->uncompromised()
-            : null,
-        );
+                ->rules('regex:/[A-Z]/');
+
+            if (app()->isProduction()) {
+                $rule->uncompromised();
+            }
+
+            return $rule;
+        });
     }
 
     protected function configureHttpMacros(): void

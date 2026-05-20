@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import { FlashAlerts } from '@/components/flash-alerts';
+
 export const authInputClassName =
     'mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-red-500/55 focus:ring-2 focus:ring-red-500/15';
 
@@ -19,6 +21,10 @@ type AuthFieldProps = {
     autoComplete: string;
     placeholder: string;
     error?: string;
+    onChange?: (value: string) => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
+    describedBy?: string;
 };
 
 export function AuthField({
@@ -29,6 +35,10 @@ export function AuthField({
     autoComplete,
     placeholder,
     error,
+    onChange,
+    onFocus,
+    onBlur,
+    describedBy,
 }: AuthFieldProps): ReactNode {
     return (
         <div>
@@ -44,7 +54,19 @@ export function AuthField({
                 placeholder={placeholder}
                 className={authInputClassName}
                 aria-invalid={error ? 'true' : 'false'}
-                aria-describedby={error ? `${id}-error` : undefined}
+                aria-describedby={
+                    [describedBy, error ? `${id}-error` : null].filter(Boolean).join(' ') ||
+                    undefined
+                }
+                onChange={
+                    onChange
+                        ? (event) => {
+                              onChange(event.target.value);
+                          }
+                        : undefined
+                }
+                onFocus={onFocus}
+                onBlur={onBlur}
             />
             {error ? (
                 <p id={`${id}-error`} className={authErrorClassName} role="alert">
@@ -79,6 +101,8 @@ export function AuthPage({ title, subtitle, children }: AuthPageProps): ReactNod
                     {children}
                 </div>
             </div>
+
+            <FlashAlerts />
         </div>
     );
 }

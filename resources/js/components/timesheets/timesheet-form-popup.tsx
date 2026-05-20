@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import {
@@ -19,7 +20,7 @@ type TimesheetFormPopupProps = {
     onDraftChange: (field: keyof TimesheetDraft, value: string) => void;
     onClose: () => void;
     onSave: () => void;
-    onDelete: () => void;
+    onDelete: () => void | Promise<void>;
 };
 
 function modalTimeRange(modal: TimesheetModalState): {
@@ -49,6 +50,9 @@ export function TimesheetFormPopup({
     onDelete,
 }: TimesheetFormPopupProps) {
     const { startMin, endMin } = modalTimeRange(modal);
+    const [descriptionFocused, setDescriptionFocused] = useState(false);
+    const showWindowTitles =
+        descriptionFocused && trackerWindowTitles.length > 0;
 
     if (typeof document === 'undefined') {
         return null;
@@ -104,7 +108,18 @@ export function TimesheetFormPopup({
                             </p>
                         ) : null}
                     </div>
-                    <div>
+                    <div
+                        onFocusCapture={() => setDescriptionFocused(true)}
+                        onBlurCapture={(event) => {
+                            if (
+                                !event.currentTarget.contains(
+                                    event.relatedTarget as Node | null,
+                                )
+                            ) {
+                                setDescriptionFocused(false);
+                            }
+                        }}
+                    >
                         <label
                             htmlFor="ts-desc"
                             className="text-sm font-medium text-gray-800"
@@ -118,31 +133,37 @@ export function TimesheetFormPopup({
                                 onDraftChange('description', e.target.value)
                             }
                             rows={3}
+                            aria-describedby={
+                                showWindowTitles ? 'ts-window-titles' : undefined
+                            }
                             className="mt-1 w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
                         />
+                        {showWindowTitles ? (
+                            <div
+                                id="ts-window-titles"
+                                className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2"
+                            >
+                                <p className="text-xs font-medium text-gray-500">
+                                    Vensters in deze periode
+                                </p>
+                                <ul className="mt-1.5 max-h-36 space-y-1 overflow-y-auto text-sm text-gray-700">
+                                    {trackerWindowTitles.map((title) => (
+                                        <li
+                                            key={title}
+                                            className="leading-snug break-words"
+                                        >
+                                            {title}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ) : null}
                         {serverErrors.description !== undefined ? (
                             <p className="mt-1 text-sm text-red-600">
                                 {serverErrors.description}
                             </p>
                         ) : null}
                     </div>
-                    {trackerWindowTitles.length > 0 ? (
-                        <div>
-                            <p className="text-sm font-medium text-gray-800">
-                                Vensters
-                            </p>
-                            <ul className="mt-2 max-h-36 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-                                {trackerWindowTitles.map((title) => (
-                                    <li
-                                        key={title}
-                                        className="leading-snug break-words"
-                                    >
-                                        {title}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ) : null}
                     <div>
                         <label
                             htmlFor="ts-client"
@@ -222,25 +243,28 @@ export function TimesheetFormPopup({
                     ) : null}
                 </div>
 
-                <div className="mt-6 flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        {modal.mode === 'edit' ? (
-                            <button
-                                type="button"
-                                onClick={onDelete}
-                                disabled={submitting}
-                                className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                Verwijderen
-                            </button>
-                        ) : null}
-                    </div>
-                    <div className="flex gap-2">
+                <div className="mt-6 flex flex-col-reverse gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                    {modal.mode === 'edit' ? (
+                        <button
+                            type="button"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                void onDelete();
+                            }}
+                            disabled={submitting}
+                            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Verwijderen
+                        </button>
+                    ) : (
+                        <span className="hidden sm:block" />
+                    )}
+                    <div className="flex gap-2 sm:justify-end">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={submitting}
-                            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
                         >
                             Annuleren
                         </button>
@@ -248,7 +272,7 @@ export function TimesheetFormPopup({
                             type="button"
                             onClick={onSave}
                             disabled={submitting}
-                            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="flex-1 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
                         >
                             {submitting ? 'Bezig…' : 'Opslaan'}
                         </button>

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Settings\StoreOrganizationInviteRequest;
 use App\Models\User;
 use App\Services\OrganizationContext;
 use App\Services\OrganizationInviteService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 final class OrganizationInviteController extends Controller
 {
@@ -16,17 +16,19 @@ final class OrganizationInviteController extends Controller
         private readonly OrganizationInviteService $organizationInviteService,
     ) {}
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreOrganizationInviteRequest $request): RedirectResponse
     {
         $user = $request->user();
         abort_unless($user instanceof User, 401);
 
         $organization = $this->organizationContext->forUserOrFail($user);
 
-        $code = $this->organizationInviteService->generate($organization, $user);
+        $email = $request->validated('email');
+
+        $this->organizationInviteService->send($organization, $user, $email);
 
         return redirect()
             ->route('settings')
-            ->with('organizationInviteCode', $code);
+            ->with('status', 'Uitnodiging verstuurd naar '.$email.'.');
     }
 }

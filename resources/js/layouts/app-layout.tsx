@@ -2,6 +2,7 @@ import type { PropsWithChildren } from 'react';
 
 import { AppHeader } from '@/components/app/app-header';
 import { AppSidebar } from '@/components/app/app-sidebar';
+import { FlashAlerts } from '@/components/flash-alerts';
 
 export function AppLayout({ children }: PropsWithChildren) {
     return (
@@ -13,6 +14,7 @@ export function AppLayout({ children }: PropsWithChildren) {
                     {children}
                 </div>
             </div>
+            <FlashAlerts />
         </div>
     );
 }

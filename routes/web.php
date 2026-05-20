@@ -1,13 +1,15 @@
 <?php
 
 use App\Http\Controllers\AppPageController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\OrganizationInviteAcceptController;
 use App\Http\Controllers\Settings\AccountSettingsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
-use App\Http\Controllers\Settings\RedeemOrganizationInviteController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
@@ -36,10 +38,8 @@ Route::middleware('auth')->group(function (): void {
         ->middleware('admin')
         ->name('settings.organization.update');
     Route::post('/settings/organization-invites', [OrganizationInviteController::class, 'store'])
-        ->middleware('admin')
+        ->middleware(['admin', 'throttle:10,1'])
         ->name('settings.organization-invites.store');
-    Route::post('/settings/organization-invite/redeem', RedeemOrganizationInviteController::class)
-        ->name('settings.organization-invite.redeem');
 
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
     Route::post('/teams', [TeamController::class, 'store'])->middleware('admin')->name('teams.store');
@@ -58,11 +58,23 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });
 
+Route::get('/uitnodiging/{token}', OrganizationInviteAcceptController::class)
+    ->name('organization-invite.show');
+
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store']);
+
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('password.update');
 
     Route::middleware('throttle:10,1')->group(function (): void {
         Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])
