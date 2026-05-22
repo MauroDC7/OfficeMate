@@ -91,7 +91,7 @@ export function TimesheetWeekBody({
     const nowTopPx = minutesToTimelineY(nowMinutes, timelineHeightPx);
 
     return (
-        <div className="max-h-[min(72vh,56rem)] overflow-y-auto overscroll-contain rounded-b-xl">
+        <div className="max-h-[min(72svh,56rem)] overflow-y-auto overscroll-contain rounded-b-xl">
             <div
                 className="grid bg-white"
                 style={{ ...gridStyle, minHeight: timelineHeightPx }}

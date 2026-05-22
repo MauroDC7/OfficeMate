@@ -3,7 +3,7 @@
 namespace App\Services;
 
 /**
- * Filters desktop-tracker titles that are OfficeMate browser tab labels
+ * Filters desktop-tracker titles that are TimeTraq browser tab labels
  * (entry title + day + time range + "Timesheets"), not real window titles.
  */
 final class TimesheetSyntheticWindowTitleFilter

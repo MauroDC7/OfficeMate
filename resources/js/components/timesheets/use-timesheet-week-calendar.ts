@@ -5,6 +5,7 @@ import {
     type CalendarView,
     parseCalendarQueryFromUrl,
 } from '@/components/timesheets/calendar-view';
+import { useIsMobileViewport } from '@/lib/use-media-query';
 import {
     addDaysToYmd,
     addWeeksToYmd,
@@ -78,11 +79,21 @@ type CalendarViewState = {
     focusDayYmd: string;
 };
 
-function readViewState(weekStart: string, pageUrl: string): CalendarViewState {
+function readViewState(
+    weekStart: string,
+    pageUrl: string,
+    isMobileViewport: boolean,
+): CalendarViewState {
     const { calendarView, focusDay } = parseCalendarQueryFromUrl(pageUrl);
 
+    // Multi-day views aren't readable on phone-sized screens; always show
+    // a single day there regardless of what the URL says.
+    const resolved: CalendarView = isMobileViewport
+        ? 'day'
+        : (calendarView ?? 'workweek');
+
     return {
-        calendarView,
+        calendarView: resolved,
         focusDayYmd: resolveFocusDayYmd(weekStart, focusDay),
     };
 }
@@ -94,9 +105,10 @@ export function useTimesheetWeekCalendar({
 }: TimesheetWeekCalendarProps) {
     const pageUrl = usePage().url;
     const { success, confirm } = useAlert();
+    const isMobileViewport = useIsMobileViewport();
 
     const [viewState, setViewState] = useState<CalendarViewState>(() =>
-        readViewState(weekStart, pageUrl),
+        readViewState(weekStart, pageUrl, isMobileViewport),
     );
 
     const { calendarView, focusDayYmd } = viewState;
@@ -112,8 +124,8 @@ export function useTimesheetWeekCalendar({
     const openedEntryKeyRef = useRef<string | null>(null);
 
     useEffect(() => {
-        setViewState(readViewState(weekStart, pageUrl));
-    }, [weekStart, pageUrl]);
+        setViewState(readViewState(weekStart, pageUrl, isMobileViewport));
+    }, [weekStart, pageUrl, isMobileViewport]);
 
     const visibleDays = useMemo(
         () => calendarDaysForView(weekStart, calendarView, focusDayYmd),

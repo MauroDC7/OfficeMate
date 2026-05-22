@@ -113,7 +113,7 @@ function AlertConfirmDialog({
 
     return (
         <div
-            className="fixed inset-0 z-[10050] flex items-center justify-center bg-gray-900/40 p-4"
+            className="fixed inset-0 z-[10050] flex items-end justify-center bg-gray-900/40 p-3 sm:items-center sm:p-4"
             role="presentation"
             onClick={onCancel}
         >
@@ -136,11 +136,11 @@ function AlertConfirmDialog({
                 >
                     {input.message}
                 </p>
-                <div className="mt-5 flex justify-end gap-2">
+                <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:py-2"
                     >
                         {input.cancelLabel ?? 'Annuleren'}
                     </button>
@@ -148,7 +148,7 @@ function AlertConfirmDialog({
                         type="button"
                         onClick={onConfirm}
                         className={cn(
-                            'rounded-lg px-4 py-2 text-sm font-semibold text-white',
+                            'rounded-lg px-4 py-2.5 text-sm font-semibold text-white sm:py-2',
                             isDanger
                                 ? 'bg-red-600 hover:bg-red-700'
                                 : 'bg-gray-900 hover:bg-gray-800',
@@ -228,7 +228,7 @@ export function AlertProvider({ children }: PropsWithChildren) {
             {children}
             {toasts.length > 0 ? (
                 <div
-                    className="pointer-events-none fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2"
+                    className="pointer-events-none fixed inset-x-3 bottom-3 z-[60] flex flex-col gap-2 sm:inset-x-auto sm:top-4 sm:right-4 sm:bottom-auto sm:w-full sm:max-w-sm"
                     aria-live="polite"
                 >
                     {toasts.map((item) => (

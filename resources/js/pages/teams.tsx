@@ -41,13 +41,19 @@ function TeamRowActions({
 }) {
     const { confirm } = useAlert();
 
+    const buttonBase =
+        'rounded-md px-3 py-1.5 text-sm font-medium sm:px-2.5 sm:py-1 sm:text-xs';
+
     if (isAdmin) {
         return (
             <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <button
                     type="button"
                     onClick={onEdit}
-                    className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                    className={cn(
+                        buttonBase,
+                        'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50',
+                    )}
                 >
                     Bewerken
                 </button>
@@ -68,7 +74,10 @@ function TeamRowActions({
                             onSuccess: onDeleted,
                         });
                     }}
-                    className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                    className={cn(
+                        buttonBase,
+                        'border border-red-200 bg-white text-red-700 hover:bg-red-50',
+                    )}
                 >
                     Verwijderen
                 </button>
@@ -95,7 +104,10 @@ function TeamRowActions({
                         onSuccess: onLeft,
                     });
                 }}
-                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                className={cn(
+                    buttonBase,
+                    'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50',
+                )}
             >
                 Verlaten
             </button>
@@ -116,7 +128,10 @@ function TeamRowActions({
                     onSuccess: onJoined,
                 })
             }
-            className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-semibold text-white hover:bg-gray-800"
+            className={cn(
+                buttonBase,
+                'bg-gray-900 font-semibold text-white hover:bg-gray-800',
+            )}
         >
             Aanvragen
         </button>
@@ -247,7 +262,7 @@ export default function Teams() {
                                                     },
                                                 )
                                             }
-                                            className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                                            className="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 sm:flex-none sm:py-1.5 sm:text-xs"
                                         >
                                             Goedkeuren
                                         </button>
@@ -263,7 +278,7 @@ export default function Teams() {
                                                     },
                                                 )
                                             }
-                                            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                            className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:flex-none sm:py-1.5 sm:text-xs"
                                         >
                                             Afwijzen
                                         </button>
@@ -408,7 +423,7 @@ export default function Teams() {
                                                             <button
                                                                 type="submit"
                                                                 disabled={processing}
-                                                                className="rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white"
+                                                                className="flex-1 rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white sm:flex-none sm:py-1.5 sm:text-xs"
                                                             >
                                                                 Opslaan
                                                             </button>
@@ -417,7 +432,7 @@ export default function Teams() {
                                                                 onClick={() =>
                                                                     setEditingTeamId(null)
                                                                 }
-                                                                className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium"
+                                                                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium sm:flex-none sm:py-1.5 sm:text-xs"
                                                             >
                                                                 Annuleren
                                                             </button>

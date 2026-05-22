@@ -60,7 +60,7 @@ export function TimesheetFormPopup({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/40 p-4 sm:items-center"
+            className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/40 p-3 sm:items-center sm:p-4"
             role="presentation"
             onClick={onClose}
         >
@@ -68,7 +68,7 @@ export function TimesheetFormPopup({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="timesheet-modal-title"
-                className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-xl"
+                className="max-h-[90svh] w-full max-w-md overflow-y-auto rounded-xl border border-gray-200 bg-white p-4 shadow-xl sm:p-5"
                 onClick={(e) => e.stopPropagation()}
             >
                 <h3

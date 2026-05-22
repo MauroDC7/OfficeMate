@@ -7,7 +7,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 
 /**
- * Builds work blocks from OfficeMate Tracker rows in desktop_activities.
+ * Builds work blocks from TimeTraq Tracker rows in desktop_activities.
  */
 final class DesktopActivityWorkBlockLoader
 {

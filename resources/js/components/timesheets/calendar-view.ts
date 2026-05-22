@@ -13,14 +13,14 @@ export const CALENDAR_VIEW_LABELS: Record<CalendarView, string> = {
 };
 
 export function parseCalendarQueryFromUrl(pageUrl: string): {
-    calendarView: CalendarView;
+    calendarView: CalendarView | null;
     focusDay: string | null;
 } {
     const { searchParams } = new URL(pageUrl, 'http://localhost');
     const viewParam = searchParams.get('view');
 
     return {
-        calendarView: isCalendarView(viewParam) ? viewParam : 'workweek',
+        calendarView: isCalendarView(viewParam) ? viewParam : null,
         focusDay: searchParams.get('day'),
     };
 }

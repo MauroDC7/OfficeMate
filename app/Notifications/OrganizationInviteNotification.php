@@ -31,7 +31,7 @@ class OrganizationInviteNotification extends Notification
 
         return (new MailMessage)
             ->subject('Uitnodiging voor '.$organizationName)
-            ->line('Je bent uitgenodigd om deel te nemen aan '.$organizationName.' in OfficeMate.')
+            ->line('Je bent uitgenodigd om deel te nemen aan '.$organizationName.' in TimeTraq.')
             ->action('Uitnodiging accepteren', $url)
             ->line('Deze link is 7 dagen geldig.')
             ->line('Als je deze uitnodiging niet verwachtte, kun je deze e-mail negeren.');

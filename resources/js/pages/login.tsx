@@ -14,7 +14,7 @@ export default function Login() {
                 title="We zijn blij je terug te zien!"
                 subtitle="Log in met je account om verder te gaan."
             >
-                <div className="px-8 pt-8 pb-9">
+                <div className="px-5 pt-6 pb-7 sm:px-8 sm:pt-8 sm:pb-9">
                     <Form action="/login" method="post">
                         {({ errors, processing }) => (
                             <div className="space-y-6">

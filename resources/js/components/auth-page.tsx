@@ -85,15 +85,26 @@ type AuthPageProps = {
 
 export function AuthPage({ title, subtitle, children }: AuthPageProps): ReactNode {
     return (
-        <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 px-4 py-16">
+        <div className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 px-4 py-8 sm:py-16">
             <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(220,38,38,0.06),transparent)]"
             />
 
             <div className="relative w-full max-w-[400px]">
-                <header className="mb-10 text-center">
-                    <h1 className="text-2xl font-semibold tracking-tight text-gray-900">{title}</h1>
+                <header className="mb-6 flex flex-col items-center text-center sm:mb-10">
+                    <img
+                        src="/img/Logo.png"
+                        alt="TimeTraq"
+                        className="mb-4 size-14 object-contain sm:size-16"
+                        width={64}
+                        height={64}
+                        decoding="async"
+                        draggable={false}
+                    />
+                    <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">
+                        {title}
+                    </h1>
                     <p className="mt-2 text-sm leading-relaxed text-gray-500">{subtitle}</p>
                 </header>
 

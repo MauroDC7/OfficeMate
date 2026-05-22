@@ -17,7 +17,7 @@ use RuntimeException;
  * Turns desktop tracker work blocks into Dutch timesheet proposals via OpenAI.
  *
  * Bron-prioriteit:
- *  1. `desktop_activities` van deze user (OfficeMate Tracker)
+ *  1. `desktop_activities` van deze user (TimeTraq Tracker)
  *  2. Lokale ActivityWatch JSON-export (fallback voor wanneer er nog geen
  *     tracker-data binnenkomt op deze machine)
  *

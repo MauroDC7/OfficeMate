@@ -205,7 +205,7 @@ export default function AdminDashboard() {
                                                         },
                                                     )
                                                 }
-                                                className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                                                className="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 sm:flex-none sm:py-1.5 sm:text-xs"
                                             >
                                                 Goedkeuren
                                             </button>
@@ -227,7 +227,7 @@ export default function AdminDashboard() {
                                                         },
                                                     )
                                                 }
-                                                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                                className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:flex-none sm:py-1.5 sm:text-xs"
                                             >
                                                 Afwijzen
                                             </button>

@@ -176,7 +176,7 @@ export default function Settings() {
                                                     name="remove_avatar"
                                                     value="1"
                                                     disabled={processing}
-                                                    className="text-sm font-medium text-red-600 underline decoration-red-600/30 underline-offset-2 transition hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    className="-mx-2 inline-flex items-center rounded-md px-2 py-2 text-sm font-medium text-red-600 underline decoration-red-600/30 underline-offset-2 transition hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                                                 >
                                                     Profielfoto verwijderen
                                                 </button>

@@ -25,14 +25,14 @@ export default function Register() {
         <>
             <Head title="Registreren" />
             <AuthPage
-                title={fromInvite ? 'Uitnodiging accepteren' : 'Welkom bij OfficeMate'}
+                title={fromInvite ? 'Uitnodiging accepteren' : 'Welkom bij TimeTraq'}
                 subtitle={
                     fromInvite
                         ? 'Maak je account aan om deel te nemen aan het bedrijf.'
                         : 'Maak een account om te beginnen.'
                 }
             >
-                <div className="px-8 pt-8 pb-9">
+                <div className="px-5 pt-6 pb-7 sm:px-8 sm:pt-8 sm:pb-9">
                     <Form action="/register" method="post">
                         {({ errors, processing }) => (
                             <div className="space-y-6">
