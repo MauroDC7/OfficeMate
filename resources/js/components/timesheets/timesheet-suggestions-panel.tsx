@@ -26,7 +26,6 @@ import type {
 const RELOAD_PROPS = ['recentActivity', 'entriesByDay', 'proposals'] as const;
 
 type TimesheetSuggestionsPanelProps = {
-    weekStart: string;
     proposals: TimesheetProposalPayload[];
     recentActivity: TimesheetActivityItem[];
     onNavigateToEntryEdit: (entryId: number, workedOnYmd: string) => void;
@@ -69,7 +68,6 @@ function slotLabel(workedOn: string, startMin: number, endMin: number): string {
 }
 
 export function TimesheetSuggestionsPanel({
-    weekStart,
     proposals,
     recentActivity,
     onNavigateToEntryEdit,
@@ -85,15 +83,16 @@ export function TimesheetSuggestionsPanel({
     const hasActivity = recentActivity.length > 0;
     const isEmpty = !hasProposals && !hasActivity;
 
-    function handleGenerate(scope: 'today' | 'week'): void {
-        const payload =
-            scope === 'today' ? { date: todayLocalYmd() } : { week: weekStart };
-
+    function handleGenerateToday(): void {
         setGenerating(true);
-        router.post(generateProposals.url(), payload, {
-            preserveScroll: true,
-            onFinish: () => setGenerating(false),
-        });
+        router.post(
+            generateProposals.url(),
+            { date: todayLocalYmd() },
+            {
+                preserveScroll: true,
+                onFinish: () => setGenerating(false),
+            },
+        );
     }
 
     function handleStartEdit(proposal: TimesheetProposalPayload): void {
@@ -243,21 +242,15 @@ export function TimesheetSuggestionsPanel({
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
                     <PrimaryButton
-                        onClick={() => handleGenerate('today')}
+                        onClick={handleGenerateToday}
                         disabled={generating}
                     >
                         {generating
                             ? 'Bezig met genereren…'
-                            : 'Genereer voor vandaag'}
+                            : hasProposals
+                              ? 'Vandaag opnieuw genereren'
+                              : 'Genereer voor vandaag'}
                     </PrimaryButton>
-                    <SecondaryButton
-                        onClick={() => handleGenerate('week')}
-                        disabled={generating}
-                    >
-                        {hasProposals
-                            ? 'Hele week opnieuw'
-                            : 'Genereer hele week'}
-                    </SecondaryButton>
                 </div>
             </header>
 

@@ -3,10 +3,10 @@ import { useEffect } from 'react';
 import { getEcho } from '@/lib/echo';
 
 /**
- * Subscribes to a private Reverb channel for the lifetime of the component
+ * Subscribes to a private broadcast channel for the lifetime of the component
  * and invokes `onEvent` with payloads for the given event name.
  *
- * - No-ops when Echo is not configured (e.g. missing VITE_REVERB_* vars).
+ * - No-ops when Echo is not configured (e.g. missing VITE_PUSHER_* / VITE_REVERB_* vars).
  * - Skips when `channel` is null (e.g. unauthenticated user).
  */
 export function usePrivateChannel<TPayload>(
