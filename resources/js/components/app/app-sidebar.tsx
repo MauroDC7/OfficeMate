@@ -85,7 +85,7 @@ export function AppSidebar({ isMobileOpen, onCloseMobile }: AppSidebarProps) {
                 <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-200/80 px-5 py-5 sm:py-6">
                     <div className="flex min-w-0 items-center gap-3">
                         <img
-                            src="/img/Logo.png"
+                            src="/img/logoTransparent.png"
                             alt=""
                             aria-hidden
                             className="size-9 shrink-0 object-contain"
