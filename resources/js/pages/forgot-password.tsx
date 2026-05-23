@@ -12,7 +12,7 @@ export default function ForgotPassword() {
                 title="Wachtwoord vergeten?"
                 subtitle="Vul je e-mailadres in. We sturen je een link om een nieuw wachtwoord in te stellen."
             >
-                <div className="px-8 pt-8 pb-9">
+                <div className="px-5 pt-6 pb-7 sm:px-8 sm:pt-8 sm:pb-9">
                     <Form action="/forgot-password" method="post">
                         {({ errors, processing }) => (
                             <div className="space-y-6">

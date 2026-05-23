@@ -11,7 +11,7 @@ export function DashboardNotificationsPanel({
     return (
         <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                <div>
+                <div className="min-w-0">
                     <h2 className="text-sm font-semibold text-gray-900">
                         Notificaties
                     </h2>
@@ -21,7 +21,7 @@ export function DashboardNotificationsPanel({
                 </div>
                 <button
                     type="button"
-                    className="inline-flex shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
+                    className="inline-flex w-full shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 sm:w-auto"
                 >
                     Alle notificaties
                 </button>
@@ -29,7 +29,7 @@ export function DashboardNotificationsPanel({
 
             {notifications.length === 0 ? (
                 <p className="px-4 py-8 text-center text-sm text-gray-500 sm:px-5">
-                    Meldingen uit OfficeMate verschijnen hier zodra ze
+                    Meldingen uit TimeTraq verschijnen hier zodra ze
                     beschikbaar zijn.
                 </p>
             ) : (

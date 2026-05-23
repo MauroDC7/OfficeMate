@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\TimesheetEntry;
 use App\Models\TimesheetEntryProposal;
 use App\Models\User;
+use App\Services\AdminDashboardStats;
 use App\Services\EmployeeDashboardStats;
 use App\Services\OrganizationContext;
 use App\Services\TimesheetEntryWindowTitlesResolver;
@@ -16,19 +17,25 @@ use Inertia\Response;
 
 final class AppPageController extends Controller
 {
-    public function dashboard(Request $request, EmployeeDashboardStats $dashboardStats): Response
-    {
+    public function dashboard(
+        Request $request,
+        EmployeeDashboardStats $employeeDashboardStats,
+        AdminDashboardStats $adminDashboardStats,
+        OrganizationContext $organizationContext,
+    ): Response {
         $user = $request->user();
+        abort_unless($user instanceof User, 401);
 
-        if ($user !== null && $user->role === UserRole::Admin) {
-            return Inertia::render('admin/dashboard');
+        if ($user->role === UserRole::Admin) {
+            $organization = $organizationContext->forUserOrFail($user);
+
+            return Inertia::render(
+                'admin/dashboard',
+                $adminDashboardStats->forOrganization($organization),
+            );
         }
 
-        if (! $user instanceof User) {
-            abort(401);
-        }
-
-        return Inertia::render('dashboard', $dashboardStats->forUser($user));
+        return Inertia::render('dashboard', $employeeDashboardStats->forUser($user));
     }
 
     public function timesheets(

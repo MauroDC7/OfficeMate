@@ -42,7 +42,7 @@ type DraftState = {
 };
 
 const ICON_BUTTON_CLASS =
-    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 disabled:opacity-40';
+    'inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 disabled:opacity-40 sm:size-8';
 
 function draftFrom(proposal: TimesheetProposalPayload): DraftState {
     return {
@@ -426,7 +426,7 @@ function ActivityRow({ item, onEdit, onDelete }: ActivityRowProps) {
                     <img
                         src="/img/Edit Icon 48.png"
                         alt=""
-                        className="h-3.5 w-3.5"
+                        className="size-4 sm:size-3.5"
                     />
                 </button>
                 <button
@@ -439,7 +439,7 @@ function ActivityRow({ item, onEdit, onDelete }: ActivityRowProps) {
                     aria-label="Verwijderen"
                     onClick={() => onDelete(item.id)}
                 >
-                    <IconTrash className="h-3.5 w-3.5" />
+                    <IconTrash className="size-4 sm:size-3.5" />
                 </button>
             </div>
         </li>
@@ -593,6 +593,9 @@ function Field({
 const BASE_BUTTON =
     'inline-flex items-center justify-center rounded-md font-medium shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60';
 
+const COMPACT_SIZE = 'px-3 py-1.5 text-sm sm:px-2 sm:py-1 sm:text-xs';
+const DEFAULT_SIZE = 'px-3 py-2 text-sm';
+
 function ApproveButton({
     children,
     onClick,
@@ -613,7 +616,7 @@ function ApproveButton({
             disabled={disabled}
             className={cn(
                 BASE_BUTTON,
-                compact ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm',
+                compact ? COMPACT_SIZE : DEFAULT_SIZE,
                 'bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600',
             )}
         >
@@ -642,7 +645,7 @@ function PrimaryButton({
             disabled={disabled}
             className={cn(
                 BASE_BUTTON,
-                compact ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm',
+                compact ? COMPACT_SIZE : DEFAULT_SIZE,
                 'bg-gray-900 text-white hover:bg-gray-800 focus-visible:outline-gray-900',
             )}
         >
@@ -671,7 +674,7 @@ function DeleteButton({
             disabled={disabled}
             className={cn(
                 BASE_BUTTON,
-                compact ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm',
+                compact ? COMPACT_SIZE : DEFAULT_SIZE,
                 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:outline-red-600',
             )}
         >
@@ -700,7 +703,7 @@ function SecondaryButton({
             disabled={disabled}
             className={cn(
                 BASE_BUTTON,
-                compact ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm',
+                compact ? COMPACT_SIZE : DEFAULT_SIZE,
                 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-gray-900',
             )}
         >

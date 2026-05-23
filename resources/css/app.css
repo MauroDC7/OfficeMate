@@ -9,3 +9,26 @@
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 }
+
+@layer base {
+    html {
+        /* iOS Safari otherwise zooms in when a form field with text < 16px
+           receives focus. Forcing 16px on phones avoids the jump while
+           letting larger viewports keep the denser 14px design. */
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+    }
+
+    @media (max-width: 767px) {
+        input:not([type='checkbox']):not([type='radio']),
+        select,
+        textarea {
+            font-size: 16px;
+        }
+    }
+
+    button {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+}

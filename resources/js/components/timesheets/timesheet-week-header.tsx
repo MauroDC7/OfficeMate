@@ -96,7 +96,7 @@ function CalendarViewToggle({
         <div
             role="group"
             aria-label="Kalenderweergave"
-            className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5"
+            className="hidden rounded-lg border border-gray-200 bg-gray-50 p-0.5 md:inline-flex"
         >
             {CALENDAR_VIEWS.map((view) => (
                 <button
