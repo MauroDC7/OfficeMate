@@ -45,7 +45,7 @@ it('creates fallback proposals with status unconfigured when OPENAI_API_KEY is m
     ]);
 
     $result = app(TimesheetProposalGenerator::class)
-        ->generateForWeek($user, CarbonImmutable::parse('2026-05-11'));
+        ->generateForDay($user, CarbonImmutable::parse('2026-05-11'));
 
     expect($result['status'])->toBe('unconfigured')
         ->and($result['proposals'])->toHaveCount(1);
@@ -55,12 +55,12 @@ it('reports no_activity when there are no work blocks', function () {
     Config::set('services.openai.key', 'sk-test');
 
     $result = app(TimesheetProposalGenerator::class)
-        ->generateForWeek(User::factory()->create(), CarbonImmutable::parse('2026-05-11'));
+        ->generateForDay(User::factory()->create(), CarbonImmutable::parse('2026-05-11'));
 
     expect($result['status'])->toBe('no_activity');
 });
 
-it('persists OpenAI proposals, drops weekend/overlapping rows, and replaces previous proposals for the week', function () {
+it('persists OpenAI proposals, drops weekend/overlapping rows, and replaces previous proposals for the day', function () {
     Config::set('services.openai.key', 'sk-test');
     Config::set('services.openai.model', 'gpt-4o-mini');
 
@@ -117,7 +117,7 @@ it('persists OpenAI proposals, drops weekend/overlapping rows, and replaces prev
     ]);
 
     $result = app(TimesheetProposalGenerator::class)
-        ->generateForWeek($user, CarbonImmutable::parse('2026-05-11'));
+        ->generateForDay($user, CarbonImmutable::parse('2026-05-11'));
 
     expect($result['status'])->toBe('ready')
         ->and($result['proposals'])->toHaveCount(1)
@@ -128,7 +128,54 @@ it('persists OpenAI proposals, drops weekend/overlapping rows, and replaces prev
     Http::assertSent(function (Request $request) {
         return $request->url() === 'https://api.openai.com/v1/chat/completions'
             && $request['model'] === 'gpt-4o-mini'
-            && $request['response_format']['type'] === 'json_object';
+            && $request['response_format']['type'] === 'json_object'
+            && $request['max_tokens'] === 1500;
+    });
+});
+
+it('caps the amount of work blocks sent to OpenAI to keep prompts small', function () {
+    Config::set('services.openai.key', 'sk-test');
+    Config::set('services.openai.model', 'gpt-4o-mini');
+
+    $user = User::factory()->create();
+
+    // 70 losse werkblokken op één dag: blokken van 3 min met 11 min gap.
+    // De coalescer mergt bij ≤ 10 min gap en dropt blokken < 2 min, dus
+    // we krijgen netjes 70 aparte blokken. Cap zou er 60 doorlaten.
+    for ($i = 0; $i < 70; $i++) {
+        $start = CarbonImmutable::parse('2026-05-11 00:00:00')->addMinutes($i * 14);
+        $end = $start->addMinutes(3);
+
+        DesktopActivity::factory()->for($user)->create([
+            'app_name' => 'Cursor',
+            'window_title' => 'Block '.$i,
+            'started_at' => $start->toDateTimeString(),
+            'ended_at' => $end->toDateTimeString(),
+            'duration_seconds' => 180,
+        ]);
+    }
+
+    Http::fake([
+        'api.openai.com/v1/chat/completions' => Http::response([
+            'choices' => [[
+                'message' => [
+                    'content' => json_encode(['proposals' => []]),
+                ],
+            ]],
+        ]),
+    ]);
+
+    app(TimesheetProposalGenerator::class)
+        ->generateForDay($user, CarbonImmutable::parse('2026-05-11'));
+
+    Http::assertSent(function (Request $request) {
+        $messages = $request['messages'] ?? [];
+        $userContent = $messages[1]['content'] ?? '{}';
+        $payload = json_decode($userContent, true);
+
+        return is_array($payload)
+            && isset($payload['blocks'])
+            && count($payload['blocks']) === 60;
     });
 });
 
@@ -150,7 +197,7 @@ it('creates fallback proposals with status error when OpenAI fails', function ()
     ]);
 
     $result = app(TimesheetProposalGenerator::class)
-        ->generateForWeek($user, CarbonImmutable::parse('2026-05-11'));
+        ->generateForDay($user, CarbonImmutable::parse('2026-05-11'));
 
     expect($result['status'])->toBe('error')
         ->and($result['proposals'])->toHaveCount(1);
@@ -176,7 +223,7 @@ it('falls back to ActivityWatch export when no desktop activity rows exist', fun
     $user = User::factory()->create();
 
     $result = app(TimesheetProposalGenerator::class)
-        ->generateForWeek($user, CarbonImmutable::parse('2026-05-11'));
+        ->generateForDay($user, CarbonImmutable::parse('2026-05-11'));
 
     expect($result['status'])->toBe('unconfigured')
         ->and($result['proposals'])->toHaveCount(1)

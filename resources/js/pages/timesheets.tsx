@@ -81,7 +81,6 @@ export default function Timesheets() {
 
                 <div className="mt-5 flex w-full min-w-0 flex-col gap-5 sm:mt-6 lg:mt-7">
                     <TimesheetSuggestionsPanel
-                        weekStart={weekStart}
                         proposals={proposals}
                         recentActivity={recentActivity}
                         onNavigateToEntryEdit={onNavigateToEntryEdit}

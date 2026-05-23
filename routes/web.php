@@ -25,7 +25,9 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/timesheets/entries', [TimesheetEntryController::class, 'store'])->name('timesheets.entries.store');
     Route::patch('/timesheets/entries/{timesheet_entry}', [TimesheetEntryController::class, 'update'])->name('timesheets.entries.update');
     Route::delete('/timesheets/entries/{timesheet_entry}', [TimesheetEntryController::class, 'destroy'])->name('timesheets.entries.destroy');
-    Route::post('/timesheets/proposals', [TimesheetEntryProposalController::class, 'store'])->name('timesheets.proposals.store');
+    Route::post('/timesheets/proposals', [TimesheetEntryProposalController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('timesheets.proposals.store');
     Route::patch('/timesheets/proposals/{timesheet_entry_proposal}', [TimesheetEntryProposalController::class, 'update'])->name('timesheets.proposals.update');
     Route::post('/timesheets/proposals/{timesheet_entry_proposal}/approve', [TimesheetEntryProposalController::class, 'approve'])->name('timesheets.proposals.approve');
     Route::delete('/timesheets/proposals/{timesheet_entry_proposal}', [TimesheetEntryProposalController::class, 'destroy'])->name('timesheets.proposals.destroy');
