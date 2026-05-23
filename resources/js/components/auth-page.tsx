@@ -94,7 +94,7 @@ export function AuthPage({ title, subtitle, children }: AuthPageProps): ReactNod
             <div className="relative w-full max-w-[400px]">
                 <header className="mb-6 flex flex-col items-center text-center sm:mb-10">
                     <img
-                        src="/img/Logo.png"
+                        src="/img/logoTransparent.png"
                         alt="TimeTraq"
                         className="mb-4 size-14 object-contain sm:size-16"
                         width={64}
