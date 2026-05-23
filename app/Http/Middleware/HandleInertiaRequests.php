@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserRole;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -40,6 +42,14 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'isAdmin' => $request->user() instanceof User
+                    && $request->user()->role === UserRole::Admin,
+            ],
+            'flash' => [
+                'authError' => fn () => $request->session()->get('authError'),
+                'status' => fn () => $request->session()->get('status'),
+                'proposalsStatus' => fn () => $request->session()->get('proposalsStatus'),
+                'proposalsMessage' => fn () => $request->session()->get('proposalsMessage'),
             ],
         ];
     }
