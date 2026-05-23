@@ -21,10 +21,13 @@ final class TimesheetEntryProposalController extends Controller
     ) {}
 
     /**
-     * Generate fresh proposals. Pass `date` for a single day, `week` for a
-     * Monday-to-Friday range, otherwise we default to today.
+     * Generate fresh proposals for a single day (default: today).
      *
-     * Existing proposals in the selected range are replaced atomically.
+     * We bewust beperkt tot één dag: dat houdt de OpenAI-call licht (kleinere
+     * prompt, kortere wachttijd, lagere kosten) en past binnen de standaard
+     * PHP-execution-time op shared hosting.
+     *
+     * Bestaande voorstellen op die dag worden in één transactie vervangen.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -33,21 +36,14 @@ final class TimesheetEntryProposalController extends Controller
 
         $validated = $request->validate([
             'date' => ['nullable', 'date'],
-            'week' => ['nullable', 'date'],
         ]);
 
-        if (! empty($validated['date'])) {
-            $day = CarbonImmutable::parse($validated['date']);
-            $result = $this->generator->generateForDay($user, $day);
-            $weekMonday = $day->startOfWeek(CarbonImmutable::MONDAY);
-        } else {
-            $weekMonday = (! empty($validated['week'])
-                ? CarbonImmutable::parse($validated['week'])
-                : CarbonImmutable::now()
-            )->startOfWeek(CarbonImmutable::MONDAY);
+        $day = ! empty($validated['date'])
+            ? CarbonImmutable::parse($validated['date'])
+            : CarbonImmutable::now();
 
-            $result = $this->generator->generateForWeek($user, $weekMonday);
-        }
+        $result = $this->generator->generateForDay($user, $day);
+        $weekMonday = $day->startOfWeek(CarbonImmutable::MONDAY);
 
         return redirect()
             ->route('timesheets', ['week' => $weekMonday->toDateString()])

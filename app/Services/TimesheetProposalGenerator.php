@@ -33,29 +33,22 @@ use RuntimeException;
  */
 final class TimesheetProposalGenerator
 {
+    /**
+     * Bovengrens aan werkblokken die naar OpenAI gaan in één call.
+     * Houdt prompt-grootte, kosten en latency onder controle.
+     */
+    private const int MAX_BLOCKS_PER_CALL = 60;
+
+    /**
+     * Bovengrens op het antwoord van OpenAI. Ruim genoeg voor één werkdag
+     * (max ~10 voorstellen), maar voorkomt token-explosies.
+     */
+    private const int OPENAI_MAX_TOKENS = 1500;
+
     public function __construct(
         private readonly DesktopActivityWorkBlockLoader $desktopLoader,
         private readonly ActivityWatchExportLoader $exportLoader,
     ) {}
-
-    /**
-     * @return array{
-     *     status: 'ready'|'unconfigured'|'no_activity'|'error',
-     *     proposals: list<TimesheetEntryProposal>,
-     *     message: string|null
-     * }
-     */
-    public function generateForWeek(User $user, CarbonImmutable $weekMonday): array
-    {
-        $rangeEnd = $weekMonday->addDays(6);
-
-        return $this->generateForRange(
-            $user,
-            $weekMonday,
-            $rangeEnd,
-            $this->loadBlocksForRange($user, $weekMonday, $rangeEnd),
-        );
-    }
 
     /**
      * @return array{
@@ -70,7 +63,7 @@ final class TimesheetProposalGenerator
             $user,
             $day,
             $day,
-            $this->loadBlocksForRange($user, $day, $day),
+            $this->loadBlocksForDay($user, $day),
         );
     }
 
@@ -79,15 +72,15 @@ final class TimesheetProposalGenerator
      *
      * @return list<array<string, mixed>>
      */
-    private function loadBlocksForRange(User $user, CarbonImmutable $rangeStart, CarbonImmutable $rangeEnd): array
+    private function loadBlocksForDay(User $user, CarbonImmutable $day): array
     {
-        $blocks = $this->desktopLoader->loadWorkBlocksForRange($user, $rangeStart, $rangeEnd);
+        $blocks = $this->desktopLoader->loadWorkBlocksForRange($user, $day, $day);
 
         if ($blocks !== []) {
             return $blocks;
         }
 
-        return $this->exportLoader->loadWorkBlocksForRange($rangeStart, $rangeEnd);
+        return $this->exportLoader->loadWorkBlocksForRange($day, $day);
     }
 
     /**
@@ -197,6 +190,8 @@ final class TimesheetProposalGenerator
         CarbonImmutable $rangeEnd,
         array $blocks,
     ): array {
+        $cappedBlocks = array_slice($blocks, 0, self::MAX_BLOCKS_PER_CALL);
+
         $userPayload = [
             'range_start' => $rangeStart->toDateString(),
             'range_end' => $rangeEnd->toDateString(),
@@ -208,7 +203,7 @@ final class TimesheetProposalGenerator
                     'duration_minutes' => $block['duration_minutes'],
                     'applications' => $block['applications'],
                 ],
-                $blocks,
+                $cappedBlocks,
             ),
         ];
 
@@ -216,6 +211,7 @@ final class TimesheetProposalGenerator
             ->post('/chat/completions', [
                 'model' => config('services.openai.model'),
                 'temperature' => 0.2,
+                'max_tokens' => self::OPENAI_MAX_TOKENS,
                 'response_format' => ['type' => 'json_object'],
                 'messages' => [
                     [
