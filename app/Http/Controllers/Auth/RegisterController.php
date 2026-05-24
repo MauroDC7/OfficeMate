@@ -61,6 +61,8 @@ class RegisterController extends Controller
                 : UserRole::from((string) $request->input('role')),
         ]);
 
+        $user->sendEmailVerificationNotification();
+
         Auth::login($user);
 
         $request->session()->regenerate();
@@ -71,13 +73,11 @@ class RegisterController extends Controller
 
             $this->organizationInviteService->accept($user, $token);
             $request->session()->forget('organization_invite_token');
-
-            return redirect()
-                ->route('dashboard')
-                ->with('status', 'Welkom! Je bent toegevoegd aan de organisatie.');
         }
 
-        return redirect()->route('dashboard');
+        return redirect()
+            ->route('verification.notice')
+            ->with('status', 'Welkom! Bevestig je e-mailadres via de link in je inbox om je account te activeren.');
     }
 
     private function inviteFromSession(Request $request): ?OrganizationInvite
