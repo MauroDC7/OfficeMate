@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\OrganizationInviteAcceptController;
 use App\Http\Controllers\Settings\AccountSettingsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
@@ -17,7 +18,21 @@ use App\Http\Controllers\TimesheetEntryProposalController;
 use App\Http\Controllers\TimesheetTrackerWindowTitlesController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/email/verify', [VerifyEmailController::class, 'notice'])->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('verification.verify');
+
 Route::middleware('auth')->group(function (): void {
+    Route::post('/email/verification-notification', [VerifyEmailController::class, 'resend'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+
+    Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+});
+
+Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/', [AppPageController::class, 'dashboard'])->name('dashboard');
     Route::get('/timesheets', [AppPageController::class, 'timesheets'])->name('timesheets');
     Route::get('/timesheets/tracker-window-titles', TimesheetTrackerWindowTitlesController::class)
@@ -56,8 +71,6 @@ Route::middleware('auth')->group(function (): void {
         ->name('team-memberships.reject');
     Route::delete('/team-memberships/{team_membership}', [TeamMembershipController::class, 'destroy'])
         ->name('team-memberships.destroy');
-
-    Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });
 
 Route::get('/uitnodiging/{token}', OrganizationInviteAcceptController::class)

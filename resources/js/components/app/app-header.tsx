@@ -44,24 +44,6 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
             </div>
 
             <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-                <button
-                    type="button"
-                    className="relative inline-flex size-10 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
-                    title="Meldingen"
-                    aria-label="Meldingen"
-                >
-                    <img
-                        src="/img/Notification Icon 24.png"
-                        alt=""
-                        className="size-6 shrink-0 object-contain"
-                        width={24}
-                        height={24}
-                        decoding="async"
-                        draggable={false}
-                    />
-                    <span className="absolute end-1.5 top-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white" />
-                </button>
-
                 <Link
                     href={settings.url()}
                     className="rounded-full transition hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
