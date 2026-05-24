@@ -19,7 +19,7 @@ it('registers a user with a valid password', function (): void {
         'password_confirmation' => 'WelkomOffice9!',
         'role' => 'employee',
     ])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('verification.notice'));
 
     $this->assertAuthenticated();
 
