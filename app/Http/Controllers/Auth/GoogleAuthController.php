@@ -56,7 +56,10 @@ final class GoogleAuthController extends Controller
             $user = User::query()->where('email', $email)->first();
 
             if ($user !== null) {
-                $user->update(['google_id' => $googleId]);
+                $user->update([
+                    'google_id' => $googleId,
+                    'email_verified_at' => $user->email_verified_at ?? now(),
+                ]);
             }
         }
 
@@ -72,6 +75,10 @@ final class GoogleAuthController extends Controller
                 'role' => UserRole::Employee,
                 'email_verified_at' => now(),
             ]);
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            $user->forceFill(['email_verified_at' => now()])->save();
         }
 
         Auth::login($user, remember: true);

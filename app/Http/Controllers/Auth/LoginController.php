@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\OrganizationInviteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,9 +36,17 @@ class LoginController extends Controller
             ]);
         }
 
-        $request->session()->regenerate();
-
         $user = Auth::user();
+
+        if ($user instanceof User && ! $user->hasVerifiedEmail()) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Bevestig eerst je e-mailadres via de link in je welkomstmail.',
+            ]);
+        }
+
+        $request->session()->regenerate();
 
         if ($user !== null && $this->organizationInviteService->tryAcceptFromSession($user)) {
             return redirect()

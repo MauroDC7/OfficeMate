@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserRole;
 use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
 use Database\Factories\UserFactory;
+use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -21,10 +23,10 @@ use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['first_name', 'last_name', 'username', 'email', 'google_id', 'password', 'role', 'organization_id'])]
 #[Hidden(['password', 'remember_token', 'avatar_path'])]
-class User extends Authenticatable implements CanResetPasswordContract
+class User extends Authenticatable implements CanResetPasswordContract, MustVerifyEmailContract
 {
     /** @use HasFactory<UserFactory> */
-    use CanResetPassword, HasApiTokens, HasFactory, Notifiable;
+    use CanResetPassword, HasApiTokens, HasFactory, MustVerifyEmail, Notifiable;
 
     /**
      * @var list<string>
@@ -117,6 +119,11 @@ class User extends Authenticatable implements CanResetPasswordContract
     public function teamMemberships(): HasMany
     {
         return $this->hasMany(TeamMembership::class);
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification);
     }
 
     public function sendPasswordResetNotification($token): void
