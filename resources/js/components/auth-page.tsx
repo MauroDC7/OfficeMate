@@ -80,10 +80,11 @@ export function AuthField({
 type AuthPageProps = {
     title: string;
     subtitle: string;
+    headerExtra?: ReactNode;
     children: ReactNode;
 };
 
-export function AuthPage({ title, subtitle, children }: AuthPageProps): ReactNode {
+export function AuthPage({ title, subtitle, headerExtra, children }: AuthPageProps): ReactNode {
     return (
         <div className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 px-4 py-8 sm:py-16">
             <div
@@ -106,6 +107,9 @@ export function AuthPage({ title, subtitle, children }: AuthPageProps): ReactNod
                         {title}
                     </h1>
                     <p className="mt-2 text-sm leading-relaxed text-gray-500">{subtitle}</p>
+                    {headerExtra !== undefined ? (
+                        <div className="mt-3">{headerExtra}</div>
+                    ) : null}
                 </header>
 
                 <div className="rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/60 ring-1 ring-gray-950/5">

@@ -7,14 +7,14 @@ import { login } from '@/routes';
 
 type LegalDocumentLayoutProps = {
     title: string;
-    lastUpdated: string;
+    lastUpdated?: string | null;
     children: ReactNode;
     footer?: ReactNode;
 };
 
 export function LegalDocumentLayout({
     title,
-    lastUpdated,
+    lastUpdated = null,
     children,
     footer,
 }: LegalDocumentLayoutProps): ReactNode {
@@ -44,7 +44,11 @@ export function LegalDocumentLayout({
                     <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
                         {title}
                     </h1>
-                    <p className="mt-2 text-sm text-gray-500">Laatst bijgewerkt: {lastUpdated}</p>
+                    {lastUpdated !== null && lastUpdated !== '' ? (
+                        <p className="mt-2 text-sm text-gray-500">
+                            Laatst bijgewerkt: {lastUpdated}
+                        </p>
+                    ) : null}
                 </header>
 
                 <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/60 ring-1 ring-gray-950/5">

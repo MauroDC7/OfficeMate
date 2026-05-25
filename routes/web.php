@@ -77,6 +77,7 @@ Route::get('/uitnodiging/{token}', OrganizationInviteAcceptController::class)
     ->name('organization-invite.show');
 
 Route::get('/privacybeleid', [LegalController::class, 'privacy'])->name('privacy');
+Route::get('/over-timetraq', [LegalController::class, 'aboutTimeTraq'])->name('about');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
