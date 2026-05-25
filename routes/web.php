@@ -48,7 +48,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::delete('/timesheets/proposals/{timesheet_entry_proposal}', [TimesheetEntryProposalController::class, 'destroy'])->name('timesheets.proposals.destroy');
     Route::get('/projects', [AppPageController::class, 'projects'])->name('projects');
     Route::get('/leave-requests', [AppPageController::class, 'leaveRequests'])->name('leaveRequests');
-    Route::get('/shift-planning', [AppPageController::class, 'shiftPlanning'])->name('shiftPlanning');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
     Route::patch('/settings/organization/{organization}', OrganizationSettingsController::class)

@@ -7,7 +7,6 @@ import {
     leaveRequests,
     projects,
     settings,
-    shiftPlanning,
     teams,
     timesheets,
 } from '@/routes';
@@ -20,7 +19,6 @@ const links = [
     { label: 'Projects', route: projects, src: '/img/Folder Icon 24.png' },
     { label: 'Teams', route: teams, src: '/img/Work Icons Material Outlined.png' },
     { label: 'Leave requests', route: leaveRequests, src: '/img/Calendar Icons Material Outlined.png' },
-    { label: 'Shift planning', route: shiftPlanning, src: '/img/Work Icons Material Outlined.png' },
     { label: 'Settings', route: settings, src: '/img/Settings Icon 24.png' },
 ] as const;
 

@@ -153,11 +153,6 @@ final class AppPageController extends Controller
         return Inertia::render('leaveRequests');
     }
 
-    public function shiftPlanning(): Response
-    {
-        return Inertia::render('shiftPlanning');
-    }
-
     public function settings(Request $request, OrganizationContext $organizationContext): Response
     {
         $user = $request->user();
