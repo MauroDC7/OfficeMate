@@ -224,6 +224,7 @@ CREATE TABLE IF NOT EXISTS "users"(
   "avatar_path" varchar,
   "google_id" varchar,
   "organization_id" integer,
+  "privacy_policy_accepted_at" datetime,
   foreign key("organization_id") references "organizations"("id") on delete set null
 );
 CREATE UNIQUE INDEX "users_email_unique" on "users"("email");
@@ -287,3 +288,4 @@ INSERT INTO migrations VALUES(21,'2026_05_24_130410_add_approved_at_to_users_tab
 INSERT INTO migrations VALUES(22,'2026_05_24_140746_create_notifications_table',8);
 INSERT INTO migrations VALUES(23,'2026_05_24_150000_remove_approved_at_from_users_table',9);
 INSERT INTO migrations VALUES(24,'2026_05_25_195311_add_department_to_teams_table',10);
+INSERT INTO migrations VALUES(25,'2026_05_25_213951_add_privacy_policy_accepted_at_to_users_table',11);

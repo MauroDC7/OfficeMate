@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\OrganizationInviteAcceptController;
 use App\Http\Controllers\Settings\AccountSettingsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
@@ -75,6 +76,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 Route::get('/uitnodiging/{token}', OrganizationInviteAcceptController::class)
     ->name('organization-invite.show');
 
+Route::get('/privacybeleid', [LegalController::class, 'privacy'])->name('privacy');
+
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
@@ -91,7 +94,7 @@ Route::middleware('guest')->group(function (): void {
         ->name('password.update');
 
     Route::middleware('throttle:10,1')->group(function (): void {
-        Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])
+        Route::match(['get', 'post'], '/auth/google/redirect', [GoogleAuthController::class, 'redirect'])
             ->name('auth.google.redirect');
         Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])
             ->name('auth.google.callback');

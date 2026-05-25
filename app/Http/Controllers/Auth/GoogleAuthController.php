@@ -21,8 +21,15 @@ final class GoogleAuthController extends Controller
     /**
      * Stuur de gebruiker naar Google voor OAuth-toestemming.
      */
-    public function redirect(): RedirectResponse
+    public function redirect(Request $request): RedirectResponse
     {
+        if ($request->isMethod('post')) {
+            $request->validate([
+                'privacy_policy_accepted' => ['accepted'],
+            ]);
+            $request->session()->put('privacy_policy_accepted', true);
+        }
+
         return Socialite::driver('google')->redirect();
     }
 
@@ -64,6 +71,15 @@ final class GoogleAuthController extends Controller
         }
 
         if ($user === null) {
+            if (! $request->session()->pull('privacy_policy_accepted', false)) {
+                return redirect()
+                    ->route('register')
+                    ->with(
+                        'authError',
+                        'Je moet eerst akkoord gaan met het privacybeleid voordat je een account kunt aanmaken.',
+                    );
+            }
+
             [$firstName, $lastName] = $this->splitName($googleUser->getName() ?? $email);
 
             $user = User::create([
@@ -74,6 +90,7 @@ final class GoogleAuthController extends Controller
                 'password' => null,
                 'role' => UserRole::Employee,
                 'email_verified_at' => now(),
+                'privacy_policy_accepted_at' => now(),
             ]);
         }
 
