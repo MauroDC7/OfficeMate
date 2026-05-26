@@ -1,6 +1,7 @@
 import { TimesheetFormPopup } from '@/components/timesheets/timesheet-form-popup';
 import { TimesheetWeekBody } from '@/components/timesheets/timesheet-week-body';
 import { TimesheetWeekHeader } from '@/components/timesheets/timesheet-week-header';
+import { useTimesheetDisplayRange } from '@/components/timesheets/use-timesheet-display-range';
 import { useTimesheetWeekCalendar } from '@/components/timesheets/use-timesheet-week-calendar';
 import type { TimesheetWeekCalendarProps } from '@/components/timesheets/week-calendar-types';
 
@@ -8,6 +9,7 @@ export type { TimesheetWeekCalendarProps } from '@/components/timesheets/week-ca
 
 export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
     const calendar = useTimesheetWeekCalendar(props);
+    const displayRange = useTimesheetDisplayRange();
 
     return (
         <div className="space-y-4">
@@ -16,6 +18,10 @@ export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
                     rangeLabel={calendar.rangeLabel}
                     calendarView={calendar.calendarView}
                     focusDayYmd={calendar.focusDayYmd}
+                    startHour={displayRange.startHour}
+                    endHour={displayRange.endHour}
+                    onStartHourChange={displayRange.setStartHour}
+                    onEndHourChange={displayRange.setEndHour}
                     onPrev={calendar.navigatePrevious}
                     onNext={calendar.navigateNext}
                     onViewChange={calendar.setCalendarView}
@@ -26,6 +32,7 @@ export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
                 <TimesheetWeekBody
                     visibleDays={calendar.visibleDays}
                     entriesByDay={props.entriesByDay}
+                    gridDisplay={displayRange.gridDisplay}
                     onSlotClick={calendar.openModalForSlot}
                     onEntryClick={calendar.openModalForEntry}
                 />

@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @use HasFactory<TeamFactory>
  */
-#[Fillable(['organization_id', 'parent_id', 'name'])]
+#[Fillable(['organization_id', 'parent_id', 'name', 'department'])]
 class Team extends Model
 {
     /** @use HasFactory<TeamFactory> */

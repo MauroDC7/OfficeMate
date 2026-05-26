@@ -1,10 +1,5 @@
-import {
-    DISPLAY_DAY_END_MIN,
-    DISPLAY_DAY_START_MIN,
-    DISPLAY_HOUR_INDICES,
-    DISPLAY_MINUTES_SPAN,
-    SLOT_MINUTES,
-} from '@/components/timesheets/timesheet-grid-config';
+import { SLOT_MINUTES } from '@/components/timesheets/timesheet-grid-config';
+import type { TimesheetGridDisplay } from '@/components/timesheets/timesheet-grid-display';
 import {
     dayKey,
     formatMinutesRange,
@@ -21,6 +16,7 @@ type OneDayCalendarColumnProps = {
     entries: TimesheetEntryPayload[];
     timelineHeightPx: number;
     slotIndices: number[];
+    gridDisplay: TimesheetGridDisplay;
     showNowLine: boolean;
     nowTopPx: number;
     onSlotClick: (dayKey: string, startMin: number, endMin: number) => void;
@@ -32,6 +28,7 @@ export function OneDayCalendarColumn({
     entries,
     timelineHeightPx,
     slotIndices,
+    gridDisplay,
     showNowLine,
     nowTopPx,
     onSlotClick,
@@ -48,13 +45,13 @@ export function OneDayCalendarColumn({
             )}
             style={{ height: timelineHeightPx }}
         >
-            {DISPLAY_HOUR_INDICES.map((h) => {
+            {gridDisplay.hourIndices.map((h) => {
                 const startMin = h * 60;
-                const topHour = minutesToTimelineY(startMin, timelineHeightPx);
+                const topHour = minutesToTimelineY(startMin, timelineHeightPx, gridDisplay);
                 const halfMin = startMin + 30;
                 const topHalf =
-                    halfMin < DISPLAY_DAY_END_MIN
-                        ? minutesToTimelineY(halfMin, timelineHeightPx)
+                    halfMin < gridDisplay.dayEndMin
+                        ? minutesToTimelineY(halfMin, timelineHeightPx, gridDisplay)
                         : null;
 
                 return (
@@ -74,11 +71,11 @@ export function OneDayCalendarColumn({
             })}
 
             {slotIndices.map((i) => {
-                const startMin = DISPLAY_DAY_START_MIN + i * SLOT_MINUTES;
+                const startMin = gridDisplay.dayStartMin + i * SLOT_MINUTES;
                 const endMin = startMin + SLOT_MINUTES;
-                const top = minutesToTimelineY(startMin, timelineHeightPx);
+                const top = minutesToTimelineY(startMin, timelineHeightPx, gridDisplay);
                 const height =
-                    (SLOT_MINUTES / DISPLAY_MINUTES_SPAN) * timelineHeightPx;
+                    (SLOT_MINUTES / gridDisplay.minutesSpan) * timelineHeightPx;
 
                 return (
                     <button
@@ -100,15 +97,16 @@ export function OneDayCalendarColumn({
                 const seg = visibleEntrySegment(
                     entry.start_minutes,
                     entry.end_minutes,
+                    gridDisplay,
                 );
 
                 if (seg === null) {
                     return null;
                 }
 
-                const top = minutesToTimelineY(seg.visStart, timelineHeightPx);
+                const top = minutesToTimelineY(seg.visStart, timelineHeightPx, gridDisplay);
                 const height = Math.max(
-                    ((seg.visEnd - seg.visStart) / DISPLAY_MINUTES_SPAN) *
+                    ((seg.visEnd - seg.visStart) / gridDisplay.minutesSpan) *
                         timelineHeightPx,
                     20,
                 );

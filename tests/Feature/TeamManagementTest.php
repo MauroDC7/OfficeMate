@@ -12,6 +12,7 @@ it('shows teams page for employees with organization context', function () {
     $organization = Organization::factory()->create(['name' => 'Acme']);
     $employee = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
     $team = Team::factory()->for($organization)->create(['name' => 'Engineering']);
+    TeamMembership::factory()->for($team)->for($employee)->approved()->create();
 
     $this->actingAs($employee)
         ->get(route('teams'))
@@ -20,8 +21,34 @@ it('shows teams page for employees with organization context', function () {
             ->component('teams')
             ->where('organization.name', 'Acme')
             ->where('isAdmin', false)
-            ->has('teams', 1)
-            ->where('teams.0.name', 'Engineering'));
+            ->has('teamCards', 1)
+            ->where('teamCards.0.name', 'Engineering'));
+});
+
+it('hides teams from employees who are not members', function () {
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+    Team::factory()->for($organization)->create(['name' => 'Hidden Squad']);
+
+    $this->actingAs($employee)
+        ->get(route('teams'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('teamCards', 0));
+});
+
+it('shows all organization teams to admins', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->forOrganization($organization)->create(['role' => UserRole::Admin]);
+    Team::factory()->for($organization)->create(['name' => 'Alpha']);
+    Team::factory()->for($organization)->create(['name' => 'Beta']);
+
+    $this->actingAs($admin)
+        ->get(route('teams'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('isAdmin', true)
+            ->has('teamCards', 2));
 });
 
 it('prompts employees without organization to use settings', function () {
@@ -58,18 +85,28 @@ it('forbids employees from creating teams', function () {
         ->assertForbidden();
 });
 
-it('allows admins to create teams', function () {
+it('allows admins to create teams with members', function () {
     $admin = User::factory()->create(['role' => UserRole::Admin]);
     $organization = app(OrganizationContext::class)->forUser($admin);
+    $colleague = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
 
     $this->actingAs($admin)
-        ->post(route('teams.store'), ['name' => 'Sales'])
+        ->post(route('teams.store'), [
+            'name' => 'Sales',
+            'department' => 'Commercial',
+            'member_ids' => [$colleague->id],
+        ])
         ->assertRedirect(route('teams'));
 
-    $this->assertDatabaseHas('teams', [
-        'organization_id' => $organization->id,
-        'name' => 'Sales',
-        'parent_id' => null,
+    $team = Team::query()->where('name', 'Sales')->first();
+
+    expect($team)->not->toBeNull()
+        ->and($team->department)->toBe('Commercial');
+
+    $this->assertDatabaseHas('team_memberships', [
+        'team_id' => $team->id,
+        'user_id' => $colleague->id,
+        'status' => TeamMembershipStatus::Approved->value,
     ]);
 });
 

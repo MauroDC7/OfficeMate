@@ -40,6 +40,7 @@ class RegisterController extends Controller
             'last_name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
+            'privacy_policy_accepted' => ['accepted'],
             'role' => $invite !== null
                 ? ['nullable']
                 : ['required', 'string', Rule::enum(UserRole::class)],
@@ -56,6 +57,7 @@ class RegisterController extends Controller
             'last_name' => $validated['last_name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
+            'privacy_policy_accepted_at' => now(),
             'role' => $invite !== null
                 ? UserRole::Employee
                 : UserRole::from((string) $request->input('role')),

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Teams;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreTeamRequest extends FormRequest
 {
@@ -16,9 +17,19 @@ class StoreTeamRequest extends FormRequest
      */
     public function rules(): array
     {
+        $organizationId = $this->user()?->organization_id;
+
         return [
             'name' => ['required', 'string', 'max:255'],
-            'parent_id' => ['nullable', 'integer', 'exists:teams,id'],
+            'department' => ['nullable', 'string', 'max:255'],
+            'member_ids' => ['nullable', 'array'],
+            'member_ids.*' => [
+                'integer',
+                'distinct',
+                Rule::exists('users', 'id')->where(
+                    fn ($query) => $query->where('organization_id', $organizationId),
+                ),
+            ],
         ];
     }
 }

@@ -1,8 +1,9 @@
 import type { CalendarView } from '@/components/timesheets/calendar-view';
 import {
-    DISPLAY_DAY_END_MIN,
-    DISPLAY_DAY_START_MIN,
-    DISPLAY_MINUTES_SPAN,
+    DEFAULT_GRID_DISPLAY,
+    type TimesheetGridDisplay,
+} from '@/components/timesheets/timesheet-grid-display';
+import {
     MINUTES_IN_DAY,
     WEEKDAY_INDICES,
     WORKDAY_INDICES,
@@ -185,18 +186,20 @@ export function currentMinutesSinceMidnight(): number {
 export function minutesToTimelineY(
     minutesSinceMidnight: number,
     timelineHeightPx: number,
+    display: TimesheetGridDisplay = DEFAULT_GRID_DISPLAY,
 ): number {
-    const rel = Math.max(0, minutesSinceMidnight - DISPLAY_DAY_START_MIN);
+    const rel = Math.max(0, minutesSinceMidnight - display.dayStartMin);
 
-    return (rel / DISPLAY_MINUTES_SPAN) * timelineHeightPx;
+    return (rel / display.minutesSpan) * timelineHeightPx;
 }
 
 export function visibleEntrySegment(
     startMin: number,
     endMin: number,
+    display: TimesheetGridDisplay = DEFAULT_GRID_DISPLAY,
 ): { visStart: number; visEnd: number } | null {
-    const visStart = Math.max(startMin, DISPLAY_DAY_START_MIN);
-    const visEnd = Math.min(endMin, DISPLAY_DAY_END_MIN);
+    const visStart = Math.max(startMin, display.dayStartMin);
+    const visEnd = Math.min(endMin, display.dayEndMin);
 
     if (visEnd <= visStart) {
         return null;

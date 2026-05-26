@@ -3,6 +3,7 @@ import { Form, Head, Link } from '@inertiajs/react';
 import { AuthGoogleSection } from '@/components/auth-google';
 import { AuthField, AuthPage, authSubmitClassName } from '@/components/auth-page';
 import { cn } from '@/lib/utils';
+import { about } from '@/routes';
 
 const footerLinkClassName = 'font-medium text-red-600 hover:text-red-700';
 
@@ -11,8 +12,13 @@ export default function Login() {
         <>
             <Head title="Inloggen" />
             <AuthPage
-                title="We zijn blij je terug te zien!"
-                subtitle="Log in met je account om verder te gaan."
+                title="Hey! Welkom bij TimeTraq"
+                subtitle="Je centrale plek voor timesheets: uren registreren, voorstellen van de AI bekijken en je week netjes afsluiten. Log in en ga verder waar je gebleven was."
+                headerExtra={
+                    <Link href={about.url()} className={footerLinkClassName}>
+                        Meer te weten komen over TimeTraq?
+                    </Link>
+                }
             >
                 <div className="px-5 pt-6 pb-7 sm:px-8 sm:pt-8 sm:pb-9">
                     <Form action="/login" method="post">

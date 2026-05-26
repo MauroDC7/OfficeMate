@@ -21,7 +21,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['first_name', 'last_name', 'username', 'email', 'google_id', 'password', 'role', 'organization_id'])]
+#[Fillable(['first_name', 'last_name', 'username', 'email', 'google_id', 'password', 'role', 'organization_id', 'privacy_policy_accepted_at'])]
 #[Hidden(['password', 'remember_token', 'avatar_path'])]
 class User extends Authenticatable implements CanResetPasswordContract, MustVerifyEmailContract
 {
@@ -44,6 +44,7 @@ class User extends Authenticatable implements CanResetPasswordContract, MustVeri
     {
         return [
             'email_verified_at' => 'datetime',
+            'privacy_policy_accepted_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
         ];

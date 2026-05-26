@@ -9,6 +9,7 @@ import {
     formatDayTotal,
     isToday,
 } from '@/components/timesheets/timesheet-helpers';
+import { TimesheetDisplayHourSelects } from '@/components/timesheets/timesheet-display-hour-selects';
 import { cn } from '@/lib/utils';
 
 const NAV_BUTTON_CLASS =
@@ -18,6 +19,10 @@ type TimesheetWeekHeaderProps = {
     rangeLabel: string;
     calendarView: CalendarView;
     focusDayYmd: string;
+    startHour: string;
+    endHour: string;
+    onStartHourChange: (value: string) => void;
+    onEndHourChange: (value: string) => void;
     onPrev: () => void;
     onNext: () => void;
     onViewChange: (view: CalendarView) => void;
@@ -122,6 +127,10 @@ export function TimesheetWeekHeader({
     rangeLabel,
     calendarView,
     focusDayYmd,
+    startHour,
+    endHour,
+    onStartHourChange,
+    onEndHourChange,
     onPrev,
     onNext,
     onViewChange,
@@ -147,6 +156,12 @@ export function TimesheetWeekHeader({
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                    <TimesheetDisplayHourSelects
+                        startHour={startHour}
+                        endHour={endHour}
+                        onStartHourChange={onStartHourChange}
+                        onEndHourChange={onEndHourChange}
+                    />
                     <CalendarViewToggle
                         calendarView={calendarView}
                         onViewChange={onViewChange}
