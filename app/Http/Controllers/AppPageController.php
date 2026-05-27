@@ -153,17 +153,12 @@ final class AppPageController extends Controller
         return Inertia::render('leaveRequests');
     }
 
-    public function settings(Request $request, OrganizationContext $organizationContext): Response
+    public function settings(Request $request): Response
     {
         $user = $request->user();
         abort_unless($user instanceof User, 401);
 
-        $org = $organizationContext->forUser($user);
-
         return Inertia::render('settings', [
-            'organization' => $org !== null
-                ? ['id' => $org->id, 'name' => $org->name]
-                : null,
             'awaitingOrganizationInvite' => $user->role !== UserRole::Admin && $user->organization_id === null,
         ]);
     }

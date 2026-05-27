@@ -15,6 +15,8 @@ final class OrganizationSettingsController extends Controller
             'name' => $request->validated('name'),
         ]);
 
-        return redirect()->route('settings');
+        return redirect()
+            ->route('teams')
+            ->with('status', 'Organisatie opgeslagen.');
     }
 }

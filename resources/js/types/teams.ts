@@ -49,4 +49,5 @@ export type TeamsPageProps = {
     organizationUsers: OrganizationUserOption[];
     pendingMemberships: PendingMembershipRow[];
     isAdmin: boolean;
+    awaitingOrganizationInvite: boolean;
 };

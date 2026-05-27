@@ -40,6 +40,7 @@ final class TeamController extends Controller
                 'organizationUsers' => [],
                 'pendingMemberships' => [],
                 'isAdmin' => $isAdmin,
+                'awaitingOrganizationInvite' => $user->role !== UserRole::Admin && $user->organization_id === null,
             ]);
         }
 
@@ -69,6 +70,7 @@ final class TeamController extends Controller
                 : [],
             'pendingMemberships' => $pendingForApproval,
             'isAdmin' => $isAdmin,
+            'awaitingOrganizationInvite' => false,
         ]);
     }
 

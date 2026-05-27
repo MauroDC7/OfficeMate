@@ -177,16 +177,16 @@ it('shows pending memberships for admins on the teams page', function () {
             ->where('pendingMemberships.0.user.email', $employee->email));
 });
 
-it('allows admins to update organization name from settings', function () {
+it('allows admins to update organization name from teams', function () {
     $admin = User::factory()->create(['role' => UserRole::Admin]);
     $organization = Organization::factory()->create(['name' => 'Acme BV']);
     $admin->forceFill(['organization_id' => $organization->id])->save();
 
     $this->actingAs($admin)
-        ->patch(route('settings.organization.update', $organization), [
+        ->patch(route('teams.organization.update', $organization), [
             'name' => 'Acme International',
         ])
-        ->assertRedirect(route('settings'));
+        ->assertRedirect(route('teams'));
 
     expect($organization->fresh()->name)->toBe('Acme International');
 });
@@ -196,7 +196,7 @@ it('forbids employees from updating organization settings', function () {
     $organization = Organization::factory()->create();
 
     $this->actingAs($employee)
-        ->patch(route('settings.organization.update', $organization), [
+        ->patch(route('teams.organization.update', $organization), [
             'name' => 'Hacked Inc',
         ])
         ->assertForbidden();

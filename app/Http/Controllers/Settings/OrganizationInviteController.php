@@ -28,7 +28,7 @@ final class OrganizationInviteController extends Controller
         $this->organizationInviteService->send($organization, $user, $email);
 
         return redirect()
-            ->route('settings')
+            ->route('teams')
             ->with('status', 'Uitnodiging verstuurd naar '.$email.'.');
     }
 }

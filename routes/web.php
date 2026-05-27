@@ -51,14 +51,13 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/leave-requests', [AppPageController::class, 'leaveRequests'])->name('leaveRequests');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
-    Route::patch('/settings/organization/{organization}', OrganizationSettingsController::class)
-        ->middleware('admin')
-        ->name('settings.organization.update');
-    Route::post('/settings/organization-invites', [OrganizationInviteController::class, 'store'])
-        ->middleware(['admin', 'throttle:10,1'])
-        ->name('settings.organization-invites.store');
-
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
+    Route::patch('/teams/organization/{organization}', OrganizationSettingsController::class)
+        ->middleware('admin')
+        ->name('teams.organization.update');
+    Route::post('/teams/organization-invites', [OrganizationInviteController::class, 'store'])
+        ->middleware(['admin', 'throttle:10,1'])
+        ->name('teams.organization-invites.store');
     Route::post('/teams', [TeamController::class, 'store'])->middleware('admin')->name('teams.store');
     Route::patch('/teams/{team}', [TeamController::class, 'update'])->middleware('admin')->name('teams.update');
     Route::delete('/teams/{team}', [TeamController::class, 'destroy'])->middleware('admin')->name('teams.destroy');

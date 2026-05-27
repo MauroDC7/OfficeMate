@@ -19,10 +19,10 @@ it('calls the Slack webhook when an invite is sent and SLACK_INCOMING_WEBHOOK_UR
     app(OrganizationContext::class)->forUser($admin);
 
     $this->actingAs($admin)
-        ->post(route('settings.organization-invites.store'), [
+        ->post(route('teams.organization-invites.store'), [
             'email' => 'slack-invite@example.com',
         ])
-        ->assertRedirect(route('settings'))
+        ->assertRedirect(route('teams'))
         ->assertSessionHas('status');
 
     Http::assertSent(fn ($request): bool => str_contains($request->url(), 'hooks.slack.com')
