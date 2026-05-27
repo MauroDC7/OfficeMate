@@ -29,6 +29,11 @@ return [
     ],
 
     'slack' => [
+        'incoming_webhook_url' => env('SLACK_INCOMING_WEBHOOK_URL'),
+        'app_id' => env('SLACK_APP_ID'),
+        'client_id' => env('SLACK_CLIENT_ID'),
+        'client_secret' => env('SLACK_CLIENT_SECRET'),
+        'signing_secret' => env('SLACK_SIGNING_SECRET'),
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),

@@ -55,7 +55,8 @@ it('accepts an invite when a new user registers after opening the link', functio
         'email' => 'medewerker@example.com',
         'password' => 'Password123!',
         'password_confirmation' => 'Password123!',
-    ])->assertRedirect(route('dashboard'));
+        'privacy_policy_accepted' => '1',
+    ])->assertRedirect(route('verification.notice'));
 
     $user = User::query()->where('email', 'medewerker@example.com')->first();
 
