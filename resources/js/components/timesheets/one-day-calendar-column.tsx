@@ -6,6 +6,7 @@ import {
     isToday,
     minutesToTimeLabel,
     minutesToTimelineY,
+    timesheetProjectLabel,
     visibleEntrySegment,
 } from '@/components/timesheets/timesheet-helpers';
 import { cn } from '@/lib/utils';
@@ -139,12 +140,15 @@ export function OneDayCalendarColumn({
                                 {entry.description.trim()}
                             </p>
                         ) : null}
-                        {entry.client_name !== null &&
-                        entry.client_name !== '' ? (
-                            <p className="shrink-0 truncate text-[0.6rem] text-violet-800 sm:text-[0.65rem]">
-                                {entry.client_name}
-                            </p>
-                        ) : null}
+                        {(() => {
+                            const label = timesheetProjectLabel(entry);
+
+                            return label !== null ? (
+                                <p className="shrink-0 truncate text-[0.6rem] text-violet-800 sm:text-[0.65rem]">
+                                    {label}
+                                </p>
+                            ) : null;
+                        })()}
                         <p className="mt-auto shrink-0 text-[0.6rem] text-violet-700 tabular-nums sm:text-[0.65rem]">
                             {formatMinutesRange(
                                 entry.start_minutes,

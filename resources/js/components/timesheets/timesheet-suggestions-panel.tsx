@@ -3,12 +3,14 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { useAlert } from '@/components/alert';
+import { TimesheetProjectSelect } from '@/components/timesheets/timesheet-project-select';
 import {
     formatActivityDayLabel,
     formatMinutesRange,
     formatShortRelativeNl,
     minutesToTimeInput,
     parseTimeInputToMinutes,
+    timesheetProjectLabel,
 } from '@/components/timesheets/timesheet-helpers';
 import { cn } from '@/lib/utils';
 import { destroy as destroyEntry } from '@/routes/timesheets/entries';
@@ -20,6 +22,7 @@ import {
 } from '@/routes/timesheets/proposals';
 import type {
     TimesheetActivityItem,
+    TimesheetProjectOption,
     TimesheetProposalPayload,
 } from '@/types/timesheets';
 
@@ -28,13 +31,14 @@ const RELOAD_PROPS = ['recentActivity', 'entriesByDay', 'proposals'] as const;
 type TimesheetSuggestionsPanelProps = {
     proposals: TimesheetProposalPayload[];
     recentActivity: TimesheetActivityItem[];
+    projectOptions: TimesheetProjectOption[];
     onNavigateToEntryEdit: (entryId: number, workedOnYmd: string) => void;
 };
 
 type DraftState = {
     title: string;
     description: string;
-    client: string;
+    projectId: string;
     start: string;
     end: string;
     worked_on: string;
@@ -47,7 +51,8 @@ function draftFrom(proposal: TimesheetProposalPayload): DraftState {
     return {
         title: proposal.title,
         description: proposal.description ?? '',
-        client: proposal.client_name ?? '',
+        projectId:
+            proposal.project_id !== null ? String(proposal.project_id) : '',
         start: minutesToTimeInput(proposal.start_minutes),
         end: minutesToTimeInput(proposal.end_minutes),
         worked_on: proposal.worked_on,
@@ -70,6 +75,7 @@ function slotLabel(workedOn: string, startMin: number, endMin: number): string {
 export function TimesheetSuggestionsPanel({
     proposals,
     recentActivity,
+    projectOptions,
     onNavigateToEntryEdit,
 }: TimesheetSuggestionsPanelProps) {
     const { success, confirm } = useAlert();
@@ -157,8 +163,7 @@ export function TimesheetSuggestionsPanel({
                     draft.description.trim() === ''
                         ? null
                         : draft.description.trim(),
-                client_name:
-                    draft.client.trim() === '' ? null : draft.client.trim(),
+                project_id: draft.projectId === '' ? null : Number(draft.projectId),
                 worked_on: draft.worked_on,
                 start_minutes: startMinutes ?? 0,
                 end_minutes: endMinutes ?? 0,
@@ -274,6 +279,7 @@ export function TimesheetSuggestionsPanel({
                                     <ProposalEditForm
                                         draft={draft}
                                         errors={draftErrors}
+                                        projectOptions={projectOptions}
                                         submitting={busyId === proposal.id}
                                         onChange={handleDraftChange}
                                         onSave={() =>
@@ -356,8 +362,8 @@ function ProposalRow({
                         proposal.start_minutes,
                         proposal.end_minutes,
                     )}
-                    {proposal.client_name !== null
-                        ? ` · ${proposal.client_name}`
+                    {timesheetProjectLabel(proposal) !== null
+                        ? ` · ${timesheetProjectLabel(proposal)}`
                         : null}
                 </p>
                 {proposal.description !== null ? (
@@ -461,6 +467,7 @@ function IconTrash({ className }: { className?: string }) {
 type ProposalEditFormProps = {
     draft: DraftState;
     errors: Record<string, string>;
+    projectOptions: TimesheetProjectOption[];
     submitting: boolean;
     onChange: (field: keyof DraftState, value: string) => void;
     onSave: () => void;
@@ -470,6 +477,7 @@ type ProposalEditFormProps = {
 function ProposalEditForm({
     draft,
     errors,
+    projectOptions,
     submitting,
     onChange,
     onSave,
@@ -502,15 +510,14 @@ function ProposalEditForm({
                     className="w-full resize-y rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
                 />
             </Field>
-            <Field label="Klantnaam (optioneel)" error={errors.client_name}>
-                <input
-                    type="text"
-                    value={draft.client}
-                    onChange={(event) => onChange('client', event.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
-                    autoComplete="organization"
-                />
-            </Field>
+            <TimesheetProjectSelect
+                id={`proposal-project-${draft.worked_on}`}
+                value={draft.projectId}
+                options={projectOptions}
+                onChange={(projectId) => onChange('projectId', projectId)}
+                error={errors.project_id}
+                className="w-full rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
+            />
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <Field label="Datum" error={errors.worked_on}>
                     <input

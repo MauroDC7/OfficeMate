@@ -10,6 +10,7 @@ use App\Services\AdminDashboardStats;
 use App\Services\EmployeeDashboardStats;
 use App\Services\OrganizationContext;
 use App\Services\TimesheetEntryWindowTitlesResolver;
+use App\Services\TimesheetProjectNormalizer;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -41,6 +42,7 @@ final class AppPageController extends Controller
     public function timesheets(
         Request $request,
         TimesheetEntryWindowTitlesResolver $windowTitlesResolver,
+        TimesheetProjectNormalizer $timesheetProjectNormalizer,
     ): Response {
         $user = $request->user();
 
@@ -55,6 +57,7 @@ final class AppPageController extends Controller
         $entries = TimesheetEntry::query()
             ->where('user_id', $user->id)
             ->whereBetween('worked_on', [$monday->toDateString(), $weekEnd->toDateString()])
+            ->with('project:id,name,client_name')
             ->orderBy('worked_on')
             ->orderBy('start_minutes')
             ->get();
@@ -69,6 +72,8 @@ final class AppPageController extends Controller
                         'id' => $e->id,
                         'title' => $e->title,
                         'description' => $e->description,
+                        'project_id' => $e->project_id,
+                        'project_name' => $e->project?->name,
                         'client_name' => $e->client_name,
                         'worked_on' => $e->worked_on->format('Y-m-d'),
                         'start_minutes' => $e->start_minutes,
@@ -102,6 +107,7 @@ final class AppPageController extends Controller
         $proposals = TimesheetEntryProposal::query()
             ->where('user_id', $user->id)
             ->whereBetween('worked_on', [$monday->toDateString(), $proposalWeekEnd->toDateString()])
+            ->with('project:id,name,client_name')
             ->orderBy('worked_on')
             ->orderBy('start_minutes')
             ->get()
@@ -109,6 +115,8 @@ final class AppPageController extends Controller
                 'id' => $p->id,
                 'title' => $p->title,
                 'description' => $p->description,
+                'project_id' => $p->project_id,
+                'project_name' => $p->project?->name,
                 'client_name' => $p->client_name,
                 'worked_on' => $p->worked_on->format('Y-m-d'),
                 'start_minutes' => $p->start_minutes,
@@ -124,6 +132,7 @@ final class AppPageController extends Controller
             'entriesByDay' => $entriesByDay,
             'recentActivity' => $recentActivity,
             'proposals' => $proposals,
+            'projectOptions' => $timesheetProjectNormalizer->optionsFor($user),
             'openEntryId' => $openEntryId,
         ]);
     }
@@ -141,11 +150,6 @@ final class AppPageController extends Controller
         } catch (\Throwable) {
             return CarbonImmutable::now()->startOfWeek(CarbonImmutable::MONDAY);
         }
-    }
-
-    public function projects(): Response
-    {
-        return Inertia::render('projects');
     }
 
     public function leaveRequests(): Response

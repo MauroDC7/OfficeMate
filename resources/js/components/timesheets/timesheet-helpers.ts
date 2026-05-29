@@ -260,3 +260,22 @@ export function formatShortRelativeNl(iso: string): string {
 
     return `${diffDay} dag${diffDay === 1 ? '' : 'en'} geleden`;
 }
+
+export function timesheetProjectLabel(entry: {
+    project_name: string | null;
+    client_name: string | null;
+}): string | null {
+    const projectName = entry.project_name?.trim();
+
+    if (projectName !== undefined && projectName !== '') {
+        return projectName;
+    }
+
+    const clientName = entry.client_name?.trim();
+
+    if (clientName !== undefined && clientName !== '') {
+        return clientName;
+    }
+
+    return null;
+}
