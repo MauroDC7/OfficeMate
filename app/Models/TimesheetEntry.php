@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @use HasFactory<TimesheetEntryFactory>
  */
-#[Fillable(['title', 'description', 'client_name', 'worked_on', 'start_minutes', 'end_minutes'])]
+#[Fillable(['project_id', 'title', 'description', 'client_name', 'worked_on', 'start_minutes', 'end_minutes'])]
 class TimesheetEntry extends Model
 {
     /** @use HasFactory<TimesheetEntryFactory> */
@@ -33,6 +33,14 @@ class TimesheetEntry extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return BelongsTo<Project, $this>
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     /**
