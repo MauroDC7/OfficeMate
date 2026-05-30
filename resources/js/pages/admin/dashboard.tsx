@@ -207,7 +207,7 @@ export default function AdminDashboard() {
                                                         },
                                                     )
                                                 }
-                                                className="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 sm:flex-none sm:py-1.5 sm:text-xs"
+                                                className="flex-1 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 sm:flex-none sm:py-1.5 sm:text-xs"
                                             >
                                                 Goedkeuren
                                             </button>
