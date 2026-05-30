@@ -1,5 +1,16 @@
 export type LeaveRequestStatus = 'pending' | 'approved' | 'rejected';
 
+export type TeamLeaveItem = {
+    id: number;
+    starts_on: string;
+    ends_on: string;
+    type_label: string;
+    user: {
+        id: number;
+        name: string;
+    };
+};
+
 export type LeaveType = 'vacation' | 'sick' | 'personal' | 'other';
 
 export type LeaveRequestListItem = {
@@ -33,6 +44,8 @@ export type LeaveRequestBalance = {
 
 export type LeaveRequestsPageProps = {
     balance: LeaveRequestBalance;
+    teamLeaveUpcoming: TeamLeaveItem[];
+    hasOrganization: boolean;
     stats: LeaveRequestsPageStats;
     requests: LeaveRequestListItem[];
 };

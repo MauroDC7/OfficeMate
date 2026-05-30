@@ -35,6 +35,7 @@ it('renders leave requests page with user data', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('leaveRequests')
+            ->where('hasOrganization', false)
             ->where('balance.year', 2026)
             ->where('balance.annual_days', 20)
             ->where('balance.used_days', 3)

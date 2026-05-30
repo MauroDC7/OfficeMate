@@ -9,8 +9,11 @@ use Carbon\CarbonImmutable;
 
 final class LeaveRequestPageData
 {
+    private const TEAM_LEAVE_PREVIEW = 12;
+
     public function __construct(
         private readonly LeaveBalanceForUser $leaveBalanceForUser,
+        private readonly OrganizationLeaveOverview $organizationLeaveOverview,
     ) {}
 
     /**
@@ -27,6 +30,14 @@ final class LeaveRequestPageData
      *         pendingCount: int,
      *         approvedUpcomingCount: int,
      *     },
+     *     hasOrganization: bool,
+     *     teamLeaveUpcoming: list<array{
+     *         id: int,
+     *         starts_on: string,
+     *         ends_on: string,
+     *         type_label: string,
+     *         user: array{id: int, name: string}
+     *     }>,
      *     requests: list<array{
      *         id: int,
      *         starts_on: string,
@@ -73,8 +84,22 @@ final class LeaveRequestPageData
             }
         }
 
+        $rangeEnd = $today->addWeeks(4);
+
+        $teamLeaveUpcoming = $user->organization_id !== null
+            ? $this->organizationLeaveOverview->approvedLeaveBetween(
+                $user->organization_id,
+                $today,
+                $rangeEnd,
+                $user->id,
+                self::TEAM_LEAVE_PREVIEW,
+            )
+            : [];
+
         return [
             'balance' => $this->leaveBalanceForUser->forUser($user, $today),
+            'hasOrganization' => $user->organization_id !== null,
+            'teamLeaveUpcoming' => $teamLeaveUpcoming,
             'stats' => [
                 'openLeaveDays' => $openLeaveDays,
                 'pendingCount' => $pendingCount,

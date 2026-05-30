@@ -11,6 +11,8 @@ export type DashboardNotification = {
     created_at: string;
 };
 
+import type { TeamLeaveItem } from '@/types/leave-requests';
+
 export type EmployeeDashboardProps = {
     activeProjects: DashboardProject[];
     pendingTimesheetCount: number;
@@ -18,6 +20,8 @@ export type EmployeeDashboardProps = {
     openLeaveDays: number;
     pendingLeaveRequestCount: number;
     weekStart: string;
+    teamLeaveThisWeek: TeamLeaveItem[];
+    hasOrganization: boolean;
     recentNotifications: DashboardNotification[];
 };
 

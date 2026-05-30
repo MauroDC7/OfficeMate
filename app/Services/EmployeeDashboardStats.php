@@ -12,6 +12,12 @@ use Carbon\CarbonImmutable;
 
 final class EmployeeDashboardStats
 {
+    private const TEAM_LEAVE_PREVIEW = 8;
+
+    public function __construct(
+        private readonly OrganizationLeaveOverview $organizationLeaveOverview,
+    ) {}
+
     /**
      * @return array{
      *     activeProjects: list<array{id: int, name: string, client_name: string|null}>,
@@ -20,6 +26,14 @@ final class EmployeeDashboardStats
      *     openLeaveDays: int,
      *     pendingLeaveRequestCount: int,
      *     weekStart: string,
+     *     teamLeaveThisWeek: list<array{
+     *         id: int,
+     *         starts_on: string,
+     *         ends_on: string,
+     *         type_label: string,
+     *         user: array{id: int, name: string}
+     *     }>,
+     *     hasOrganization: bool,
      *     recentNotifications: list<array{id: string, title: string, message: string, created_at: string}>
      * }
      */
@@ -67,6 +81,16 @@ final class EmployeeDashboardStats
             ->get()
             ->sum(fn (LeaveRequest $request): int => $this->remainingLeaveDays($request, $today));
 
+        $teamLeaveThisWeek = $user->organization_id !== null
+            ? $this->organizationLeaveOverview->approvedLeaveBetween(
+                $user->organization_id,
+                $monday,
+                $weekEnd,
+                $user->id,
+                self::TEAM_LEAVE_PREVIEW,
+            )
+            : [];
+
         return [
             'activeProjects' => $activeProjects,
             'pendingTimesheetCount' => $pendingTimesheetCount,
@@ -74,6 +98,8 @@ final class EmployeeDashboardStats
             'openLeaveDays' => $openLeaveDays,
             'pendingLeaveRequestCount' => $pendingLeaveRequestCount,
             'weekStart' => $monday->toDateString(),
+            'teamLeaveThisWeek' => $teamLeaveThisWeek,
+            'hasOrganization' => $user->organization_id !== null,
             'recentNotifications' => [],
         ];
     }

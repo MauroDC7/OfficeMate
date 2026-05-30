@@ -8,6 +8,7 @@ import {
     type LeaveRequestStatusFilter,
 } from '@/components/leave-requests/leave-request-helpers';
 import { LeaveRequestBalanceCard } from '@/components/leave-requests/leave-request-balance-card';
+import { TeamLeaveOverview } from '@/components/leave-requests/team-leave-overview';
 import { LeaveRequestsList } from '@/components/leave-requests/leave-requests-list';
 import { AppLayout } from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
@@ -51,7 +52,8 @@ function upcomingDetail(count: number): string {
 
 export default function LeaveRequests() {
     const { success } = useAlert();
-    const { balance, stats, requests } = usePage<LeaveRequestsPageProps>().props;
+    const { balance, teamLeaveUpcoming, hasOrganization, stats, requests } =
+        usePage<LeaveRequestsPageProps>().props;
     const [statusFilter, setStatusFilter] = useState<LeaveRequestStatusFilter>('all');
     const [creatingNew, setCreatingNew] = useState(false);
     const [editingRequest, setEditingRequest] = useState<LeaveRequestListItem | null>(null);
@@ -143,6 +145,16 @@ export default function LeaveRequests() {
                             {upcomingDetail(stats.approvedUpcomingCount)}
                         </p>
                     </div>
+                </div>
+
+                <div className="mt-5 sm:mt-6">
+                    <TeamLeaveOverview
+                        title="Wie is er weg?"
+                        description="Goedgekeurd verlof van collega’s in de komende vier weken."
+                        items={teamLeaveUpcoming}
+                        hasOrganization={hasOrganization}
+                        emptyMessage="Geen collega’s met goedgekeurd verlof in deze periode."
+                    />
                 </div>
 
                 <section className="mt-5 rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6">
