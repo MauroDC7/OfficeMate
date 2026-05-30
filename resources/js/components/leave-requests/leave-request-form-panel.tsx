@@ -1,7 +1,10 @@
 import { Form } from '@inertiajs/react';
 import { useEffect, useId, useState } from 'react';
 
-import { LEAVE_TYPE_OPTIONS } from '@/components/leave-requests/leave-request-helpers';
+import {
+    LEAVE_TYPE_LABELS,
+    LEAVE_TYPE_PRIMARY_OPTIONS,
+} from '@/components/leave-requests/leave-request-helpers';
 import { cn } from '@/lib/utils';
 import { store, update } from '@/routes/leaveRequests';
 import type { LeaveRequestListItem, LeaveType } from '@/types/leave-requests';
@@ -27,6 +30,56 @@ function IconClose({ className }: { className?: string }) {
 
 const inputClass =
     'mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10';
+
+const typeOptionClass = (selected: boolean, spansFullWidth = false) =>
+    cn(
+        'flex cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition',
+        spansFullWidth && 'col-span-2',
+        selected
+            ? 'border-gray-900 bg-gray-900 text-white'
+            : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400',
+    );
+
+function TypeOption({
+    value,
+    label,
+    src,
+    selected,
+    onSelect,
+    spansFullWidth = false,
+}: {
+    value: LeaveType;
+    label: string;
+    src?: string;
+    selected: boolean;
+    onSelect: (value: LeaveType) => void;
+    spansFullWidth?: boolean;
+}) {
+    return (
+        <label className={typeOptionClass(selected, spansFullWidth)}>
+            <input
+                type="radio"
+                name="type"
+                value={value}
+                checked={selected}
+                onChange={() => onSelect(value)}
+                className="sr-only"
+            />
+            {src !== undefined ? (
+                <img
+                    src={src}
+                    alt=""
+                    className="size-5 shrink-0 object-contain"
+                    width={20}
+                    height={20}
+                    decoding="async"
+                    draggable={false}
+                />
+            ) : null}
+            {label}
+        </label>
+    );
+}
 
 export function LeaveRequestFormPanel({
     onClose,
@@ -110,27 +163,23 @@ export function LeaveRequestFormPanel({
                             <div>
                                 <span className="text-sm font-medium text-gray-800">Type</span>
                                 <div className="mt-1.5 grid grid-cols-2 gap-2">
-                                    {LEAVE_TYPE_OPTIONS.map((option) => (
-                                        <label
+                                    {LEAVE_TYPE_PRIMARY_OPTIONS.map((option) => (
+                                        <TypeOption
                                             key={option.value}
-                                            className={cn(
-                                                'flex cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition',
-                                                type === option.value
-                                                    ? 'border-gray-900 bg-gray-900 text-white'
-                                                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400',
-                                            )}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="type"
-                                                value={option.value}
-                                                checked={type === option.value}
-                                                onChange={() => setType(option.value)}
-                                                className="sr-only"
-                                            />
-                                            {option.label}
-                                        </label>
+                                            value={option.value}
+                                            label={option.label}
+                                            src={option.src}
+                                            selected={type === option.value}
+                                            onSelect={setType}
+                                        />
                                     ))}
+                                    <TypeOption
+                                        value="other"
+                                        label={LEAVE_TYPE_LABELS.other}
+                                        selected={type === 'other'}
+                                        onSelect={setType}
+                                        spansFullWidth
+                                    />
                                 </div>
                                 {errors.type ? (
                                     <p className="mt-1 text-xs text-red-600">{errors.type}</p>

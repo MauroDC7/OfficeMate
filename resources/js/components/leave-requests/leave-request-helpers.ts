@@ -7,9 +7,14 @@ import type {
 export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
     vacation: 'Vakantie',
     sick: 'Ziekte',
-    personal: 'Persoonlijk verlof',
     other: 'Overig',
 };
+
+/** Types in het keuzeraster (Overig wordt apart over volle breedte getoond). */
+export const LEAVE_TYPE_PRIMARY_OPTIONS: { value: LeaveType; label: string; src: string }[] = [
+    { value: 'vacation', label: LEAVE_TYPE_LABELS.vacation, src: '/img/Leave Vacation Icon 50.png' },
+    { value: 'sick', label: LEAVE_TYPE_LABELS.sick, src: '/img/Leave Sick Icon 50.png' },
+];
 
 export const LEAVE_TYPE_OPTIONS: { value: LeaveType; label: string }[] = (
     Object.keys(LEAVE_TYPE_LABELS) as LeaveType[]
@@ -21,11 +26,16 @@ export const LEAVE_REQUEST_STATUS_LABELS: Record<LeaveRequestStatus, string> = {
     rejected: 'Afgewezen',
 };
 
-export const LEAVE_REQUEST_STATUS_STYLES: Record<LeaveRequestStatus, string> = {
-    pending: 'border-amber-200 bg-amber-50 text-amber-800',
-    approved: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    rejected: 'border-gray-200 bg-gray-50 text-gray-600',
-};
+/** Actieve filter-tab (merk-rood, zelfde als primaire actieknoppen in instellingen). */
+export const LEAVE_FILTER_TAB_ACTIVE_CLASS =
+    'border-red-600 bg-red-600 text-white shadow-sm';
+
+export const LEAVE_FILTER_TAB_INACTIVE_CLASS =
+    'border-gray-200 bg-white text-gray-700 hover:bg-gray-50';
+
+/** Kolomindeling medewerkerslijst (type · periode · dagen · status). */
+export const LEAVE_TABLE_ROW_GRID =
+    'sm:grid sm:grid-cols-[minmax(0,1.7fr)_minmax(0,1.5fr)_minmax(0,0.7fr)_auto_2.5rem] sm:items-center sm:gap-x-6';
 
 const DATE_FORMATTER = new Intl.DateTimeFormat('nl-BE', {
     day: 'numeric',
@@ -41,6 +51,26 @@ export function formatLeavePeriod(request: Pick<LeaveRequestListItem, 'starts_on
     }
 
     const end = DATE_FORMATTER.format(new Date(`${request.ends_on}T12:00:00`));
+
+    return `${start} – ${end}`;
+}
+
+const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('nl-BE', {
+    day: 'numeric',
+    month: 'short',
+});
+
+/** Periode zonder jaartal, voor compacte plekken zoals de overzichtskaarten. */
+export function formatLeavePeriodShort(
+    request: Pick<LeaveRequestListItem, 'starts_on' | 'ends_on'>,
+): string {
+    const start = SHORT_DATE_FORMATTER.format(new Date(`${request.starts_on}T12:00:00`));
+
+    if (request.ends_on === request.starts_on) {
+        return start;
+    }
+
+    const end = SHORT_DATE_FORMATTER.format(new Date(`${request.ends_on}T12:00:00`));
 
     return `${start} – ${end}`;
 }

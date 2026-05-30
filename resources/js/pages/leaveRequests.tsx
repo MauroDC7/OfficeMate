@@ -4,12 +4,15 @@ import { useMemo, useState } from 'react';
 import { useAlert } from '@/components/alert';
 import { LeaveRequestFormPanel } from '@/components/leave-requests/leave-request-form-panel';
 import {
+    formatLeavePeriodShort,
+    LEAVE_FILTER_TAB_ACTIVE_CLASS,
+    LEAVE_FILTER_TAB_INACTIVE_CLASS,
     LEAVE_REQUEST_FILTERS,
     type LeaveRequestStatusFilter,
 } from '@/components/leave-requests/leave-request-helpers';
-import { LeaveRequestBalanceCard } from '@/components/leave-requests/leave-request-balance-card';
-import { TeamLeaveOverview } from '@/components/leave-requests/team-leave-overview';
 import { LeaveRequestsList } from '@/components/leave-requests/leave-requests-list';
+import { LeaveSummaryCards } from '@/components/leave-requests/leave-summary-cards';
+import { TeamLeaveOverview } from '@/components/leave-requests/team-leave-overview';
 import { AppLayout } from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import type { LeaveRequestListItem, LeaveRequestsPageProps } from '@/types/leave-requests';
@@ -22,32 +25,12 @@ function IconPlus({ className }: { className?: string }) {
     );
 }
 
-function pendingDetail(count: number): string {
-    if (count === 0) {
-        return 'Geen aanvragen in behandeling';
-    }
+function daysUntil(date: string): number {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(`${date}T00:00:00`);
 
-    return count === 1
-        ? '1 aanvraag wacht op goedkeuring'
-        : `${count} aanvragen wachten op goedkeuring`;
-}
-
-function openLeaveDetail(days: number): string {
-    if (days === 0) {
-        return 'Geen resterend goedgekeurd verlof';
-    }
-
-    return days === 1 ? 'Nog 1 verlofdag gepland' : `Nog ${days} verlofdagen gepland`;
-}
-
-function upcomingDetail(count: number): string {
-    if (count === 0) {
-        return 'Geen goedgekeurde periodes vooruit';
-    }
-
-    return count === 1
-        ? '1 goedgekeurde periode'
-        : `${count} goedgekeurde periodes`;
+    return Math.round((target.getTime() - today.getTime()) / 86_400_000);
 }
 
 export default function LeaveRequests() {
@@ -73,6 +56,20 @@ export default function LeaveRequests() {
         setCreatingNew(false);
         setEditingRequest(request);
     }
+
+    const lastPendingPeriod = useMemo(() => {
+        const pending = requests.find((request) => request.status === 'pending');
+
+        return pending !== undefined ? formatLeavePeriodShort(pending) : null;
+    }, [requests]);
+
+    const nextUpcomingInDays = useMemo(() => {
+        const upcoming = requests
+            .filter((request) => request.status === 'approved' && daysUntil(request.starts_on) >= 0)
+            .sort((a, b) => a.starts_on.localeCompare(b.starts_on))[0];
+
+        return upcoming !== undefined ? daysUntil(upcoming.starts_on) : null;
+    }, [requests]);
 
     const filteredRequests = useMemo(
         () =>
@@ -103,70 +100,32 @@ export default function LeaveRequests() {
                         className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
                     >
                         <IconPlus />
-                        Nieuwe aanvraag
+                        Verlof aanvragen
                     </button>
                 </div>
 
                 <div className="mt-5 sm:mt-6">
-                    <LeaveRequestBalanceCard balance={balance} />
-                </div>
-
-                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                        <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
-                            Open verlofdagen
-                        </p>
-                        <p className="mt-2 text-2xl font-semibold tracking-tight text-gray-900">
-                            {stats.openLeaveDays}
-                        </p>
-                        <p className="mt-1 text-xs text-gray-500">
-                            {openLeaveDetail(stats.openLeaveDays)}
-                        </p>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                        <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
-                            In behandeling
-                        </p>
-                        <p className="mt-2 text-2xl font-semibold tracking-tight text-gray-900">
-                            {stats.pendingCount}
-                        </p>
-                        <p className="mt-1 text-xs text-gray-500">
-                            {pendingDetail(stats.pendingCount)}
-                        </p>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                        <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
-                            Goedgekeurd
-                        </p>
-                        <p className="mt-2 text-2xl font-semibold tracking-tight text-gray-900">
-                            {stats.approvedUpcomingCount}
-                        </p>
-                        <p className="mt-1 text-xs text-gray-500">
-                            {upcomingDetail(stats.approvedUpcomingCount)}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="mt-5 sm:mt-6">
-                    <TeamLeaveOverview
-                        title="Wie is er weg?"
-                        description="Goedgekeurd verlof van collega’s in de komende vier weken."
-                        items={teamLeaveUpcoming}
-                        hasOrganization={hasOrganization}
-                        emptyMessage="Geen collega’s met goedgekeurd verlof in deze periode."
+                    <LeaveSummaryCards
+                        balance={balance}
+                        pendingCount={stats.pendingCount}
+                        lastPendingPeriod={lastPendingPeriod}
+                        upcomingCount={stats.approvedUpcomingCount}
+                        nextUpcomingInDays={nextUpcomingInDays}
                     />
                 </div>
 
                 <section className="mt-5 rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6">
-                    <div className="border-b border-gray-100 px-4 py-3 sm:px-5">
-                        <h2 className="text-sm font-semibold text-gray-900">Jouw aanvragen</h2>
-                        <p className="mt-0.5 text-xs text-gray-500">
-                            Nieuwste periodes eerst. Filter op status.
-                        </p>
+                    <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                        <div>
+                            <h2 className="text-sm font-semibold text-gray-900">Recente aanvragen</h2>
+                            <p className="mt-0.5 text-xs text-gray-500">
+                                Nieuwste periodes eerst.
+                            </p>
+                        </div>
 
                         {hasRequests ? (
                             <div
-                                className="mt-3 flex flex-wrap gap-2"
+                                className="flex flex-wrap gap-2"
                                 role="tablist"
                                 aria-label="Filter op status"
                             >
@@ -183,8 +142,8 @@ export default function LeaveRequests() {
                                             className={cn(
                                                 'rounded-full border px-3 py-1.5 text-xs font-medium transition',
                                                 active
-                                                    ? 'border-gray-900 bg-gray-900 text-white'
-                                                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50',
+                                                    ? LEAVE_FILTER_TAB_ACTIVE_CLASS
+                                                    : LEAVE_FILTER_TAB_INACTIVE_CLASS,
                                             )}
                                         >
                                             {label}
@@ -203,6 +162,14 @@ export default function LeaveRequests() {
                             <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
                                 Zodra je verlof aanvraagt, verschijnen je periodes en status hier.
                             </p>
+                            <button
+                                type="button"
+                                onClick={openCreate}
+                                className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
+                            >
+                                <IconPlus />
+                                Verlof aanvragen
+                            </button>
                         </div>
                     ) : (
                         <LeaveRequestsList
@@ -212,6 +179,16 @@ export default function LeaveRequests() {
                         />
                     )}
                 </section>
+
+                <div className="mt-5 sm:mt-6">
+                    <TeamLeaveOverview
+                        title="Wie is er weg?"
+                        description="Goedgekeurd verlof van collega’s in de komende vier weken."
+                        items={teamLeaveUpcoming}
+                        hasOrganization={hasOrganization}
+                        emptyMessage="Geen collega’s met goedgekeurd verlof in deze periode."
+                    />
+                </div>
 
                 {showForm ? (
                     <LeaveRequestFormPanel
