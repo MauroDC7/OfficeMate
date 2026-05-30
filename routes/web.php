@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\OrganizationInviteAcceptController;
 use App\Http\Controllers\ProjectController;
@@ -57,6 +58,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->middleware('admin')
         ->name('projects.creator-access.update');
     Route::get('/leave-requests', [AppPageController::class, 'leaveRequests'])->name('leaveRequests');
+    Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->name('leaveRequests.store');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');

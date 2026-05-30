@@ -1,6 +1,8 @@
 import { Head, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
+import { useAlert } from '@/components/alert';
+import { LeaveRequestFormPanel } from '@/components/leave-requests/leave-request-form-panel';
 import {
     LEAVE_REQUEST_FILTERS,
     type LeaveRequestStatusFilter,
@@ -9,6 +11,14 @@ import { LeaveRequestsList } from '@/components/leave-requests/leave-requests-li
 import { AppLayout } from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import type { LeaveRequestsPageProps } from '@/types/leave-requests';
+
+function IconPlus({ className }: { className?: string }) {
+    return (
+        <svg className={className} width={18} height={18} viewBox="0 0 24 24" aria-hidden fill="none">
+            <path stroke="currentColor" strokeWidth={2} strokeLinecap="round" d="M12 5v14M5 12h14" />
+        </svg>
+    );
+}
 
 function pendingDetail(count: number): string {
     if (count === 0) {
@@ -39,8 +49,10 @@ function upcomingDetail(count: number): string {
 }
 
 export default function LeaveRequests() {
+    const { success } = useAlert();
     const { stats, requests } = usePage<LeaveRequestsPageProps>().props;
     const [statusFilter, setStatusFilter] = useState<LeaveRequestStatusFilter>('all');
+    const [showForm, setShowForm] = useState(false);
 
     const filteredRequests = useMemo(
         () =>
@@ -56,13 +68,23 @@ export default function LeaveRequests() {
         <AppLayout>
             <Head title="Verlofaanvragen" />
             <main className="mx-auto box-border w-full max-w-5xl min-w-0 px-4 py-4 sm:px-5 sm:py-5 md:max-w-6xl md:px-6 lg:max-w-7xl lg:px-8 lg:py-6 xl:max-w-none xl:px-8 2xl:px-12">
-                <div className="min-w-0">
-                    <h1 className="text-lg font-semibold tracking-tight text-gray-900 sm:text-xl lg:text-2xl">
-                        Verlofaanvragen
-                    </h1>
-                    <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                        Overzicht van je verlofperiodes, status en geplande afwezigheid.
-                    </p>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-lg font-semibold tracking-tight text-gray-900 sm:text-xl lg:text-2xl">
+                            Verlofaanvragen
+                        </h1>
+                        <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                            Overzicht van je verlofperiodes, status en geplande afwezigheid.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setShowForm(true)}
+                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
+                    >
+                        <IconPlus />
+                        Nieuwe aanvraag
+                    </button>
                 </div>
 
                 <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:mt-6">
@@ -152,6 +174,13 @@ export default function LeaveRequests() {
                         <LeaveRequestsList requests={filteredRequests} />
                     )}
                 </section>
+
+                {showForm ? (
+                    <LeaveRequestFormPanel
+                        onClose={() => setShowForm(false)}
+                        onSuccess={(message) => success(message)}
+                    />
+                ) : null}
             </main>
         </AppLayout>
     );

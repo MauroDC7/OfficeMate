@@ -11,6 +11,10 @@ export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
     other: 'Overig',
 };
 
+export const LEAVE_TYPE_OPTIONS: { value: LeaveType; label: string }[] = (
+    Object.keys(LEAVE_TYPE_LABELS) as LeaveType[]
+).map((value) => ({ value, label: LEAVE_TYPE_LABELS[value] }));
+
 export const LEAVE_REQUEST_STATUS_LABELS: Record<LeaveRequestStatus, string> = {
     pending: 'In behandeling',
     approved: 'Goedgekeurd',
