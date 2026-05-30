@@ -77,6 +77,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/leave-requests/{leave_request}/reject', [LeaveRequestController::class, 'reject'])
         ->middleware('admin')
         ->name('leaveRequests.reject');
+    Route::post('/leave-requests/{leave_request}/revert-approval', [LeaveRequestController::class, 'revertApproval'])
+        ->middleware('admin')
+        ->name('leaveRequests.revertApproval');
+    Route::post('/leave-requests/{leave_request}/revert-rejection', [LeaveRequestController::class, 'revertRejection'])
+        ->middleware('admin')
+        ->name('leaveRequests.revertRejection');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');

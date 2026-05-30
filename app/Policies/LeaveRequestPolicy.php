@@ -44,6 +44,18 @@ final class LeaveRequestPolicy
         return $this->approve($user, $leaveRequest);
     }
 
+    public function revertApproval(User $user, LeaveRequest $leaveRequest): bool
+    {
+        return $this->manageOrganizationLeave($user, $leaveRequest)
+            && $leaveRequest->status === LeaveRequestStatus::Approved;
+    }
+
+    public function revertRejection(User $user, LeaveRequest $leaveRequest): bool
+    {
+        return $this->manageOrganizationLeave($user, $leaveRequest)
+            && $leaveRequest->status === LeaveRequestStatus::Rejected;
+    }
+
     private function manageOrganizationLeave(User $user, LeaveRequest $leaveRequest): bool
     {
         if ($user->role !== UserRole::Admin || $user->organization_id === null) {

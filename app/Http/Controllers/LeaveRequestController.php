@@ -148,6 +148,36 @@ final class LeaveRequestController extends Controller
         return $this->redirectAfterAdminLeaveAction($request->user());
     }
 
+    public function revertApproval(LeaveRequest $leaveRequest): RedirectResponse
+    {
+        $this->authorize('revertApproval', $leaveRequest);
+
+        $this->markPending($leaveRequest);
+
+        $user = auth()->user();
+
+        return $this->redirectAfterAdminLeaveAction($user instanceof User ? $user : null);
+    }
+
+    public function revertRejection(LeaveRequest $leaveRequest): RedirectResponse
+    {
+        $this->authorize('revertRejection', $leaveRequest);
+
+        $this->markPending($leaveRequest);
+
+        $user = auth()->user();
+
+        return $this->redirectAfterAdminLeaveAction($user instanceof User ? $user : null);
+    }
+
+    private function markPending(LeaveRequest $leaveRequest): void
+    {
+        $leaveRequest->update([
+            'status' => LeaveRequestStatus::Pending,
+            'rejection_reason' => null,
+        ]);
+    }
+
     private function redirectAfterAdminLeaveAction(?User $user): RedirectResponse
     {
         abort_unless($user instanceof User, 401);

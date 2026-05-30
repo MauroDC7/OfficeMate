@@ -18,7 +18,7 @@ it('allows an admin to bulk approve pending leave requests', function () {
         ->post(route('leaveRequests.bulkApprove'), [
             'leave_request_ids' => [$first->id, $second->id],
         ])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('admin.leaveRequests'));
 
     expect($first->fresh()->status)->toBe(LeaveRequestStatus::Approved)
         ->and($second->fresh()->status)->toBe(LeaveRequestStatus::Approved);

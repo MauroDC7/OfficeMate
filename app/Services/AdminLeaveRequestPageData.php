@@ -26,9 +26,18 @@ final class AdminLeaveRequestPageData
      *         rejection_reason: string|null,
      *         day_count: int,
      *         created_at: string,
-     *         user: array{id: int, name: string, email: string},
+     *         user: array{
+     *             id: int,
+     *             first_name: string,
+     *             last_name: string,
+     *             name: string,
+     *             email: string,
+     *             avatar: string|null,
+     *         },
      *         attachment: array{name: string, url: string}|null,
      *         can_approve: bool,
+     *         can_revert_approval: bool,
+     *         can_revert_rejection: bool,
      *     }>
      * }
      */
@@ -59,7 +68,7 @@ final class AdminLeaveRequestPageData
 
         $query = LeaveRequest::query()
             ->whereIn('user_id', $memberIds)
-            ->with(['user:id,first_name,last_name,email,organization_id', 'attachments'])
+            ->with(['user:id,first_name,last_name,email,organization_id,avatar_path', 'attachments'])
             ->orderByDesc('starts_on')
             ->orderByDesc('id');
 
@@ -109,6 +118,8 @@ final class AdminLeaveRequestPageData
      *     user: array{id: int, name: string, email: string},
      *     attachment: array{name: string, url: string}|null,
      *     can_approve: bool,
+     *     can_revert_approval: bool,
+     *     can_revert_rejection: bool,
      * }
      */
     private function mapRequest(LeaveRequest $leave): array
@@ -128,8 +139,11 @@ final class AdminLeaveRequestPageData
             'created_at' => $leave->created_at?->toIso8601String() ?? '',
             'user' => [
                 'id' => $leave->user->id,
+                'first_name' => $leave->user->first_name,
+                'last_name' => $leave->user->last_name,
                 'name' => $leave->user->name,
                 'email' => $leave->user->email,
+                'avatar' => $leave->user->avatar,
             ],
             'attachment' => $attachment !== null
                 ? [
@@ -138,6 +152,8 @@ final class AdminLeaveRequestPageData
                 ]
                 : null,
             'can_approve' => $leave->status === LeaveRequestStatus::Pending,
+            'can_revert_approval' => $leave->status === LeaveRequestStatus::Approved,
+            'can_revert_rejection' => $leave->status === LeaveRequestStatus::Rejected,
         ];
     }
 

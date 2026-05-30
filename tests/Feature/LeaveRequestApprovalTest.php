@@ -14,7 +14,7 @@ it('allows an admin to approve a pending leave request in their organization', f
 
     $this->actingAs($admin)
         ->post(route('leaveRequests.approve', $leaveRequest))
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('admin.leaveRequests'));
 
     $leaveRequest->refresh();
 
@@ -32,7 +32,7 @@ it('allows an admin to reject a pending leave request with a reason', function (
         ->post(route('leaveRequests.reject', $leaveRequest), [
             'rejection_reason' => 'Te weinig capaciteit',
         ])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('admin.leaveRequests'));
 
     $leaveRequest->refresh();
 
@@ -61,7 +61,86 @@ it('forbids admins from approving leave requests outside their organization', fu
         ->assertForbidden();
 });
 
-it('lists pending leave requests on the admin dashboard', function () {
+it('allows an admin to revert an approved leave request to pending', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->forOrganization($organization)->create(['role' => UserRole::Admin]);
+    $employee = User::factory()->forOrganization($organization)->create();
+    $leaveRequest = LeaveRequest::factory()->for($employee)->approved()->create([
+        'rejection_reason' => 'Oud',
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('leaveRequests.revertApproval', $leaveRequest))
+        ->assertRedirect(route('admin.leaveRequests'));
+
+    $leaveRequest->refresh();
+
+    expect($leaveRequest->status)->toBe(LeaveRequestStatus::Pending)
+        ->and($leaveRequest->rejection_reason)->toBeNull();
+});
+
+it('forbids reverting approval on a pending leave request', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->forOrganization($organization)->create(['role' => UserRole::Admin]);
+    $employee = User::factory()->forOrganization($organization)->create();
+    $leaveRequest = LeaveRequest::factory()->for($employee)->pending()->create();
+
+    $this->actingAs($admin)
+        ->post(route('leaveRequests.revertApproval', $leaveRequest))
+        ->assertForbidden();
+});
+
+it('forbids employees from reverting leave approval', function () {
+    $user = User::factory()->create();
+    $leaveRequest = LeaveRequest::factory()->for($user)->approved()->create();
+
+    $this->actingAs($user)
+        ->post(route('leaveRequests.revertApproval', $leaveRequest))
+        ->assertForbidden();
+});
+
+it('allows an admin to revert a rejected leave request to pending', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->forOrganization($organization)->create(['role' => UserRole::Admin]);
+    $employee = User::factory()->forOrganization($organization)->create();
+    $leaveRequest = LeaveRequest::factory()->for($employee)->create([
+        'status' => LeaveRequestStatus::Rejected,
+        'rejection_reason' => 'Te weinig capaciteit',
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('leaveRequests.revertRejection', $leaveRequest))
+        ->assertRedirect(route('admin.leaveRequests'));
+
+    $leaveRequest->refresh();
+
+    expect($leaveRequest->status)->toBe(LeaveRequestStatus::Pending)
+        ->and($leaveRequest->rejection_reason)->toBeNull();
+});
+
+it('forbids reverting rejection on a pending leave request', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->forOrganization($organization)->create(['role' => UserRole::Admin]);
+    $employee = User::factory()->forOrganization($organization)->create();
+    $leaveRequest = LeaveRequest::factory()->for($employee)->pending()->create();
+
+    $this->actingAs($admin)
+        ->post(route('leaveRequests.revertRejection', $leaveRequest))
+        ->assertForbidden();
+});
+
+it('forbids employees from reverting leave rejection', function () {
+    $user = User::factory()->create();
+    $leaveRequest = LeaveRequest::factory()->for($user)->create([
+        'status' => LeaveRequestStatus::Rejected,
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('leaveRequests.revertRejection', $leaveRequest))
+        ->assertForbidden();
+});
+
+it('lists pending leave requests on the admin leave management page', function () {
     $organization = Organization::factory()->create();
     $admin = User::factory()->forOrganization($organization)->create(['role' => UserRole::Admin]);
     $employee = User::factory()->forOrganization($organization)->create([
@@ -75,11 +154,11 @@ it('lists pending leave requests on the admin dashboard', function () {
     ]);
 
     $this->actingAs($admin)
-        ->get(route('dashboard'))
+        ->get(route('admin.leaveRequests'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('admin/dashboard')
-            ->has('pendingLeaveRequests', 1)
-            ->where('pendingLeaveRequests.0.user.name', 'Sam Peeters')
-            ->where('pendingLeaveRequests.0.type_label', 'Vakantie'));
+            ->component('admin/leaveRequests')
+            ->has('requests', 1)
+            ->where('requests.0.user.name', 'Sam Peeters')
+            ->where('requests.0.type_label', 'Vakantie'));
 });
