@@ -21,7 +21,16 @@ export type LeaveRequestsPageStats = {
     approvedUpcomingCount: number;
 };
 
+export type LeaveRequestBalance = {
+    year: number;
+    annual_days: number;
+    used_days: number;
+    pending_days: number;
+    remaining_days: number;
+};
+
 export type LeaveRequestsPageProps = {
+    balance: LeaveRequestBalance;
     stats: LeaveRequestsPageStats;
     requests: LeaveRequestListItem[];
 };

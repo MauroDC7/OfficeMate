@@ -9,8 +9,19 @@ use Carbon\CarbonImmutable;
 
 final class LeaveRequestPageData
 {
+    public function __construct(
+        private readonly LeaveBalanceForUser $leaveBalanceForUser,
+    ) {}
+
     /**
      * @return array{
+     *     balance: array{
+     *         year: int,
+     *         annual_days: int,
+     *         used_days: int,
+     *         pending_days: int,
+     *         remaining_days: int,
+     *     },
      *     stats: array{
      *         openLeaveDays: int,
      *         pendingCount: int,
@@ -60,6 +71,7 @@ final class LeaveRequestPageData
         }
 
         return [
+            'balance' => $this->leaveBalanceForUser->forUser($user, $today),
             'stats' => [
                 'openLeaveDays' => $openLeaveDays,
                 'pendingCount' => $pendingCount,

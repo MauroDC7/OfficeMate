@@ -7,6 +7,7 @@ import {
     LEAVE_REQUEST_FILTERS,
     type LeaveRequestStatusFilter,
 } from '@/components/leave-requests/leave-request-helpers';
+import { LeaveRequestBalanceCard } from '@/components/leave-requests/leave-request-balance-card';
 import { LeaveRequestsList } from '@/components/leave-requests/leave-requests-list';
 import { AppLayout } from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
@@ -50,7 +51,7 @@ function upcomingDetail(count: number): string {
 
 export default function LeaveRequests() {
     const { success } = useAlert();
-    const { stats, requests } = usePage<LeaveRequestsPageProps>().props;
+    const { balance, stats, requests } = usePage<LeaveRequestsPageProps>().props;
     const [statusFilter, setStatusFilter] = useState<LeaveRequestStatusFilter>('all');
     const [creatingNew, setCreatingNew] = useState(false);
     const [editingRequest, setEditingRequest] = useState<LeaveRequestListItem | null>(null);
@@ -104,7 +105,11 @@ export default function LeaveRequests() {
                     </button>
                 </div>
 
-                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:mt-6">
+                <div className="mt-5 sm:mt-6">
+                    <LeaveRequestBalanceCard balance={balance} />
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                         <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
                             Open verlofdagen
