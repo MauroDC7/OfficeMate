@@ -6,7 +6,6 @@ enum LeaveType: string
 {
     case Vacation = 'vacation';
     case Sick = 'sick';
-    case Personal = 'personal';
     case Other = 'other';
 
     public function label(): string
@@ -14,7 +13,6 @@ enum LeaveType: string
         return match ($this) {
             self::Vacation => 'Vakantie',
             self::Sick => 'Ziekte',
-            self::Personal => 'Persoonlijk verlof',
             self::Other => 'Overig',
         };
     }

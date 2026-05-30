@@ -14,7 +14,7 @@ afterEach(function () {
     CarbonImmutable::setTestNow();
 });
 
-it('calculates annual leave balance for vacation and personal leave', function () {
+it('calculates annual leave balance from vacation leave only', function () {
     $user = User::factory()->create(['annual_leave_days' => 25]);
     $service = app(LeaveBalanceForUser::class);
 
@@ -23,10 +23,15 @@ it('calculates annual leave balance for vacation and personal leave', function (
         'ends_on' => '2026-03-03',
     ]);
 
-    LeaveRequest::factory()->for($user)->pending()->create([
+    LeaveRequest::factory()->for($user)->pending()->vacation()->create([
         'starts_on' => '2026-08-01',
         'ends_on' => '2026-08-01',
-        'type' => LeaveType::Personal,
+    ]);
+
+    LeaveRequest::factory()->for($user)->pending()->create([
+        'starts_on' => '2026-09-01',
+        'ends_on' => '2026-09-02',
+        'type' => LeaveType::Other,
     ]);
 
     LeaveRequest::factory()->for($user)->approved()->sick()->create([

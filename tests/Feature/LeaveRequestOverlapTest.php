@@ -43,7 +43,7 @@ it('rejects a leave request that overlaps with a pending period', function () {
 
     $this->actingAs($user)
         ->post(route('leaveRequests.store'), [
-            'type' => LeaveType::Personal->value,
+            'type' => LeaveType::Other->value,
             'starts_on' => '2026-06-28',
             'ends_on' => '2026-07-02',
         ])

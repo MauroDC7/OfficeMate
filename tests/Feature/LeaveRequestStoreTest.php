@@ -50,7 +50,7 @@ it('validates leave request dates and type', function () {
 
 it('requires authentication to store a leave request', function () {
     $this->post(route('leaveRequests.store'), [
-        'type' => LeaveType::Personal->value,
+        'type' => LeaveType::Other->value,
         'starts_on' => '2026-06-01',
         'ends_on' => '2026-06-01',
     ])

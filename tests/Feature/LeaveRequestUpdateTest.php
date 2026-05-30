@@ -25,7 +25,7 @@ it('updates a pending leave request for the owner', function () {
 
     $this->actingAs($user)
         ->patch(route('leaveRequests.update', $leaveRequest), [
-            'type' => LeaveType::Personal->value,
+            'type' => LeaveType::Other->value,
             'starts_on' => $monday->addDays(20)->toDateString(),
             'ends_on' => $monday->addDays(21)->toDateString(),
             'notes' => 'Aangepast',
@@ -34,7 +34,7 @@ it('updates a pending leave request for the owner', function () {
 
     $leaveRequest->refresh();
 
-    expect($leaveRequest->type)->toBe(LeaveType::Personal)
+    expect($leaveRequest->type)->toBe(LeaveType::Other)
         ->and($leaveRequest->status)->toBe(LeaveRequestStatus::Pending)
         ->and($leaveRequest->starts_on->format('Y-m-d'))->toBe($monday->addDays(20)->toDateString())
         ->and($leaveRequest->ends_on->format('Y-m-d'))->toBe($monday->addDays(21)->toDateString())

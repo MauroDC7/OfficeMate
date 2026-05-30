@@ -11,7 +11,7 @@ export type TeamLeaveItem = {
     };
 };
 
-export type LeaveType = 'vacation' | 'sick' | 'personal' | 'other';
+export type LeaveType = 'vacation' | 'sick' | 'other';
 
 export type LeaveRequestListItem = {
     id: number;

@@ -30,7 +30,7 @@ final class LeaveBalanceForUser
 
         $requests = LeaveRequest::query()
             ->where('user_id', $user->id)
-            ->whereIn('type', [LeaveType::Vacation, LeaveType::Personal])
+            ->where('type', LeaveType::Vacation)
             ->whereYear('starts_on', $year)
             ->whereIn('status', [LeaveRequestStatus::Approved, LeaveRequestStatus::Pending])
             ->get();

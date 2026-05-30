@@ -25,7 +25,7 @@ it('renders leave requests page with user data', function () {
     LeaveRequest::factory()->for($user)->pending()->create([
         'starts_on' => $monday->addDays(20)->toDateString(),
         'ends_on' => $monday->addDays(21)->toDateString(),
-        'type' => LeaveType::Personal,
+        'type' => LeaveType::Other,
     ]);
 
     LeaveRequest::factory()->create();
@@ -39,14 +39,14 @@ it('renders leave requests page with user data', function () {
             ->where('balance.year', 2026)
             ->where('balance.annual_days', 20)
             ->where('balance.used_days', 3)
-            ->where('balance.pending_days', 2)
+            ->where('balance.pending_days', 0)
             ->where('balance.remaining_days', 17)
             ->where('stats.openLeaveDays', 3)
             ->where('stats.pendingCount', 1)
             ->where('stats.approvedUpcomingCount', 1)
             ->has('requests', 2)
-            ->where('requests.0.type', 'personal')
-            ->where('requests.0.type_label', 'Persoonlijk verlof')
+            ->where('requests.0.type', 'other')
+            ->where('requests.0.type_label', 'Overig')
             ->where('requests.0.status', 'pending')
             ->where('requests.1.type', 'vacation')
             ->where('requests.1.type_label', 'Vakantie')
