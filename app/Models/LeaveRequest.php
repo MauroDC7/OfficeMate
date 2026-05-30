@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @use HasFactory<LeaveRequestFactory>
@@ -20,6 +21,17 @@ class LeaveRequest extends Model
 {
     /** @use HasFactory<LeaveRequestFactory> */
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::deleting(function (LeaveRequest $leaveRequest): void {
+            $leaveRequest->loadMissing('attachments');
+
+            foreach ($leaveRequest->attachments as $attachment) {
+                Storage::disk('local')->delete($attachment->path);
+            }
+        });
+    }
 
     /**
      * @return array<string, string>

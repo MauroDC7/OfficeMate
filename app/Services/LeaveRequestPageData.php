@@ -38,6 +38,7 @@ final class LeaveRequestPageData
      *         day_count: int,
      *         created_at: string,
      *         can_edit: bool,
+     *         attachment: array{name: string, url: string}|null,
      *     }>
      * }
      */
@@ -48,6 +49,7 @@ final class LeaveRequestPageData
 
         $requests = LeaveRequest::query()
             ->where('user_id', $user->id)
+            ->with('attachments')
             ->orderByDesc('starts_on')
             ->orderByDesc('id')
             ->get();
@@ -89,9 +91,27 @@ final class LeaveRequestPageData
                     'day_count' => $request->dayCount(),
                     'created_at' => $request->created_at?->toIso8601String() ?? '',
                     'can_edit' => $user->can('update', $request),
+                    'attachment' => $this->attachmentPayload($request),
                 ])
                 ->values()
                 ->all(),
+        ];
+    }
+
+    /**
+     * @return array{name: string, url: string}|null
+     */
+    private function attachmentPayload(LeaveRequest $request): ?array
+    {
+        $attachment = $request->attachments->first();
+
+        if ($attachment === null) {
+            return null;
+        }
+
+        return [
+            'name' => $attachment->original_name,
+            'url' => route('leaveRequests.medicalCertificate', $request),
         ];
     }
 

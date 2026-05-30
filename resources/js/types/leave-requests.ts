@@ -13,6 +13,7 @@ export type LeaveRequestListItem = {
     day_count: number;
     created_at: string;
     can_edit: boolean;
+    attachment: { name: string; url: string } | null;
 };
 
 export type LeaveRequestsPageStats = {

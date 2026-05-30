@@ -95,6 +95,7 @@ export function LeaveRequestFormPanel({
 
                 <Form
                     {...formProps}
+                    encType="multipart/form-data"
                     options={{ preserveScroll: true }}
                     onSuccess={() => {
                         onSuccess(
@@ -192,12 +193,50 @@ export function LeaveRequestFormPanel({
                                 {errors.notes ? (
                                     <p className="mt-1 text-xs text-red-600">{errors.notes}</p>
                                 ) : null}
-                                {type === 'sick' ? (
-                                    <p className="mt-1.5 text-xs text-gray-500">
-                                        Een doktersbrief upload je in een volgende stap bij ziekteverlof.
-                                    </p>
-                                ) : null}
                             </div>
+
+                            {type === 'sick' ? (
+                                <div>
+                                    <label
+                                        htmlFor="leave-medical-certificate"
+                                        className="text-sm font-medium text-gray-800"
+                                    >
+                                        Doktersbrief{' '}
+                                        {isEdit && request?.attachment !== null ? null : (
+                                            <span className="text-red-600">*</span>
+                                        )}
+                                    </label>
+                                    {isEdit && request?.attachment !== null ? (
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Huidig bestand:{' '}
+                                            <a
+                                                href={request.attachment.url}
+                                                className="font-medium text-gray-700 underline hover:text-gray-900"
+                                            >
+                                                {request.attachment.name}
+                                            </a>
+                                            . Upload een nieuw bestand om te vervangen.
+                                        </p>
+                                    ) : (
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            PDF, JPG of PNG, max. 5 MB.
+                                        </p>
+                                    )}
+                                    <input
+                                        id="leave-medical-certificate"
+                                        name="medical_certificate"
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                        required={!isEdit || request?.attachment === null}
+                                        className={cn(inputClass, 'file:me-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-gray-700')}
+                                    />
+                                    {errors.medical_certificate ? (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            {errors.medical_certificate}
+                                        </p>
+                                    ) : null}
+                                </div>
+                            ) : null}
 
                             <div className="flex flex-col-reverse gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
                                 <button

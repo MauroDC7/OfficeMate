@@ -45,6 +45,16 @@ export function LeaveRequestsList({ requests, onEdit, onCancelled }: LeaveReques
                         {request.notes !== null && request.notes !== '' ? (
                             <p className="mt-1 text-xs text-gray-500">{request.notes}</p>
                         ) : null}
+                        {request.attachment !== null ? (
+                            <p className="mt-1 text-xs">
+                                <a
+                                    href={request.attachment.url}
+                                    className="font-medium text-gray-700 underline hover:text-gray-900"
+                                >
+                                    {request.attachment.name}
+                                </a>
+                            </p>
+                        ) : null}
                     </div>
 
                     {request.can_edit ? (
