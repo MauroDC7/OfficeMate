@@ -4,6 +4,8 @@ namespace App\Http\Requests\Concerns;
 
 use App\Enums\LeaveType;
 use App\Models\LeaveRequest;
+use App\Models\User;
+use App\Services\LeaveRequestOverlapChecker;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -64,5 +66,37 @@ trait ValidatesLeaveRequestPayload
             'medical_certificate',
             'Upload een doktersbrief (PDF of afbeelding).',
         );
+    }
+
+    protected function validateLeaveRequestOverlap(Validator $validator, ?LeaveRequest $existing = null): void
+    {
+        if ($validator->errors()->isNotEmpty()) {
+            return;
+        }
+
+        $user = $this->user();
+
+        if (! $user instanceof User) {
+            return;
+        }
+
+        $startsOn = $this->input('starts_on');
+        $endsOn = $this->input('ends_on');
+
+        if (! is_string($startsOn) || ! is_string($endsOn)) {
+            return;
+        }
+
+        if (app(LeaveRequestOverlapChecker::class)->overlapsForUser(
+            $user->id,
+            $startsOn,
+            $endsOn,
+            $existing?->id,
+        )) {
+            $validator->errors()->add(
+                'starts_on',
+                'Deze periode overlapt met een bestaande verlofaanvraag.',
+            );
+        }
     }
 }

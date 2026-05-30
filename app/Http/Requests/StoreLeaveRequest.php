@@ -27,6 +27,7 @@ class StoreLeaveRequest extends FormRequest
     {
         $validator->after(function (Validator $validator): void {
             $this->validateSickLeaveCertificate($validator);
+            $this->validateLeaveRequestOverlap($validator);
         });
     }
 

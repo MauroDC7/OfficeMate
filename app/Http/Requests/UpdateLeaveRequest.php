@@ -30,6 +30,7 @@ class UpdateLeaveRequest extends FormRequest
 
             if ($leaveRequest instanceof LeaveRequest) {
                 $this->validateSickLeaveCertificate($validator, $leaveRequest);
+                $this->validateLeaveRequestOverlap($validator, $leaveRequest);
             }
         });
     }
