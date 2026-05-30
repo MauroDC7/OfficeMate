@@ -1,16 +1,23 @@
+import { router } from '@inertiajs/react';
+
+import { useAlert } from '@/components/alert';
 import { LeaveRequestStatusBadge } from '@/components/leave-requests/leave-request-status-badge';
 import {
     formatDayCount,
     formatLeavePeriod,
 } from '@/components/leave-requests/leave-request-helpers';
+import { destroy } from '@/routes/leaveRequests';
 import type { LeaveRequestListItem } from '@/types/leave-requests';
 
 type LeaveRequestsListProps = {
     requests: LeaveRequestListItem[];
     onEdit?: (request: LeaveRequestListItem) => void;
+    onCancelled?: () => void;
 };
 
-export function LeaveRequestsList({ requests, onEdit }: LeaveRequestsListProps) {
+export function LeaveRequestsList({ requests, onEdit, onCancelled }: LeaveRequestsListProps) {
+    const { confirm } = useAlert();
+
     if (requests.length === 0) {
         return (
             <p className="px-4 py-10 text-center text-sm text-gray-500 sm:px-5">
@@ -40,14 +47,43 @@ export function LeaveRequestsList({ requests, onEdit }: LeaveRequestsListProps) 
                         ) : null}
                     </div>
 
-                    {request.can_edit && onEdit !== undefined ? (
-                        <button
-                            type="button"
-                            onClick={() => onEdit(request)}
-                            className="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-                        >
-                            Bewerken
-                        </button>
+                    {request.can_edit ? (
+                        <div className="flex shrink-0 flex-wrap gap-2">
+                            {onEdit !== undefined ? (
+                                <button
+                                    type="button"
+                                    onClick={() => onEdit(request)}
+                                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+                                >
+                                    Bewerken
+                                </button>
+                            ) : null}
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    const accepted = await confirm({
+                                        message: `Aanvraag “${request.type_label}” (${formatLeavePeriod(request)}) intrekken?`,
+                                        confirmLabel: 'Intrekken',
+                                        variant: 'danger',
+                                    });
+
+                                    if (!accepted) {
+                                        return;
+                                    }
+
+                                    router.delete(
+                                        destroy.url({ leave_request: request.id }),
+                                        {
+                                            preserveScroll: true,
+                                            onSuccess: onCancelled,
+                                        },
+                                    );
+                                }}
+                                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-600 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+                            >
+                                Intrekken
+                            </button>
+                        </div>
                     ) : null}
                 </li>
             ))}

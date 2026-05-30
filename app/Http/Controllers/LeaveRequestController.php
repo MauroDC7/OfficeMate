@@ -43,4 +43,13 @@ final class LeaveRequestController extends Controller
 
         return redirect()->route('leaveRequests');
     }
+
+    public function destroy(LeaveRequest $leaveRequest): RedirectResponse
+    {
+        $this->authorize('delete', $leaveRequest);
+
+        $leaveRequest->delete();
+
+        return redirect()->route('leaveRequests');
+    }
 }

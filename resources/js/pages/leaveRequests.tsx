@@ -191,6 +191,7 @@ export default function LeaveRequests() {
                         <LeaveRequestsList
                             requests={filteredRequests}
                             onEdit={openEdit}
+                            onCancelled={() => success('Verlofaanvraag ingetrokken.')}
                         />
                     )}
                 </section>

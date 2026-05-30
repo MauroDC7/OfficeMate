@@ -61,6 +61,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->name('leaveRequests.store');
     Route::patch('/leave-requests/{leave_request}', [LeaveRequestController::class, 'update'])
         ->name('leaveRequests.update');
+    Route::delete('/leave-requests/{leave_request}', [LeaveRequestController::class, 'destroy'])
+        ->name('leaveRequests.destroy');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
