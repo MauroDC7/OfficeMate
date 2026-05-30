@@ -11,7 +11,7 @@ final class LeaveRequestPolicy
 {
     public function create(User $user): bool
     {
-        return true;
+        return $user->role === UserRole::Employee;
     }
 
     public function update(User $user, LeaveRequest $leaveRequest): bool

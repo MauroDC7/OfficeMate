@@ -7,12 +7,14 @@ use App\Models\TimesheetEntry;
 use App\Models\TimesheetEntryProposal;
 use App\Models\User;
 use App\Services\AdminDashboardStats;
+use App\Services\AdminLeaveRequestPageData;
 use App\Services\EmployeeDashboardStats;
 use App\Services\LeaveRequestPageData;
 use App\Services\OrganizationContext;
 use App\Services\TimesheetEntryWindowTitlesResolver;
 use App\Services\TimesheetProjectNormalizer;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -153,12 +155,32 @@ final class AppPageController extends Controller
         }
     }
 
-    public function leaveRequests(Request $request, LeaveRequestPageData $leaveRequestPageData): Response
+    public function leaveRequests(Request $request, LeaveRequestPageData $leaveRequestPageData): Response|RedirectResponse
     {
         $user = $request->user();
         abort_unless($user instanceof User, 401);
 
+        if ($user->role === UserRole::Admin) {
+            return redirect()->route('admin.leaveRequests');
+        }
+
         return Inertia::render('leaveRequests', $leaveRequestPageData->forUser($user));
+    }
+
+    public function adminLeaveRequests(
+        Request $request,
+        AdminLeaveRequestPageData $adminLeaveRequestPageData,
+        OrganizationContext $organizationContext,
+    ): Response {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        $organization = $organizationContext->forUserOrFail($user);
+
+        return Inertia::render(
+            'admin/leaveRequests',
+            $adminLeaveRequestPageData->forOrganization($organization, $request),
+        );
     }
 
     public function settings(Request $request): Response

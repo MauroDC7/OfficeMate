@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\LeaveRequestStatus;
 use App\Enums\LeaveType;
+use App\Enums\UserRole;
 use App\Http\Requests\BulkApproveLeaveRequests;
 use App\Http\Requests\RejectLeaveRequest;
 use App\Http\Requests\StoreLeaveRequest;
@@ -94,7 +95,9 @@ final class LeaveRequestController extends Controller
 
         $this->markApproved($leaveRequest);
 
-        return redirect()->route('dashboard');
+        $user = auth()->user();
+
+        return $this->redirectAfterAdminLeaveAction($user instanceof User ? $user : null);
     }
 
     public function bulkApprove(BulkApproveLeaveRequests $request): RedirectResponse
@@ -122,7 +125,7 @@ final class LeaveRequestController extends Controller
                 'rejection_reason' => null,
             ]);
 
-        return redirect()->route('dashboard');
+        return $this->redirectAfterAdminLeaveAction($request->user());
     }
 
     private function markApproved(LeaveRequest $leaveRequest): void
@@ -141,6 +144,17 @@ final class LeaveRequestController extends Controller
             'status' => LeaveRequestStatus::Rejected,
             'rejection_reason' => $validated['rejection_reason'] ?? null,
         ]);
+
+        return $this->redirectAfterAdminLeaveAction($request->user());
+    }
+
+    private function redirectAfterAdminLeaveAction(?User $user): RedirectResponse
+    {
+        abort_unless($user instanceof User, 401);
+
+        if ($user->role === UserRole::Admin) {
+            return redirect()->route('admin.leaveRequests');
+        }
 
         return redirect()->route('dashboard');
     }

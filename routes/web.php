@@ -58,6 +58,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->middleware('admin')
         ->name('projects.creator-access.update');
     Route::get('/leave-requests', [AppPageController::class, 'leaveRequests'])->name('leaveRequests');
+    Route::get('/admin/leave-requests', [AppPageController::class, 'adminLeaveRequests'])
+        ->middleware('admin')
+        ->name('admin.leaveRequests');
     Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->name('leaveRequests.store');
     Route::post('/leave-requests/bulk-approve', [LeaveRequestController::class, 'bulkApprove'])
         ->middleware('admin')

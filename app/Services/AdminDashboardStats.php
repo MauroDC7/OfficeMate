@@ -20,8 +20,6 @@ final class AdminDashboardStats
 
     private const CURRENT_LEAVE_PREVIEW = 5;
 
-    private const PENDING_LEAVE_PREVIEW = 10;
-
     /**
      * @return array{
      *     organizationName: string,
@@ -36,17 +34,6 @@ final class AdminDashboardStats
      *     pendingMemberships: list<array{
      *         id: int,
      *         team: array{id: int, name: string},
-     *         user: array{id: int, name: string, email: string}
-     *     }>,
-     *     pendingLeaveRequests: list<array{
-     *         id: int,
-     *         starts_on: string,
-     *         ends_on: string,
-     *         day_count: int,
-     *         type: string,
-     *         type_label: string,
-     *         notes: string|null,
-     *         attachment: array{name: string, url: string}|null,
      *         user: array{id: int, name: string, email: string}
      *     }>,
      *     currentLeave: list<array{
@@ -105,34 +92,7 @@ final class AdminDashboardStats
             ->whereIn('user_id', $memberIds)
             ->where('status', LeaveRequestStatus::Pending);
 
-        $pendingLeaveRequestCount = (clone $pendingLeaveQuery)->count();
-
-        $pendingLeaveRequests = $pendingLeaveQuery
-            ->with(['user:id,first_name,last_name,email,organization_id', 'attachments'])
-            ->orderBy('starts_on')
-            ->limit(self::PENDING_LEAVE_PREVIEW)
-            ->get()
-            ->map(fn (LeaveRequest $leave): array => [
-                'id' => $leave->id,
-                'starts_on' => $leave->starts_on->format('Y-m-d'),
-                'ends_on' => $leave->ends_on->format('Y-m-d'),
-                'day_count' => $leave->dayCount(),
-                'type' => $leave->type->value,
-                'type_label' => $leave->type->label(),
-                'notes' => $leave->notes,
-                'attachment' => $leave->attachments->first() !== null
-                    ? [
-                        'name' => $leave->attachments->first()->original_name,
-                        'url' => route('leaveRequests.medicalCertificate', $leave),
-                    ]
-                    : null,
-                'user' => [
-                    'id' => $leave->user->id,
-                    'name' => $leave->user->name,
-                    'email' => $leave->user->email,
-                ],
-            ])
-            ->all();
+        $pendingLeaveRequestCount = $pendingLeaveQuery->count();
 
         $pendingProposalCount = TimesheetEntryProposal::query()
             ->whereIn('user_id', $memberIds)
@@ -186,7 +146,6 @@ final class AdminDashboardStats
             'hoursThisWeekMinutes' => $hoursThisWeekMinutes,
             'weekStart' => $monday->toDateString(),
             'pendingMemberships' => $pendingMemberships,
-            'pendingLeaveRequests' => $pendingLeaveRequests,
             'currentLeave' => $currentLeave,
         ];
     }

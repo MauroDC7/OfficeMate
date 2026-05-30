@@ -4,8 +4,9 @@ import { useAlert } from '@/components/alert';
 import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
 import { formatDayTotal } from '@/components/timesheets/timesheet-helpers';
 import { AppLayout } from '@/layouts/app-layout';
-import { leaveRequests, settings, teams, timesheets } from '@/routes';
-import { AdminPendingLeaveSection } from '@/components/leave-requests/admin-pending-leave-section';
+import { leaveRequests as adminLeaveRequests } from '@/routes/admin';
+import { settings, teams, timesheets } from '@/routes';
+import { AdminLeaveManagementTeaser } from '@/components/leave-requests/admin-leave-management-teaser';
 import { approve, reject } from '@/routes/team-memberships';
 import type {
     AdminDashboardCurrentLeave,
@@ -91,7 +92,6 @@ export default function AdminDashboard() {
         hoursThisWeekMinutes,
         weekStart,
         pendingMemberships,
-        pendingLeaveRequests,
         currentLeave,
     } = usePage<AdminDashboardProps>().props;
     const { success } = useAlert();
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
                             label="Verlof in behandeling"
                             value={pendingLeaveRequestCount}
                             detail={pendingLeaveDetail(pendingLeaveRequestCount)}
-                            href={leaveRequests.url()}
+                            href={adminLeaveRequests.url()}
                         />
                         <DashboardStatCard
                             label="Open uitnodigingen"
@@ -240,11 +240,7 @@ export default function AdminDashboard() {
                         )}
                     </section>
 
-                    <AdminPendingLeaveSection
-                        requests={pendingLeaveRequests}
-                        totalCount={pendingLeaveRequestCount}
-                        onSuccess={(message) => success(message)}
-                    />
+                    <AdminLeaveManagementTeaser pendingCount={pendingLeaveRequestCount} />
 
                     <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
                         <div className="border-b border-gray-100 px-4 py-3 sm:px-5">
