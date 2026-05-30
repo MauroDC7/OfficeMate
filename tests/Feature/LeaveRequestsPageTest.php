@@ -45,7 +45,9 @@ it('renders leave requests page with user data', function () {
             ->where('requests.1.type', 'vacation')
             ->where('requests.1.type_label', 'Vakantie')
             ->where('requests.1.status', 'approved')
-            ->where('requests.1.day_count', 3));
+            ->where('requests.1.day_count', 3)
+            ->where('requests.0.can_edit', true)
+            ->where('requests.1.can_edit', false));
 });
 
 it('requires authentication for leave requests page', function () {

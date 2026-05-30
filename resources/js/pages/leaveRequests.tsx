@@ -10,7 +10,7 @@ import {
 import { LeaveRequestsList } from '@/components/leave-requests/leave-requests-list';
 import { AppLayout } from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import type { LeaveRequestsPageProps } from '@/types/leave-requests';
+import type { LeaveRequestListItem, LeaveRequestsPageProps } from '@/types/leave-requests';
 
 function IconPlus({ className }: { className?: string }) {
     return (
@@ -52,7 +52,24 @@ export default function LeaveRequests() {
     const { success } = useAlert();
     const { stats, requests } = usePage<LeaveRequestsPageProps>().props;
     const [statusFilter, setStatusFilter] = useState<LeaveRequestStatusFilter>('all');
-    const [showForm, setShowForm] = useState(false);
+    const [creatingNew, setCreatingNew] = useState(false);
+    const [editingRequest, setEditingRequest] = useState<LeaveRequestListItem | null>(null);
+    const showForm = creatingNew || editingRequest !== null;
+
+    function closeForm() {
+        setCreatingNew(false);
+        setEditingRequest(null);
+    }
+
+    function openCreate() {
+        setEditingRequest(null);
+        setCreatingNew(true);
+    }
+
+    function openEdit(request: LeaveRequestListItem) {
+        setCreatingNew(false);
+        setEditingRequest(request);
+    }
 
     const filteredRequests = useMemo(
         () =>
@@ -79,7 +96,7 @@ export default function LeaveRequests() {
                     </div>
                     <button
                         type="button"
-                        onClick={() => setShowForm(true)}
+                        onClick={openCreate}
                         className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
                     >
                         <IconPlus />
@@ -171,13 +188,17 @@ export default function LeaveRequests() {
                             </p>
                         </div>
                     ) : (
-                        <LeaveRequestsList requests={filteredRequests} />
+                        <LeaveRequestsList
+                            requests={filteredRequests}
+                            onEdit={openEdit}
+                        />
                     )}
                 </section>
 
                 {showForm ? (
                     <LeaveRequestFormPanel
-                        onClose={() => setShowForm(false)}
+                        request={editingRequest}
+                        onClose={closeForm}
                         onSuccess={(message) => success(message)}
                     />
                 ) : null}

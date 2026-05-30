@@ -12,6 +12,7 @@ export type LeaveRequestListItem = {
     notes: string | null;
     day_count: number;
     created_at: string;
+    can_edit: boolean;
 };
 
 export type LeaveRequestsPageStats = {

@@ -7,9 +7,10 @@ import type { LeaveRequestListItem } from '@/types/leave-requests';
 
 type LeaveRequestsListProps = {
     requests: LeaveRequestListItem[];
+    onEdit?: (request: LeaveRequestListItem) => void;
 };
 
-export function LeaveRequestsList({ requests }: LeaveRequestsListProps) {
+export function LeaveRequestsList({ requests, onEdit }: LeaveRequestsListProps) {
     if (requests.length === 0) {
         return (
             <p className="px-4 py-10 text-center text-sm text-gray-500 sm:px-5">
@@ -38,6 +39,16 @@ export function LeaveRequestsList({ requests }: LeaveRequestsListProps) {
                             <p className="mt-1 text-xs text-gray-500">{request.notes}</p>
                         ) : null}
                     </div>
+
+                    {request.can_edit && onEdit !== undefined ? (
+                        <button
+                            type="button"
+                            onClick={() => onEdit(request)}
+                            className="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+                        >
+                            Bewerken
+                        </button>
+                    ) : null}
                 </li>
             ))}
         </ul>

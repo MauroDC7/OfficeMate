@@ -7,7 +7,7 @@ use App\Models\LeaveRequest;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreLeaveRequest extends FormRequest
+class UpdateLeaveRequest extends FormRequest
 {
     use ValidatesLeaveRequestPayload;
 
@@ -21,7 +21,10 @@ class StoreLeaveRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->can('create', LeaveRequest::class) ?? false;
+        $leaveRequest = $this->route('leave_request');
+
+        return $leaveRequest instanceof LeaveRequest
+            && ($this->user()?->can('update', $leaveRequest) ?? false);
     }
 
     protected function prepareForValidation(): void

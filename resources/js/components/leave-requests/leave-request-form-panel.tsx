@@ -1,16 +1,15 @@
 import { Form } from '@inertiajs/react';
 import { useEffect, useId, useState } from 'react';
 
-import {
-    LEAVE_TYPE_OPTIONS,
-} from '@/components/leave-requests/leave-request-helpers';
+import { LEAVE_TYPE_OPTIONS } from '@/components/leave-requests/leave-request-helpers';
 import { cn } from '@/lib/utils';
-import { store } from '@/routes/leaveRequests';
-import type { LeaveType } from '@/types/leave-requests';
+import { store, update } from '@/routes/leaveRequests';
+import type { LeaveRequestListItem, LeaveType } from '@/types/leave-requests';
 
 type LeaveRequestFormPanelProps = {
     onClose: () => void;
     onSuccess: (message: string) => void;
+    request?: LeaveRequestListItem | null;
 };
 
 function IconClose({ className }: { className?: string }) {
@@ -29,9 +28,14 @@ function IconClose({ className }: { className?: string }) {
 const inputClass =
     'mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10';
 
-export function LeaveRequestFormPanel({ onClose, onSuccess }: LeaveRequestFormPanelProps) {
+export function LeaveRequestFormPanel({
+    onClose,
+    onSuccess,
+    request = null,
+}: LeaveRequestFormPanelProps) {
     const titleId = useId();
-    const [type, setType] = useState<LeaveType>('vacation');
+    const isEdit = request !== null;
+    const [type, setType] = useState<LeaveType>(request?.type ?? 'vacation');
 
     useEffect(() => {
         const previousOverflow = document.body.style.overflow;
@@ -51,6 +55,10 @@ export function LeaveRequestFormPanel({ onClose, onSuccess }: LeaveRequestFormPa
         };
     }, [onClose]);
 
+    const formProps = isEdit
+        ? update.form.patch({ leave_request: request.id })
+        : store.form.post();
+
     return (
         <div
             className="fixed inset-0 z-[9990] flex items-end justify-center bg-gray-900/40 p-3 sm:items-center sm:p-4"
@@ -67,10 +75,12 @@ export function LeaveRequestFormPanel({ onClose, onSuccess }: LeaveRequestFormPa
                 <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4 sm:px-6">
                     <div>
                         <h2 id={titleId} className="text-base font-semibold text-gray-900">
-                            Nieuwe verlofaanvraag
+                            {isEdit ? 'Verlofaanvraag bewerken' : 'Nieuwe verlofaanvraag'}
                         </h2>
                         <p className="mt-0.5 text-sm text-gray-500">
-                            Kies het type en de periode. Je aanvraag wordt ter goedkeuring ingediend.
+                            {isEdit
+                                ? 'Pas type en periode aan zolang de aanvraag in behandeling is.'
+                                : 'Kies het type en de periode. Je aanvraag wordt ter goedkeuring ingediend.'}
                         </p>
                     </div>
                     <button
@@ -84,10 +94,12 @@ export function LeaveRequestFormPanel({ onClose, onSuccess }: LeaveRequestFormPa
                 </div>
 
                 <Form
-                    {...store.form.post()}
+                    {...formProps}
                     options={{ preserveScroll: true }}
                     onSuccess={() => {
-                        onSuccess('Verlofaanvraag ingediend.');
+                        onSuccess(
+                            isEdit ? 'Verlofaanvraag bijgewerkt.' : 'Verlofaanvraag ingediend.',
+                        );
                         onClose();
                     }}
                     className="space-y-5 px-5 py-5 sm:px-6"
@@ -137,6 +149,7 @@ export function LeaveRequestFormPanel({ onClose, onSuccess }: LeaveRequestFormPa
                                         name="starts_on"
                                         type="date"
                                         required
+                                        defaultValue={request?.starts_on ?? ''}
                                         className={inputClass}
                                     />
                                     {errors.starts_on ? (
@@ -155,6 +168,7 @@ export function LeaveRequestFormPanel({ onClose, onSuccess }: LeaveRequestFormPa
                                         name="ends_on"
                                         type="date"
                                         required
+                                        defaultValue={request?.ends_on ?? ''}
                                         className={inputClass}
                                     />
                                     {errors.ends_on ? (
@@ -171,6 +185,7 @@ export function LeaveRequestFormPanel({ onClose, onSuccess }: LeaveRequestFormPa
                                     id="leave-notes"
                                     name="notes"
                                     rows={3}
+                                    defaultValue={request?.notes ?? ''}
                                     placeholder="Optioneel: extra toelichting voor je beheerder"
                                     className={inputClass}
                                 />
@@ -197,7 +212,7 @@ export function LeaveRequestFormPanel({ onClose, onSuccess }: LeaveRequestFormPa
                                     disabled={processing}
                                     className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
                                 >
-                                    {processing ? 'Bezig…' : 'Indienen'}
+                                    {processing ? 'Bezig…' : isEdit ? 'Opslaan' : 'Indienen'}
                                 </button>
                             </div>
                         </>

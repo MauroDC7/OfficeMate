@@ -59,6 +59,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('projects.creator-access.update');
     Route::get('/leave-requests', [AppPageController::class, 'leaveRequests'])->name('leaveRequests');
     Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->name('leaveRequests.store');
+    Route::patch('/leave-requests/{leave_request}', [LeaveRequestController::class, 'update'])
+        ->name('leaveRequests.update');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');

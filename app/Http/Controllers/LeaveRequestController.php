@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\LeaveRequestStatus;
 use App\Enums\LeaveType;
 use App\Http\Requests\StoreLeaveRequest;
+use App\Http\Requests\UpdateLeaveRequest;
+use App\Models\LeaveRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 
@@ -23,6 +25,20 @@ final class LeaveRequestController extends Controller
             'type' => LeaveType::from($validated['type']),
             'notes' => $validated['notes'] ?? null,
             'status' => LeaveRequestStatus::Pending,
+        ]);
+
+        return redirect()->route('leaveRequests');
+    }
+
+    public function update(UpdateLeaveRequest $request, LeaveRequest $leaveRequest): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        $leaveRequest->update([
+            'starts_on' => $validated['starts_on'],
+            'ends_on' => $validated['ends_on'],
+            'type' => LeaveType::from($validated['type']),
+            'notes' => $validated['notes'] ?? null,
         ]);
 
         return redirect()->route('leaveRequests');

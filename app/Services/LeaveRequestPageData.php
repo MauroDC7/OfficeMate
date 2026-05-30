@@ -26,6 +26,7 @@ final class LeaveRequestPageData
      *         notes: string|null,
      *         day_count: int,
      *         created_at: string,
+     *         can_edit: bool,
      *     }>
      * }
      */
@@ -75,6 +76,7 @@ final class LeaveRequestPageData
                     'notes' => $request->notes,
                     'day_count' => $request->dayCount(),
                     'created_at' => $request->created_at?->toIso8601String() ?? '',
+                    'can_edit' => $user->can('update', $request),
                 ])
                 ->values()
                 ->all(),
