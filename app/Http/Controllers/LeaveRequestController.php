@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\LeaveRequestStatus;
 use App\Enums\LeaveType;
+use App\Http\Requests\BulkApproveLeaveRequests;
 use App\Http\Requests\RejectLeaveRequest;
 use App\Http\Requests\StoreLeaveRequest;
 use App\Http\Requests\UpdateLeaveRequest;
@@ -91,12 +92,45 @@ final class LeaveRequestController extends Controller
     {
         $this->authorize('approve', $leaveRequest);
 
+        $this->markApproved($leaveRequest);
+
+        return redirect()->route('dashboard');
+    }
+
+    public function bulkApprove(BulkApproveLeaveRequests $request): RedirectResponse
+    {
+        /** @var list<int> $ids */
+        $ids = $request->validated('leave_request_ids');
+
+        $leaveRequests = LeaveRequest::query()
+            ->whereIn('id', $ids)
+            ->with('user')
+            ->get();
+
+        if ($leaveRequests->count() !== count($ids)) {
+            abort(404);
+        }
+
+        foreach ($leaveRequests as $leaveRequest) {
+            $this->authorize('approve', $leaveRequest);
+        }
+
+        LeaveRequest::query()
+            ->whereIn('id', $ids)
+            ->update([
+                'status' => LeaveRequestStatus::Approved,
+                'rejection_reason' => null,
+            ]);
+
+        return redirect()->route('dashboard');
+    }
+
+    private function markApproved(LeaveRequest $leaveRequest): void
+    {
         $leaveRequest->update([
             'status' => LeaveRequestStatus::Approved,
             'rejection_reason' => null,
         ]);
-
-        return redirect()->route('dashboard');
     }
 
     public function reject(RejectLeaveRequest $request, LeaveRequest $leaveRequest): RedirectResponse
