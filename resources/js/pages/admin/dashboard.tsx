@@ -263,12 +263,9 @@ export default function AdminDashboard() {
                                             <p className="truncate text-sm font-medium text-gray-900">
                                                 {leave.user.name}
                                             </p>
-                                            {leave.label !== null &&
-                                            leave.label !== '' ? (
-                                                <p className="truncate text-xs text-gray-500">
-                                                    {leave.label}
-                                                </p>
-                                            ) : null}
+                                            <p className="truncate text-xs text-gray-500">
+                                                {leave.type_label}
+                                            </p>
                                         </div>
                                         <p className="shrink-0 text-xs font-medium text-gray-600">
                                             {formatLeavePeriod(leave)}

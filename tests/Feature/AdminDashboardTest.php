@@ -253,10 +253,9 @@ it('lists approved leave that overlaps with the current week', function () {
 
     $monday = CarbonImmutable::now()->startOfWeek(CarbonImmutable::MONDAY);
 
-    LeaveRequest::factory()->for($employee)->approved()->create([
+    LeaveRequest::factory()->for($employee)->approved()->vacation()->create([
         'starts_on' => $monday->addDay()->toDateString(),
         'ends_on' => $monday->addDays(3)->toDateString(),
-        'label' => 'Vakantie',
     ]);
 
     LeaveRequest::factory()->for($employee)->approved()->create([
@@ -276,5 +275,5 @@ it('lists approved leave that overlaps with the current week', function () {
             ->component('admin/dashboard')
             ->has('currentLeave', 1)
             ->where('currentLeave.0.user.name', 'Lena Janssens')
-            ->where('currentLeave.0.label', 'Vakantie'));
+            ->where('currentLeave.0.type_label', 'Vakantie'));
 });

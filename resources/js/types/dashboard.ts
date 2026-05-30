@@ -38,7 +38,8 @@ export type AdminDashboardCurrentLeave = {
     id: number;
     starts_on: string;
     ends_on: string;
-    label: string | null;
+    type: string;
+    type_label: string;
     user: {
         id: number;
         name: string;

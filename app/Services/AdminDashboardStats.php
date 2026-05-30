@@ -40,7 +40,8 @@ final class AdminDashboardStats
      *         id: int,
      *         starts_on: string,
      *         ends_on: string,
-     *         label: string|null,
+     *         type: string,
+     *         type_label: string,
      *         user: array{id: int, name: string}
      *     }>
      * }
@@ -124,7 +125,8 @@ final class AdminDashboardStats
                 'id' => $leave->id,
                 'starts_on' => $leave->starts_on->format('Y-m-d'),
                 'ends_on' => $leave->ends_on->format('Y-m-d'),
-                'label' => $leave->label,
+                'type' => $leave->type->value,
+                'type_label' => $leave->type->label(),
                 'user' => [
                     'id' => $leave->user->id,
                     'name' => $leave->user->name,

@@ -8,6 +8,7 @@ use App\Models\TimesheetEntryProposal;
 use App\Models\User;
 use App\Services\AdminDashboardStats;
 use App\Services\EmployeeDashboardStats;
+use App\Services\LeaveRequestPageData;
 use App\Services\OrganizationContext;
 use App\Services\TimesheetEntryWindowTitlesResolver;
 use App\Services\TimesheetProjectNormalizer;
@@ -152,9 +153,12 @@ final class AppPageController extends Controller
         }
     }
 
-    public function leaveRequests(): Response
+    public function leaveRequests(Request $request, LeaveRequestPageData $leaveRequestPageData): Response
     {
-        return Inertia::render('leaveRequests');
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        return Inertia::render('leaveRequests', $leaveRequestPageData->forUser($user));
     }
 
     public function settings(Request $request): Response
