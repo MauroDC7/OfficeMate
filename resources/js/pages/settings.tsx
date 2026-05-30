@@ -6,14 +6,10 @@ import { AppLayout } from '@/layouts/app-layout';
 import { getUserDisplayFullName, getUserInitials } from '@/lib/user-display';
 import { logout } from '@/routes';
 import { update as updateSettingsAccount } from '@/routes/settings/account';
-import { store as sendOrganizationInvite } from '@/routes/settings/organization-invites';
-import { update as updateOrganization } from '@/routes/settings/organization';
 import type { Auth, User } from '@/types/auth';
-import type { OrganizationSummary } from '@/types/teams';
 
 type SettingsPageProps = {
     auth: Auth;
-    organization: OrganizationSummary | null;
     awaitingOrganizationInvite: boolean;
 };
 
@@ -61,14 +57,9 @@ function formalName(user: User | null): string {
 }
 
 export default function Settings() {
-    const {
-        auth,
-        organization,
-        awaitingOrganizationInvite,
-    } = usePage<SettingsPageProps>().props;
+    const { auth, awaitingOrganizationInvite } = usePage<SettingsPageProps>().props;
     const { success } = useAlert();
     const user = auth.user;
-    const isAdmin = auth.isAdmin;
 
     const primaryNameLine = formalName(user);
     const initials = getUserInitials(user);
@@ -84,8 +75,18 @@ export default function Settings() {
                     Instellingen
                 </h1>
                 <p className="mt-2 max-w-2xl text-pretty text-sm leading-relaxed text-gray-500 md:max-w-3xl lg:text-base xl:max-w-4xl 2xl:max-w-5xl">
-                    Beheer je profiel, notificaties, AI-voorkeuren en integraties.
+                    Beheer je profiel en account.
                 </p>
+
+                {awaitingOrganizationInvite ? (
+                    <section className="mt-5 rounded-xl border border-amber-200 bg-amber-50/70 p-5 shadow-sm sm:mt-6">
+                        <h2 className="text-base font-semibold text-gray-900">Uitnodiging bedrijf</h2>
+                        <p className="mt-1 text-sm text-gray-600">
+                            Je beheerder nodigt je per e-mail uit. Open de link in die mail om teams en
+                            timesheets te gebruiken.
+                        </p>
+                    </section>
+                ) : null}
 
                 <section
                     className="mt-5 w-full min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6 sm:rounded-2xl lg:mt-7"
@@ -222,120 +223,6 @@ export default function Settings() {
                         </div>
                     </div>
                 </section>
-
-                {awaitingOrganizationInvite ? (
-                    <section className="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:mt-6">
-                        <h2 className="text-base font-semibold text-gray-900">Bedrijf</h2>
-                        <p className="mt-1 text-sm text-gray-500">
-                            Je beheerder nodigt je per e-mail uit. Open de link in die mail om
-                            deel te nemen aan het bedrijf.
-                        </p>
-                    </section>
-                ) : null}
-
-                {organization !== null && !awaitingOrganizationInvite && !isAdmin ? (
-                    <section className="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:mt-6">
-                        <h2 className="text-base font-semibold text-gray-900">Bedrijf</h2>
-                        <p className="mt-2 text-sm text-gray-800">{organization.name}</p>
-                    </section>
-                ) : null}
-
-                {isAdmin && organization !== null ? (
-                    <section
-                        className="mt-5 w-full min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6 sm:rounded-2xl"
-                        aria-labelledby="organization-card-title"
-                    >
-                        <div className="flex items-center gap-2.5 border-b border-gray-200 px-5 py-4 sm:px-6 sm:py-5">
-                            <h2 id="organization-card-title" className="text-base font-semibold text-gray-900">
-                                Organisatie
-                            </h2>
-                        </div>
-                        <Form
-                            key={`organization-${organization.id}`}
-                            {...updateOrganization.form.patch({ organization: organization.id })}
-                            options={{ preserveScroll: true }}
-                            onSuccess={() => success('Organisatie opgeslagen.')}
-                            className="border-b border-gray-200 px-5 py-5 sm:px-6"
-                        >
-                            {({ errors, processing }) => (
-                                <div className="max-w-md space-y-4">
-                                    <div>
-                                        <label
-                                            htmlFor="organization-name"
-                                            className="text-sm font-medium text-gray-900"
-                                        >
-                                            Bedrijfsnaam
-                                        </label>
-                                        <input
-                                            id="organization-name"
-                                            type="text"
-                                            name="name"
-                                            required
-                                            defaultValue={organization.name}
-                                            className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
-                                        />
-                                        {errors.name !== undefined ? (
-                                            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-                                        ) : null}
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-                                    >
-                                        {processing ? 'Opslaan…' : 'Opslaan'}
-                                    </button>
-                                </div>
-                            )}
-                        </Form>
-                        <div className="px-5 py-5 sm:px-6">
-                            <p className="text-sm font-medium text-gray-900">Medewerker uitnodigen</p>
-                            <p className="mt-1 text-xs text-gray-500">
-                                Stuur een uitnodiging per e-mail. De link is 7 dagen geldig.
-                            </p>
-                            <Form
-                                {...sendOrganizationInvite.form.post()}
-                                options={{ preserveScroll: true }}
-                                onSuccess={() => success('Uitnodiging verstuurd.')}
-                                className="mt-4 max-w-md space-y-4"
-                            >
-                                {({ errors, processing }) => (
-                                    <>
-                                        <div>
-                                            <label
-                                                htmlFor="invite-email"
-                                                className="text-sm font-medium text-gray-900"
-                                            >
-                                                E-mailadres
-                                            </label>
-                                            <input
-                                                id="invite-email"
-                                                type="email"
-                                                name="email"
-                                                required
-                                                autoComplete="email"
-                                                placeholder="naam@voorbeeld.nl"
-                                                className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
-                                            />
-                                            {errors.email !== undefined ? (
-                                                <p className="mt-1 text-sm text-red-600">
-                                                    {errors.email}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            disabled={processing}
-                                            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
-                                        >
-                                            {processing ? 'Bezig…' : 'Uitnodiging versturen'}
-                                        </button>
-                                    </>
-                                )}
-                            </Form>
-                        </div>
-                    </section>
-                ) : null}
             </main>
         </AppLayout>
     );

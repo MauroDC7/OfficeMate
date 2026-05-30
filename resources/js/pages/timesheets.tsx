@@ -10,6 +10,7 @@ import { timesheets } from '@/routes';
 import type {
     TimesheetActivityItem,
     TimesheetEntryPayload,
+    TimesheetProjectOption,
     TimesheetProposalPayload,
 } from '@/types/timesheets';
 
@@ -18,6 +19,7 @@ type TimesheetsPageProps = {
     entriesByDay: Record<string, TimesheetEntryPayload[]>;
     recentActivity: TimesheetActivityItem[];
     proposals: TimesheetProposalPayload[];
+    projectOptions: TimesheetProjectOption[];
     openEntryId: number | null;
     auth: { user: { id: number } | null };
 };
@@ -29,6 +31,7 @@ export default function Timesheets() {
         entriesByDay,
         recentActivity,
         proposals,
+        projectOptions,
         openEntryId,
     } = page.props;
     const userId = page.props.auth.user?.id ?? null;
@@ -83,6 +86,7 @@ export default function Timesheets() {
                     <TimesheetSuggestionsPanel
                         proposals={proposals}
                         recentActivity={recentActivity}
+                        projectOptions={projectOptions}
                         onNavigateToEntryEdit={onNavigateToEntryEdit}
                     />
                     <TimesheetWeekCalendar

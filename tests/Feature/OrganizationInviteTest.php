@@ -16,10 +16,10 @@ it('lets admins send an email invite', function () {
     $organization = app(OrganizationContext::class)->forUser($admin);
 
     $this->actingAs($admin)
-        ->post(route('settings.organization-invites.store'), [
+        ->post(route('teams.organization-invites.store'), [
             'email' => 'nieuw@example.com',
         ])
-        ->assertRedirect(route('settings'))
+        ->assertRedirect(route('teams'))
         ->assertSessionHas('status');
 
     $this->assertDatabaseHas('organization_invites', [
@@ -55,7 +55,8 @@ it('accepts an invite when a new user registers after opening the link', functio
         'email' => 'medewerker@example.com',
         'password' => 'Password123!',
         'password_confirmation' => 'Password123!',
-    ])->assertRedirect(route('dashboard'));
+        'privacy_policy_accepted' => '1',
+    ])->assertRedirect(route('verification.notice'));
 
     $user = User::query()->where('email', 'medewerker@example.com')->first();
 
@@ -119,7 +120,7 @@ it('forbids employees from sending invites', function () {
     $employee = User::factory()->create(['role' => UserRole::Employee]);
 
     $this->actingAs($employee)
-        ->post(route('settings.organization-invites.store'), [
+        ->post(route('teams.organization-invites.store'), [
             'email' => 'iemand@example.com',
         ])
         ->assertForbidden();
@@ -130,6 +131,12 @@ it('shows awaiting invite message for employees without an organization', functi
 
     $this->actingAs($employee)
         ->get(route('settings'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('awaitingOrganizationInvite', true));
+
+    $this->actingAs($employee)
+        ->get(route('teams'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('awaitingOrganizationInvite', true)

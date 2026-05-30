@@ -3,6 +3,10 @@ import { useMemo, useState } from 'react';
 
 import { useAlert } from '@/components/alert';
 import { CreateTeamFormPanel } from '@/components/teams/create-team-form-panel';
+import {
+    OrganizationSettingsPanel,
+    OrganizationSettingsTrigger,
+} from '@/components/teams/organization-settings-panel';
 import { TeamCard } from '@/components/teams/team-card';
 import { AppLayout } from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
@@ -49,11 +53,13 @@ export default function Teams() {
         organizationUsers,
         pendingMemberships,
         isAdmin,
+        awaitingOrganizationInvite,
     } = usePage<TeamsPageProps>().props;
 
     const [search, setSearch] = useState('');
     const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const [showOrganizationSettings, setShowOrganizationSettings] = useState(false);
 
     const filteredTeams = useMemo(
         () => teamCards.filter((team) => matchesSearch(search, team)),
@@ -62,21 +68,44 @@ export default function Teams() {
 
     const openCreateForm = () => setShowCreateForm(true);
 
+    const hasTeams = teamCards.length > 0;
+    const showFeaturedOrganizationSettings = isAdmin && !hasTeams;
+
     if (organization === null) {
         return (
             <AppLayout>
                 <Head title="Teams" />
-                <main className="mx-auto max-w-5xl px-4 py-8">
-                    <h1 className="text-xl font-semibold text-gray-900">Teams</h1>
-                    <p className="mt-2 text-sm text-gray-500">
-                        Voer eerst je uitnodigingscode in bij Instellingen om teams te zien.
-                    </p>
-                    <Link
-                        href={settings.url()}
-                        className="mt-4 inline-flex rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
-                    >
-                        Naar instellingen
-                    </Link>
+                <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+                    <h1 className="text-xl font-semibold tracking-tight text-gray-900">Teams</h1>
+                    <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                        {awaitingOrganizationInvite ? (
+                            <>
+                                <p className="text-sm font-medium text-gray-900">Nog geen bedrijf gekoppeld</p>
+                                <p className="mt-2 text-sm leading-relaxed text-gray-500">
+                                    Je beheerder nodigt je per e-mail uit. Open de link in die mail om teams en
+                                    timesheets te gebruiken.
+                                </p>
+                                <Link
+                                    href={settings.url()}
+                                    className="mt-4 inline-flex text-sm font-medium text-gray-900 underline decoration-gray-400 underline-offset-2 hover:text-gray-700"
+                                >
+                                    Account bekijken in instellingen
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-sm text-gray-500">
+                                    Koppel eerst een organisatie om teams te beheren.
+                                </p>
+                                {isAdmin ? (
+                                    <p className="mt-2 text-sm text-gray-600">
+                                        Als beheerder kun je hier straks je bedrijfsnaam instellen zodra je
+                                        organisatie is aangemaakt.
+                                    </p>
+                                ) : null}
+                            </>
+                        )}
+                    </div>
                 </main>
             </AppLayout>
         );
@@ -98,7 +127,7 @@ export default function Teams() {
                         </p>
                     </div>
 
-                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:max-w-xl">
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:max-w-2xl">
                         <div className="relative min-w-0 flex-1">
                             <label htmlFor="team-search" className="sr-only">
                                 Zoek teams
@@ -120,14 +149,21 @@ export default function Teams() {
                         </div>
 
                         {isAdmin ? (
-                            <button
-                                type="button"
-                                onClick={openCreateForm}
-                                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
-                            >
-                                <IconPlus />
-                                Team toevoegen
-                            </button>
+                            <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                {!showFeaturedOrganizationSettings ? (
+                                    <OrganizationSettingsTrigger
+                                        onClick={() => setShowOrganizationSettings(true)}
+                                    />
+                                ) : null}
+                                <button
+                                    type="button"
+                                    onClick={openCreateForm}
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
+                                >
+                                    <IconPlus />
+                                    Team toevoegen
+                                </button>
+                            </div>
                         ) : null}
                     </div>
                 </div>
@@ -214,29 +250,43 @@ export default function Teams() {
 
                 <section className="mt-5">
                     {filteredTeams.length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-gray-200 bg-white px-6 py-14 text-center shadow-sm">
-                            <p className="text-sm font-semibold text-gray-900">
-                                {search.trim() !== ''
-                                    ? 'Geen teams gevonden voor je zoekopdracht.'
-                                    : isAdmin
-                                      ? 'Nog geen teams aangemaakt'
-                                      : 'Je zit nog in geen team'}
-                            </p>
-                            <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
-                                {isAdmin
-                                    ? 'Voeg je eerste team toe om collega’s te groeperen.'
-                                    : 'Vraag je beheerder om je toe te voegen aan een team.'}
-                            </p>
-                            {isAdmin ? (
-                                <button
-                                    type="button"
-                                    onClick={openCreateForm}
-                                    className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
-                                >
-                                    <IconPlus />
-                                    Team toevoegen
-                                </button>
+                        <div className="rounded-xl border border-dashed border-gray-200 bg-white px-4 py-8 shadow-sm sm:px-8 sm:py-10">
+                            {showFeaturedOrganizationSettings ? (
+                                <OrganizationSettingsPanel
+                                    organization={organization}
+                                    onSuccess={(message) => success(message)}
+                                    mode="featured"
+                                />
                             ) : null}
+                            <div
+                                className={cn(
+                                    showFeaturedOrganizationSettings &&
+                                        'border-t border-gray-200 pt-10 text-center',
+                                )}
+                            >
+                                <p className="text-sm font-semibold text-gray-900">
+                                    {search.trim() !== ''
+                                        ? 'Geen teams gevonden voor je zoekopdracht.'
+                                        : isAdmin
+                                          ? 'Nog geen teams aangemaakt'
+                                          : 'Je zit nog in geen team'}
+                                </p>
+                                <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
+                                    {isAdmin
+                                        ? 'Voeg je eerste team toe om collega’s te groeperen.'
+                                        : 'Vraag je beheerder om je toe te voegen aan een team.'}
+                                </p>
+                                {isAdmin ? (
+                                    <button
+                                        type="button"
+                                        onClick={openCreateForm}
+                                        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+                                    >
+                                        <IconPlus />
+                                        Team toevoegen
+                                    </button>
+                                ) : null}
+                            </div>
                         </div>
                     ) : (
                         <div
@@ -276,14 +326,25 @@ export default function Teams() {
             </main>
 
             {isAdmin ? (
-                <CreateTeamFormPanel
-                    open={showCreateForm}
-                    onClose={() => setShowCreateForm(false)}
-                    organizationUsers={organizationUsers}
-                    selectedMemberIds={selectedMemberIds}
-                    onMemberIdsChange={setSelectedMemberIds}
-                    onSuccess={() => success('Team aangemaakt.')}
-                />
+                <>
+                    <CreateTeamFormPanel
+                        open={showCreateForm}
+                        onClose={() => setShowCreateForm(false)}
+                        organizationUsers={organizationUsers}
+                        selectedMemberIds={selectedMemberIds}
+                        onMemberIdsChange={setSelectedMemberIds}
+                        onSuccess={() => success('Team aangemaakt.')}
+                    />
+                    {!showFeaturedOrganizationSettings ? (
+                        <OrganizationSettingsPanel
+                            organization={organization}
+                            onSuccess={(message) => success(message)}
+                            open={showOrganizationSettings}
+                            onOpenChange={setShowOrganizationSettings}
+                            mode="dialog"
+                        />
+                    ) : null}
+                </>
             ) : null}
         </AppLayout>
     );

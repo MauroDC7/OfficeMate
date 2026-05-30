@@ -29,7 +29,10 @@ import { fetchTrackerWindowTitles } from '@/components/timesheets/fetch-tracker-
 import { useAlert } from '@/components/alert';
 import { timesheets } from '@/routes';
 import { destroy, store, update } from '@/routes/timesheets/entries';
-import type { TimesheetEntryPayload } from '@/types/timesheets';
+import type {
+    TimesheetEntryPayload,
+    TimesheetProjectOption,
+} from '@/types/timesheets';
 
 type ServerErrors = Record<string, string | string[]>;
 
@@ -40,12 +43,11 @@ function buildEntryPayload(
     end: number,
 ) {
     const trimmedDescription = draft.description.trim();
-    const trimmedClient = draft.client.trim();
 
     return {
         title: draft.title.trim(),
         description: trimmedDescription === '' ? null : trimmedDescription,
-        client_name: trimmedClient === '' ? null : trimmedClient,
+        project_id: draft.projectId === '' ? null : Number(draft.projectId),
         worked_on: workedOn,
         start_minutes: start,
         end_minutes: end,
@@ -103,7 +105,9 @@ export function useTimesheetWeekCalendar({
     entriesByDay,
     openEntryId = null,
 }: TimesheetWeekCalendarProps) {
-    const pageUrl = usePage().url;
+    const page = usePage<{ projectOptions: TimesheetProjectOption[] }>();
+    const { projectOptions = [] } = page.props;
+    const pageUrl = page.url;
     const { success, confirm } = useAlert();
     const isMobileViewport = useIsMobileViewport();
 
@@ -347,7 +351,8 @@ export function useTimesheetWeekCalendar({
             setDraft({
                 title: entry.title,
                 description: entry.description ?? '',
-                client: entry.client_name ?? '',
+                projectId:
+                    entry.project_id !== null ? String(entry.project_id) : '',
                 start: minutesToTimeInput(entry.start_minutes),
                 end: minutesToTimeInput(entry.end_minutes),
             });
@@ -569,5 +574,6 @@ export function useTimesheetWeekCalendar({
         deleteEntry,
         openModalForSlot,
         openModalForEntry,
+        projectOptions,
     };
 }

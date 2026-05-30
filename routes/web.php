@@ -9,6 +9,8 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\OrganizationInviteAcceptController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectCreatorAccessController;
 use App\Http\Controllers\Settings\AccountSettingsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
@@ -47,18 +49,23 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::patch('/timesheets/proposals/{timesheet_entry_proposal}', [TimesheetEntryProposalController::class, 'update'])->name('timesheets.proposals.update');
     Route::post('/timesheets/proposals/{timesheet_entry_proposal}/approve', [TimesheetEntryProposalController::class, 'approve'])->name('timesheets.proposals.approve');
     Route::delete('/timesheets/proposals/{timesheet_entry_proposal}', [TimesheetEntryProposalController::class, 'destroy'])->name('timesheets.proposals.destroy');
-    Route::get('/projects', [AppPageController::class, 'projects'])->name('projects');
+    Route::get('/projects', [ProjectController::class, 'index'])->name('projects');
+    Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
+    Route::patch('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
+    Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
+    Route::patch('/projects/creator-access/{user}', [ProjectCreatorAccessController::class, 'update'])
+        ->middleware('admin')
+        ->name('projects.creator-access.update');
     Route::get('/leave-requests', [AppPageController::class, 'leaveRequests'])->name('leaveRequests');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
-    Route::patch('/settings/organization/{organization}', OrganizationSettingsController::class)
-        ->middleware('admin')
-        ->name('settings.organization.update');
-    Route::post('/settings/organization-invites', [OrganizationInviteController::class, 'store'])
-        ->middleware(['admin', 'throttle:10,1'])
-        ->name('settings.organization-invites.store');
-
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
+    Route::patch('/teams/organization/{organization}', OrganizationSettingsController::class)
+        ->middleware('admin')
+        ->name('teams.organization.update');
+    Route::post('/teams/organization-invites', [OrganizationInviteController::class, 'store'])
+        ->middleware(['admin', 'throttle:10,1'])
+        ->name('teams.organization-invites.store');
     Route::post('/teams', [TeamController::class, 'store'])->middleware('admin')->name('teams.store');
     Route::patch('/teams/{team}', [TeamController::class, 'update'])->middleware('admin')->name('teams.update');
     Route::delete('/teams/{team}', [TeamController::class, 'destroy'])->middleware('admin')->name('teams.destroy');

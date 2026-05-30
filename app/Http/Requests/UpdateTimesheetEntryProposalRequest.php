@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\NormalizesTimesheetProject;
 use App\Models\TimesheetEntryProposal;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -9,6 +10,8 @@ use Illuminate\Validation\Validator;
 
 class UpdateTimesheetEntryProposalRequest extends FormRequest
 {
+    use NormalizesTimesheetProject;
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -17,6 +20,7 @@ class UpdateTimesheetEntryProposalRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:10000'],
+            ...$this->timesheetProjectRules(),
             'client_name' => ['nullable', 'string', 'max:255'],
             'worked_on' => ['required', 'date'],
             'start_minutes' => ['required', 'integer', 'min:0', 'max:1439'],
@@ -37,12 +41,12 @@ class UpdateTimesheetEntryProposalRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $description = $this->input('description');
-        $clientName = $this->input('client_name');
 
         $this->merge([
             'description' => is_string($description) && trim($description) !== '' ? trim($description) : null,
-            'client_name' => is_string($clientName) && trim($clientName) !== '' ? trim($clientName) : null,
         ]);
+
+        $this->mergeTimesheetProjectFields();
     }
 
     public function withValidator(Validator $validator): void

@@ -42,6 +42,7 @@ export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
                 <TimesheetFormPopup
                     modal={calendar.modal}
                     draft={calendar.draft}
+                    projectOptions={calendar.projectOptions}
                     trackerWindowTitles={
                         calendar.modal.mode === 'edit'
                             ? calendar.modal.entry.tracker_window_titles

@@ -19,7 +19,7 @@ export type TimesheetWeekCalendarProps = {
 export type TimesheetDraft = {
     title: string;
     description: string;
-    client: string;
+    projectId: string;
     start: string;
     end: string;
 };
@@ -27,7 +27,7 @@ export type TimesheetDraft = {
 export const emptyDraft = (): TimesheetDraft => ({
     title: '',
     description: '',
-    client: '',
+    projectId: '',
     start: '09:00',
     end: '09:30',
 });
