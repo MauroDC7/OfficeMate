@@ -45,6 +45,13 @@ export function LeaveRequestsList({ requests, onEdit, onCancelled }: LeaveReques
                         {request.notes !== null && request.notes !== '' ? (
                             <p className="mt-1 text-xs text-gray-500">{request.notes}</p>
                         ) : null}
+                        {request.status === 'rejected' &&
+                        request.rejection_reason !== null &&
+                        request.rejection_reason !== '' ? (
+                            <p className="mt-1 text-xs text-red-600">
+                                Reden afwijzing: {request.rejection_reason}
+                            </p>
+                        ) : null}
                         {request.attachment !== null ? (
                             <p className="mt-1 text-xs">
                                 <a

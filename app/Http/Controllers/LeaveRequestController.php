@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\LeaveRequestStatus;
 use App\Enums\LeaveType;
+use App\Http\Requests\RejectLeaveRequest;
 use App\Http\Requests\StoreLeaveRequest;
 use App\Http\Requests\UpdateLeaveRequest;
 use App\Models\LeaveRequest;
@@ -84,5 +85,29 @@ final class LeaveRequestController extends Controller
             $attachment->path,
             $attachment->original_name,
         );
+    }
+
+    public function approve(LeaveRequest $leaveRequest): RedirectResponse
+    {
+        $this->authorize('approve', $leaveRequest);
+
+        $leaveRequest->update([
+            'status' => LeaveRequestStatus::Approved,
+            'rejection_reason' => null,
+        ]);
+
+        return redirect()->route('dashboard');
+    }
+
+    public function reject(RejectLeaveRequest $request, LeaveRequest $leaveRequest): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        $leaveRequest->update([
+            'status' => LeaveRequestStatus::Rejected,
+            'rejection_reason' => $validated['rejection_reason'] ?? null,
+        ]);
+
+        return redirect()->route('dashboard');
     }
 }

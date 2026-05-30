@@ -14,6 +14,7 @@ export type LeaveRequestListItem = {
     created_at: string;
     can_edit: boolean;
     attachment: { name: string; url: string } | null;
+    rejection_reason: string | null;
 };
 
 export type LeaveRequestsPageStats = {

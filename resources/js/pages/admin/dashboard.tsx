@@ -5,6 +5,7 @@ import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
 import { formatDayTotal } from '@/components/timesheets/timesheet-helpers';
 import { AppLayout } from '@/layouts/app-layout';
 import { leaveRequests, settings, teams, timesheets } from '@/routes';
+import { AdminPendingLeaveSection } from '@/components/leave-requests/admin-pending-leave-section';
 import { approve, reject } from '@/routes/team-memberships';
 import type {
     AdminDashboardCurrentLeave,
@@ -90,6 +91,7 @@ export default function AdminDashboard() {
         hoursThisWeekMinutes,
         weekStart,
         pendingMemberships,
+        pendingLeaveRequests,
         currentLeave,
     } = usePage<AdminDashboardProps>().props;
     const { success } = useAlert();
@@ -237,6 +239,12 @@ export default function AdminDashboard() {
                             </ul>
                         )}
                     </section>
+
+                    <AdminPendingLeaveSection
+                        requests={pendingLeaveRequests}
+                        totalCount={pendingLeaveRequestCount}
+                        onSuccess={(message) => success(message)}
+                    />
 
                     <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
                         <div className="border-b border-gray-100 px-4 py-3 sm:px-5">

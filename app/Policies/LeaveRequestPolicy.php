@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\LeaveRequestStatus;
 use App\Enums\UserRole;
 use App\Models\LeaveRequest;
 use App\Models\User;
@@ -29,8 +30,28 @@ final class LeaveRequestPolicy
             return true;
         }
 
-        return $user->role === UserRole::Admin
-            && $user->organization_id !== null
-            && $leaveRequest->user->organization_id === $user->organization_id;
+        return $this->manageOrganizationLeave($user, $leaveRequest);
+    }
+
+    public function approve(User $user, LeaveRequest $leaveRequest): bool
+    {
+        return $this->manageOrganizationLeave($user, $leaveRequest)
+            && $leaveRequest->status === LeaveRequestStatus::Pending;
+    }
+
+    public function reject(User $user, LeaveRequest $leaveRequest): bool
+    {
+        return $this->approve($user, $leaveRequest);
+    }
+
+    private function manageOrganizationLeave(User $user, LeaveRequest $leaveRequest): bool
+    {
+        if ($user->role !== UserRole::Admin || $user->organization_id === null) {
+            return false;
+        }
+
+        $leaveRequest->loadMissing('user');
+
+        return $leaveRequest->user->organization_id === $user->organization_id;
     }
 }

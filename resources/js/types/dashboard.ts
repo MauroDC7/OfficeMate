@@ -34,6 +34,22 @@ export type AdminDashboardPendingMembership = {
     };
 };
 
+export type AdminDashboardPendingLeave = {
+    id: number;
+    starts_on: string;
+    ends_on: string;
+    day_count: number;
+    type: string;
+    type_label: string;
+    notes: string | null;
+    attachment: { name: string; url: string } | null;
+    user: {
+        id: number;
+        name: string;
+        email: string;
+    };
+};
+
 export type AdminDashboardCurrentLeave = {
     id: number;
     starts_on: string;
@@ -57,5 +73,6 @@ export type AdminDashboardProps = {
     hoursThisWeekMinutes: number;
     weekStart: string;
     pendingMemberships: AdminDashboardPendingMembership[];
+    pendingLeaveRequests: AdminDashboardPendingLeave[];
     currentLeave: AdminDashboardCurrentLeave[];
 };

@@ -39,6 +39,7 @@ final class LeaveRequestPageData
      *         created_at: string,
      *         can_edit: bool,
      *         attachment: array{name: string, url: string}|null,
+     *         rejection_reason: string|null,
      *     }>
      * }
      */
@@ -92,6 +93,7 @@ final class LeaveRequestPageData
                     'created_at' => $request->created_at?->toIso8601String() ?? '',
                     'can_edit' => $user->can('update', $request),
                     'attachment' => $this->attachmentPayload($request),
+                    'rejection_reason' => $request->rejection_reason,
                 ])
                 ->values()
                 ->all(),

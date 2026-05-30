@@ -65,6 +65,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('leaveRequests.destroy');
     Route::get('/leave-requests/{leave_request}/medical-certificate', [LeaveRequestController::class, 'medicalCertificate'])
         ->name('leaveRequests.medicalCertificate');
+    Route::post('/leave-requests/{leave_request}/approve', [LeaveRequestController::class, 'approve'])
+        ->middleware('admin')
+        ->name('leaveRequests.approve');
+    Route::post('/leave-requests/{leave_request}/reject', [LeaveRequestController::class, 'reject'])
+        ->middleware('admin')
+        ->name('leaveRequests.reject');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
