@@ -155,7 +155,7 @@ it('includes the admin\'s own data in the totals', function () {
 });
 
 it('returns empty admin dashboard for an organization without data', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $admin = User::factory()->admin()->create();
 
     $monday = CarbonImmutable::now()->startOfWeek(CarbonImmutable::MONDAY);
 

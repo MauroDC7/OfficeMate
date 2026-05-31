@@ -1,8 +1,6 @@
 <?php
 
-use App\Enums\UserRole;
 use App\Models\User;
-use App\Services\OrganizationContext;
 use App\Services\Slack\SlackIncomingWebhook;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
@@ -15,8 +13,7 @@ it('calls the Slack webhook when an invite is sent and SLACK_INCOMING_WEBHOOK_UR
 
     config(['services.slack.incoming_webhook_url' => 'https://hooks.slack.com/services/T000/B000/SECRET']);
 
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
 
     $this->actingAs($admin)
         ->post(route('teams.organization-invites.store'), [

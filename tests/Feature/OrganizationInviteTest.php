@@ -5,15 +5,14 @@ use App\Models\Organization;
 use App\Models\OrganizationInvite;
 use App\Models\User;
 use App\Notifications\OrganizationInviteNotification;
-use App\Services\OrganizationContext;
 use App\Services\OrganizationInviteService;
 use Illuminate\Support\Facades\Notification;
 
 it('lets admins send an email invite', function () {
     Notification::fake();
 
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
 
     $this->actingAs($admin)
         ->post(route('teams.organization-invites.store'), [

@@ -2,14 +2,12 @@
 
 use App\Enums\ProjectStatus;
 use App\Enums\ProjectType;
-use App\Enums\UserRole;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\Team;
 use App\Models\TeamMembership;
 use App\Models\TimesheetEntry;
 use App\Models\User;
-use App\Services\OrganizationContext;
 
 it('shows projects an employee is involved in through their team', function () {
     $organization = Organization::factory()->create();
@@ -34,8 +32,8 @@ it('shows projects an employee is involved in through their team', function () {
 });
 
 it('shows all organization projects to admins', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
     Project::factory()->for($organization)->count(2)->create();
 
     $this->actingAs($admin)
@@ -76,8 +74,8 @@ it('allows permitted employees to create projects', function () {
 });
 
 it('allows admins to create an external project with client and teams', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
     $team = Team::factory()->for($organization)->create();
 
     $this->actingAs($admin)
@@ -106,8 +104,7 @@ it('allows admins to create an external project with client and teams', function
 });
 
 it('requires a client name for external projects', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
 
     $this->actingAs($admin)
         ->post(route('projects.store'), [
@@ -118,8 +115,8 @@ it('requires a client name for external projects', function () {
 });
 
 it('allows admins to update a project status', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
     $project = Project::factory()->for($organization)->create([
         'status' => ProjectStatus::InProgress,
     ]);
@@ -151,8 +148,8 @@ it('forbids employees from updating projects', function () {
 });
 
 it('allows admins to delete a project', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
     $project = Project::factory()->for($organization)->create();
 
     $this->actingAs($admin)
@@ -163,8 +160,8 @@ it('allows admins to delete a project', function () {
 });
 
 it('allows admins to grant project creation rights', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
     $employee = User::factory()->forOrganization($organization)->create(['can_create_projects' => false]);
 
     $this->actingAs($admin)
@@ -189,8 +186,8 @@ it('forbids employees from granting project creation rights', function () {
 });
 
 it('tracks hours per project from linked timesheet entries', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
     $project = Project::factory()->for($organization)->create();
 
     TimesheetEntry::factory()->for($admin)->create([
