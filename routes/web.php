@@ -16,9 +16,11 @@ use App\Http\Controllers\Settings\AccountSettingsController;
 use App\Http\Controllers\Settings\EmployeeEmploymentSearchController;
 use App\Http\Controllers\Settings\EmployeeEmploymentSettingsController;
 use App\Http\Controllers\Settings\EmploymentProfileController;
+use App\Http\Controllers\Settings\GrantEmployeeAdminRoleController;
 use App\Http\Controllers\Settings\OrganizationEmploymentDefaultsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
+use App\Http\Controllers\Settings\StoreOrganizationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
@@ -89,6 +91,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('leaveRequests.revertRejection');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
+    Route::post('/settings/organization', StoreOrganizationController::class)->name('settings.organization.store');
     Route::patch('/settings/organization/employment-defaults', OrganizationEmploymentDefaultsController::class)
         ->middleware('admin')
         ->name('settings.organization.employment-defaults.update');
@@ -107,6 +110,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::patch('/settings/employees/{user}/employment', [EmployeeEmploymentSettingsController::class, 'update'])
         ->middleware('admin')
         ->name('settings.employees.employment.update');
+    Route::post('/settings/employees/{user}/admin-role', GrantEmployeeAdminRoleController::class)
+        ->middleware('admin')
+        ->name('settings.employees.admin-role.store');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
     Route::patch('/teams/organization/{organization}', OrganizationSettingsController::class)
         ->middleware('admin')
