@@ -1,10 +1,12 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 
 import { useAlert } from '@/components/alert';
+import { AdminAccessSettingsSection } from '@/components/settings/admin-access-settings-section';
 import {
     EmploymentSettingsSection,
     type EmploymentSettingsPayload,
 } from '@/components/settings/employment-settings-section';
+import { OrganizationSetupSection } from '@/components/settings/organization-setup-section';
 import {
     TrackerSettingsSection,
     type TrackerSettingsPayload,
@@ -19,6 +21,7 @@ import type { Auth, User } from '@/types/auth';
 type SettingsPageProps = {
     auth: Auth;
     awaitingOrganizationInvite: boolean;
+    canCreateOrganization: boolean;
     tracker: TrackerSettingsPayload | null;
     isAdmin: boolean;
     employment: EmploymentSettingsPayload | null;
@@ -68,7 +71,7 @@ function formalName(user: User | null): string {
 }
 
 export default function Settings() {
-    const { auth, awaitingOrganizationInvite, tracker, isAdmin, employment } =
+    const { auth, awaitingOrganizationInvite, canCreateOrganization, tracker, isAdmin, employment } =
         usePage<SettingsPageProps>().props;
     const { success } = useAlert();
     const user = auth.user;
@@ -99,6 +102,8 @@ export default function Settings() {
                         </p>
                     </section>
                 ) : null}
+
+                {canCreateOrganization ? <OrganizationSetupSection /> : null}
 
                 <section
                     className="mt-5 w-full min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6 sm:rounded-2xl lg:mt-7"
@@ -239,6 +244,8 @@ export default function Settings() {
                 {tracker !== null ? <TrackerSettingsSection tracker={tracker} /> : null}
 
                 {employment !== null ? <EmploymentSettingsSection employment={employment} /> : null}
+
+                {isAdmin ? <AdminAccessSettingsSection /> : null}
             </main>
         </AppLayout>
     );

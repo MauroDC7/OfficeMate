@@ -25,6 +25,7 @@ final class SettingsPageData
      *         download_url: string|null,
      *     }|null,
      *     isAdmin: bool,
+     *     canCreateOrganization: bool,
      *     employment: array{
      *         defaults: array{weekly_work_hours: int, annual_leave_days: int},
      *         profiles: list<array{
@@ -72,6 +73,7 @@ final class SettingsPageData
 
         return [
             'awaitingOrganizationInvite' => $awaitingOrganizationInvite,
+            'canCreateOrganization' => $user->organization_id === null,
             'tracker' => $tracker,
             'isAdmin' => $isAdmin,
             'employment' => $employment,
