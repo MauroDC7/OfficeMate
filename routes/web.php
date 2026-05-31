@@ -19,6 +19,7 @@ use App\Http\Controllers\Settings\EmploymentProfileController;
 use App\Http\Controllers\Settings\GrantEmployeeAdminRoleController;
 use App\Http\Controllers\Settings\OrganizationEmploymentDefaultsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
+use App\Http\Controllers\Settings\OrganizationOfficeIpsController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
 use App\Http\Controllers\Settings\StoreOrganizationController;
 use App\Http\Controllers\TeamController;
@@ -98,6 +99,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::patch('/settings/organization/employment-defaults', OrganizationEmploymentDefaultsController::class)
         ->middleware('admin')
         ->name('settings.organization.employment-defaults.update');
+    Route::patch('/settings/organization/office-ips', OrganizationOfficeIpsController::class)
+        ->middleware('admin')
+        ->name('settings.organization.office-ips.update');
     Route::post('/settings/employment-profiles', [EmploymentProfileController::class, 'store'])
         ->middleware('admin')
         ->name('settings.employment-profiles.store');

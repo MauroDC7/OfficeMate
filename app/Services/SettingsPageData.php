@@ -46,6 +46,9 @@ final class SettingsPageData
      *             employment_profile_id: int|null,
      *         }|null,
      *     }|null,
+     *     officePresence: array{
+     *         office_ip_addresses: list<string>,
+     *     }|null,
      * }
      */
     public function forRequest(Request $request): array
@@ -65,10 +68,14 @@ final class SettingsPageData
 
         $isAdmin = $user->role === UserRole::Admin;
         $employment = null;
+        $officePresence = null;
 
         if ($isAdmin && $user->organization_id !== null) {
             $organization = $this->organizationContext->forUserOrFail($user);
             $employment = $this->employmentPayload($organization, $request);
+            $officePresence = [
+                'office_ip_addresses' => $organization->office_ip_addresses ?? [],
+            ];
         }
 
         return [
@@ -77,6 +84,7 @@ final class SettingsPageData
             'tracker' => $tracker,
             'isAdmin' => $isAdmin,
             'employment' => $employment,
+            'officePresence' => $officePresence,
         ];
     }
 
