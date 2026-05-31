@@ -11,6 +11,7 @@ use App\Services\AdminLeaveRequestPageData;
 use App\Services\EmployeeDashboardStats;
 use App\Services\LeaveRequestPageData;
 use App\Services\OrganizationContext;
+use App\Services\SettingsPageData;
 use App\Services\TimesheetEntryWindowTitlesResolver;
 use App\Services\TimesheetProjectNormalizer;
 use Carbon\CarbonImmutable;
@@ -183,13 +184,8 @@ final class AppPageController extends Controller
         );
     }
 
-    public function settings(Request $request): Response
+    public function settings(Request $request, SettingsPageData $settingsPageData): Response
     {
-        $user = $request->user();
-        abort_unless($user instanceof User, 401);
-
-        return Inertia::render('settings', [
-            'awaitingOrganizationInvite' => $user->role !== UserRole::Admin && $user->organization_id === null,
-        ]);
+        return Inertia::render('settings', $settingsPageData->forRequest($request));
     }
 }

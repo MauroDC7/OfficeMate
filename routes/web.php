@@ -13,6 +13,10 @@ use App\Http\Controllers\OrganizationInviteAcceptController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectCreatorAccessController;
 use App\Http\Controllers\Settings\AccountSettingsController;
+use App\Http\Controllers\Settings\EmployeeEmploymentSearchController;
+use App\Http\Controllers\Settings\EmployeeEmploymentSettingsController;
+use App\Http\Controllers\Settings\EmploymentProfileController;
+use App\Http\Controllers\Settings\OrganizationEmploymentDefaultsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
 use App\Http\Controllers\TeamController;
@@ -85,6 +89,24 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('leaveRequests.revertRejection');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
+    Route::patch('/settings/organization/employment-defaults', OrganizationEmploymentDefaultsController::class)
+        ->middleware('admin')
+        ->name('settings.organization.employment-defaults.update');
+    Route::post('/settings/employment-profiles', [EmploymentProfileController::class, 'store'])
+        ->middleware('admin')
+        ->name('settings.employment-profiles.store');
+    Route::patch('/settings/employment-profiles/{employment_profile}', [EmploymentProfileController::class, 'update'])
+        ->middleware('admin')
+        ->name('settings.employment-profiles.update');
+    Route::delete('/settings/employment-profiles/{employment_profile}', [EmploymentProfileController::class, 'destroy'])
+        ->middleware('admin')
+        ->name('settings.employment-profiles.destroy');
+    Route::get('/settings/employees/search', EmployeeEmploymentSearchController::class)
+        ->middleware('admin')
+        ->name('settings.employees.search');
+    Route::patch('/settings/employees/{user}/employment', [EmployeeEmploymentSettingsController::class, 'update'])
+        ->middleware('admin')
+        ->name('settings.employees.employment.update');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
     Route::patch('/teams/organization/{organization}', OrganizationSettingsController::class)
         ->middleware('admin')
