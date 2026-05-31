@@ -21,6 +21,7 @@ use App\Http\Controllers\Settings\OrganizationEmploymentDefaultsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
 use App\Http\Controllers\Settings\OrganizationOfficeIpsController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
+use App\Http\Controllers\Settings\RemoveOrganizationMemberController;
 use App\Http\Controllers\Settings\StoreOrganizationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMembershipController;
@@ -68,7 +69,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/admin/leave-requests', [AppPageController::class, 'adminLeaveRequests'])
         ->middleware('admin')
         ->name('admin.leaveRequests');
-    Route::get('/admin/presence', fn () => redirect()->route('teams', ['tab' => 'presence']))
+    Route::get('/admin/presence', fn () => redirect()->route('teams', ['tab' => 'people']))
         ->middleware('admin')
         ->name('admin.presence');
     Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->name('leaveRequests.store');
@@ -120,6 +121,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/settings/employees/{user}/admin-role', GrantEmployeeAdminRoleController::class)
         ->middleware('admin')
         ->name('settings.employees.admin-role.store');
+    Route::delete('/settings/employees/{user}', RemoveOrganizationMemberController::class)
+        ->middleware('admin')
+        ->name('settings.employees.destroy');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
     Route::patch('/teams/organization/{organization}', OrganizationSettingsController::class)
         ->middleware('admin')
