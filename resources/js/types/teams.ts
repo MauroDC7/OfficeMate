@@ -52,9 +52,9 @@ export type TeamsPageProps = {
     pendingMemberships: PendingMembershipRow[];
     isAdmin: boolean;
     awaitingOrganizationInvite: boolean;
-    presence: {
+    people: {
         summary: PresenceSummary;
         employees: PresenceEmployee[];
     } | null;
-    initialTab: 'teams' | 'presence';
+    initialTab: 'teams' | 'people';
 };

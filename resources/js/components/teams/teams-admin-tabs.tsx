@@ -1,10 +1,10 @@
 import { cn } from '@/lib/utils';
 
-export type TeamsAdminTab = 'teams' | 'presence';
+export type TeamsAdminTab = 'teams' | 'people';
 
 const TABS: { value: TeamsAdminTab; label: string }[] = [
     { value: 'teams', label: 'Teams' },
-    { value: 'presence', label: 'Aanwezigheid vandaag' },
+    { value: 'people', label: 'People' },
 ];
 
 type TeamsAdminTabsProps = {

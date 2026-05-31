@@ -43,7 +43,7 @@ final class TeamController extends Controller
                 'pendingMemberships' => [],
                 'isAdmin' => $isAdmin,
                 'awaitingOrganizationInvite' => $user->role !== UserRole::Admin && $user->organization_id === null,
-                'presence' => null,
+                'people' => null,
                 'initialTab' => 'teams',
             ]);
         }
@@ -75,10 +75,10 @@ final class TeamController extends Controller
             'pendingMemberships' => $pendingForApproval,
             'isAdmin' => $isAdmin,
             'awaitingOrganizationInvite' => false,
-            'presence' => $isAdmin
+            'people' => $isAdmin
                 ? $this->organizationPresenceOverview->forOrganization($organization)
                 : null,
-            'initialTab' => $request->query('tab') === 'presence' ? 'presence' : 'teams',
+            'initialTab' => in_array($request->query('tab'), ['people', 'presence'], true) ? 'people' : 'teams',
         ]);
     }
 

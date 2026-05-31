@@ -6,6 +6,7 @@ use App\Enums\EmployeePresenceStatus;
 use App\Enums\LeaveRequestStatus;
 use App\Enums\LeaveType;
 use App\Enums\TeamMembershipStatus;
+use App\Enums\UserRole;
 use App\Models\LeaveRequest;
 use App\Models\Organization;
 use App\Models\Team;
@@ -40,6 +41,7 @@ final class OrganizationPresenceOverview
      *         status: string,
      *         status_label: string,
      *         leave_ends_on: string|null,
+     *         role: string,
      *     }>
      * }
      */
@@ -53,7 +55,7 @@ final class OrganizationPresenceOverview
             ->where('organization_id', $organization->id)
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name', 'email', 'avatar_path', 'last_seen_at_office']);
+            ->get(['id', 'first_name', 'last_name', 'email', 'avatar_path', 'last_seen_at_office', 'role']);
 
         if ($employees->isEmpty()) {
             return [
@@ -113,6 +115,9 @@ final class OrganizationPresenceOverview
                 'status' => $status->value,
                 'status_label' => $status->label(),
                 'leave_ends_on' => $leave?->ends_on->format('Y-m-d'),
+                'role' => $employee->role instanceof UserRole
+                    ? $employee->role->value
+                    : (string) $employee->role,
             ];
         }
 

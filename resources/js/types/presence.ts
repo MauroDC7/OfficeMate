@@ -1,4 +1,5 @@
 import type { UserAvatarFields } from '@/components/user-avatar';
+import type { UserRole } from '@/types/auth';
 
 export type PresenceStatus =
     | 'in_office'
@@ -22,6 +23,7 @@ export type PresenceEmployee = UserAvatarFields & {
     status: PresenceStatus;
     status_label: string;
     leave_ends_on: string | null;
+    role: UserRole;
 };
 
 export type AdminDashboardPresenceSummary = PresenceSummary;

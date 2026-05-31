@@ -54,21 +54,22 @@ it('shows organization presence on the teams page for admins', function () {
     ]);
 
     $this->actingAs($admin)
-        ->get(route('teams', ['tab' => 'presence']))
+        ->get(route('teams', ['tab' => 'people']))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('teams')
-            ->where('initialTab', 'presence')
-            ->where('presence.summary.in_office', 0)
-            ->where('presence.summary.out_of_office', 2)
-            ->where('presence.summary.vacation', 1)
-            ->where('presence.summary.sick', 1)
-            ->where('presence.summary.other_leave', 0)
-            ->has('presence.employees', 4)
-            ->where('presence.employees.0.status', 'out_of_office')
-            ->where('presence.employees.1.status', 'sick')
-            ->where('presence.employees.2.status', 'out_of_office')
-            ->where('presence.employees.3.status', 'vacation'));
+            ->where('initialTab', 'people')
+            ->where('people.summary.in_office', 0)
+            ->where('people.summary.out_of_office', 2)
+            ->where('people.summary.vacation', 1)
+            ->where('people.summary.sick', 1)
+            ->where('people.summary.other_leave', 0)
+            ->has('people.employees', 4)
+            ->where('people.employees.0.status', 'out_of_office')
+            ->where('people.employees.0.role', 'admin')
+            ->where('people.employees.1.status', 'sick')
+            ->where('people.employees.2.status', 'out_of_office')
+            ->where('people.employees.3.status', 'vacation'));
 });
 
 it('does not expose presence data to employees on the teams page', function () {
@@ -78,12 +79,25 @@ it('does not expose presence data to employees on the teams page', function () {
     ]);
 
     $this->actingAs($employee)
-        ->get(route('teams', ['tab' => 'presence']))
+        ->get(route('teams', ['tab' => 'people']))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('teams')
-            ->where('presence', null)
-            ->where('initialTab', 'presence'));
+            ->where('people', null)
+            ->where('initialTab', 'people'));
+});
+
+it('opens the people tab when using the legacy presence query parameter', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->forOrganization($organization)->create([
+        'role' => UserRole::Admin,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('teams', ['tab' => 'presence']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('initialTab', 'people'));
 });
 
 it('redirects the legacy admin presence route to teams', function () {
@@ -94,7 +108,7 @@ it('redirects the legacy admin presence route to teams', function () {
 
     $this->actingAs($admin)
         ->get(route('admin.presence'))
-        ->assertRedirect(route('teams', ['tab' => 'presence']));
+        ->assertRedirect(route('teams', ['tab' => 'people']));
 });
 
 it('forbids employees from the legacy admin presence route', function () {

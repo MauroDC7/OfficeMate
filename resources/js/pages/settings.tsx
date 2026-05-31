@@ -1,7 +1,6 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 
 import { useAlert } from '@/components/alert';
-import { AdminAccessSettingsSection } from '@/components/settings/admin-access-settings-section';
 import {
     EmploymentSettingsSection,
     type EmploymentSettingsPayload,
@@ -254,7 +253,6 @@ export default function Settings() {
                     <OfficePresenceSettingsSection officePresence={officePresence} />
                 ) : null}
 
-                {isAdmin ? <AdminAccessSettingsSection /> : null}
             </main>
         </AppLayout>
     );

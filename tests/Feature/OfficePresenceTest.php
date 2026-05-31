@@ -48,7 +48,7 @@ it('records office presence through authenticated web requests', function () {
     expect($employee->fresh()->last_seen_at_office)->not->toBeNull();
 });
 
-it('marks employees as in office on the teams presence tab', function () {
+it('marks employees as in office on the teams people tab', function () {
     CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-05-19 10:00:00', 'UTC'));
 
     $organization = Organization::factory()->create([
@@ -63,11 +63,11 @@ it('marks employees as in office on the teams presence tab', function () {
     ]);
 
     $this->actingAs($admin)
-        ->get(route('teams', ['tab' => 'presence']))
+        ->get(route('teams', ['tab' => 'people']))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->where('presence.summary.in_office', 1)
-            ->where('presence.summary.out_of_office', 1));
+            ->where('people.summary.in_office', 1)
+            ->where('people.summary.out_of_office', 1));
 
     CarbonImmutable::setTestNow();
 });
