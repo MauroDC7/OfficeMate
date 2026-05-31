@@ -6,6 +6,10 @@ import {
     EmploymentSettingsSection,
     type EmploymentSettingsPayload,
 } from '@/components/settings/employment-settings-section';
+import {
+    OfficePresenceSettingsSection,
+    type OfficePresenceSettingsPayload,
+} from '@/components/settings/office-presence-settings-section';
 import { OrganizationSetupSection } from '@/components/settings/organization-setup-section';
 import {
     TrackerSettingsSection,
@@ -25,6 +29,7 @@ type SettingsPageProps = {
     tracker: TrackerSettingsPayload | null;
     isAdmin: boolean;
     employment: EmploymentSettingsPayload | null;
+    officePresence: OfficePresenceSettingsPayload | null;
 };
 
 function IconUserOutline({ className }: { className?: string }) {
@@ -71,7 +76,7 @@ function formalName(user: User | null): string {
 }
 
 export default function Settings() {
-    const { auth, awaitingOrganizationInvite, canCreateOrganization, tracker, isAdmin, employment } =
+    const { auth, awaitingOrganizationInvite, canCreateOrganization, tracker, isAdmin, employment, officePresence } =
         usePage<SettingsPageProps>().props;
     const { success } = useAlert();
     const user = auth.user;
@@ -244,6 +249,10 @@ export default function Settings() {
                 {tracker !== null ? <TrackerSettingsSection tracker={tracker} /> : null}
 
                 {employment !== null ? <EmploymentSettingsSection employment={employment} /> : null}
+
+                {officePresence !== null ? (
+                    <OfficePresenceSettingsSection officePresence={officePresence} />
+                ) : null}
 
                 {isAdmin ? <AdminAccessSettingsSection /> : null}
             </main>
