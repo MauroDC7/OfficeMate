@@ -12,6 +12,7 @@ export type DashboardNotification = {
 };
 
 import type { TeamLeaveItem } from '@/types/leave-requests';
+import type { AdminDashboardPresenceSummary } from '@/types/presence';
 
 export type EmployeeDashboardProps = {
     activeProjects: DashboardProject[];
@@ -71,4 +72,5 @@ export type AdminDashboardProps = {
     currentLeave: AdminDashboardCurrentLeave[];
     employmentSetupCount: number;
     employeesNeedingEmploymentSetup: AdminDashboardEmployeeNeedingEmploymentSetup[];
+    presenceSummary: AdminDashboardPresenceSummary;
 };

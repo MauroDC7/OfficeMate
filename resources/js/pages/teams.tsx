@@ -8,9 +8,11 @@ import {
     OrganizationSettingsTrigger,
 } from '@/components/teams/organization-settings-panel';
 import { TeamCard } from '@/components/teams/team-card';
+import { TeamsAdminTabs, type TeamsAdminTab } from '@/components/teams/teams-admin-tabs';
+import { TeamsPresencePanel } from '@/components/teams/teams-presence-panel';
 import { AppLayout } from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import { settings } from '@/routes';
+import { settings, teams as teamsRoute } from '@/routes';
 import { approve, reject } from '@/routes/team-memberships';
 import type { TeamsPageProps } from '@/types/teams';
 
@@ -54,12 +56,28 @@ export default function Teams() {
         pendingMemberships,
         isAdmin,
         awaitingOrganizationInvite,
+        presence,
+        initialTab,
     } = usePage<TeamsPageProps>().props;
 
     const [search, setSearch] = useState('');
     const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [showOrganizationSettings, setShowOrganizationSettings] = useState(false);
+    const [activeTab, setActiveTab] = useState<TeamsAdminTab>(initialTab);
+
+    const showPresenceTab = isAdmin && presence !== null;
+    const showingPresence = showPresenceTab && activeTab === 'presence';
+
+    const setAdminTab = (tab: TeamsAdminTab) => {
+        setActiveTab(tab);
+
+        router.get(
+            teamsRoute.url({ query: tab === 'presence' ? { tab: 'presence' } : {} }),
+            {},
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
 
     const filteredTeams = useMemo(
         () => teamCards.filter((team) => matchesSearch(search, team)),
@@ -121,13 +139,16 @@ export default function Teams() {
                             Teams
                         </h1>
                         <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                            {isAdmin
-                                ? `Beheer teams binnen ${organization.name}.`
-                                : `Teams waar jij lid van bent binnen ${organization.name}.`}
+                            {showingPresence
+                                ? `Wie is vandaag aanwezig bij ${organization.name}.`
+                                : isAdmin
+                                  ? `Beheer teams binnen ${organization.name}.`
+                                  : `Teams waar jij lid van bent binnen ${organization.name}.`}
                         </p>
                     </div>
 
-                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:max-w-2xl">
+                    {!showingPresence ? (
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:max-w-2xl">
                         <div className="relative min-w-0 flex-1">
                             <label htmlFor="team-search" className="sr-only">
                                 Zoek teams
@@ -166,9 +187,21 @@ export default function Teams() {
                             </div>
                         ) : null}
                     </div>
+                    ) : null}
                 </div>
 
-                {isAdmin ? (
+                {showPresenceTab ? (
+                    <TeamsAdminTabs activeTab={activeTab} onTabChange={setAdminTab} />
+                ) : null}
+
+                {showingPresence && presence !== null ? (
+                    <TeamsPresencePanel
+                        summary={presence.summary}
+                        employees={presence.employees}
+                    />
+                ) : null}
+
+                {!showingPresence && isAdmin ? (
                     <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:max-w-xl">
                         <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
                             <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
@@ -185,7 +218,7 @@ export default function Teams() {
                     </div>
                 ) : null}
 
-                {isAdmin && pendingMemberships.length > 0 ? (
+                {!showingPresence && isAdmin && pendingMemberships.length > 0 ? (
                     <section className="mt-5 rounded-xl border border-amber-200 bg-amber-50/60 p-4 sm:p-5">
                         <h2 className="text-sm font-semibold text-gray-900">
                             Open lidmaatschapsaanvragen ({pendingMemberships.length})
@@ -248,6 +281,7 @@ export default function Teams() {
                     </section>
                 ) : null}
 
+                {!showingPresence ? (
                 <section className="mt-5">
                     {filteredTeams.length === 0 ? (
                         <div className="rounded-xl border border-dashed border-gray-200 bg-white px-4 py-8 shadow-sm sm:px-8 sm:py-10">
@@ -306,8 +340,9 @@ export default function Teams() {
                         </div>
                     )}
                 </section>
+                ) : null}
 
-                {!isAdmin && teamCards.length > 0 ? (
+                {!showingPresence && !isAdmin && teamCards.length > 0 ? (
                     <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:max-w-xl">
                         <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
                             <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">

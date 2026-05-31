@@ -1,3 +1,5 @@
+import type { PresenceEmployee, PresenceSummary } from '@/types/presence';
+
 export type TeamMembershipStatus = 'pending' | 'approved' | 'rejected';
 
 export type TeamMemberPreview = {
@@ -50,4 +52,9 @@ export type TeamsPageProps = {
     pendingMemberships: PendingMembershipRow[];
     isAdmin: boolean;
     awaitingOrganizationInvite: boolean;
+    presence: {
+        summary: PresenceSummary;
+        employees: PresenceEmployee[];
+    } | null;
+    initialTab: 'teams' | 'presence';
 };
