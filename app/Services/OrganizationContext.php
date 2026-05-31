@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\UserRole;
 use App\Models\Organization;
 use App\Models\User;
 
@@ -10,24 +9,11 @@ final class OrganizationContext
 {
     public function forUser(User $user): ?Organization
     {
-        if ($user->organization_id !== null) {
-            return Organization::query()->find($user->organization_id);
+        if ($user->organization_id === null) {
+            return null;
         }
 
-        if ($user->role === UserRole::Admin) {
-            $organization = Organization::query()->firstOrCreate(
-                [],
-                ['name' => ''],
-            );
-
-            if ($user->organization_id !== $organization->id) {
-                $user->forceFill(['organization_id' => $organization->id])->save();
-            }
-
-            return $organization;
-        }
-
-        return null;
+        return Organization::query()->find($user->organization_id);
     }
 
     public function forUserOrFail(User $user): Organization
