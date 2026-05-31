@@ -67,6 +67,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/admin/leave-requests', [AppPageController::class, 'adminLeaveRequests'])
         ->middleware('admin')
         ->name('admin.leaveRequests');
+    Route::get('/admin/presence', fn () => redirect()->route('teams', ['tab' => 'presence']))
+        ->middleware('admin')
+        ->name('admin.presence');
     Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->name('leaveRequests.store');
     Route::post('/leave-requests/bulk-approve', [LeaveRequestController::class, 'bulkApprove'])
         ->middleware('admin')

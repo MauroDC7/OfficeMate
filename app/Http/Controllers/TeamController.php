@@ -10,6 +10,7 @@ use App\Models\Team;
 use App\Models\TeamMembership;
 use App\Models\User;
 use App\Services\OrganizationContext;
+use App\Services\OrganizationPresenceOverview;
 use App\Services\TeamOverviewBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ final class TeamController extends Controller
     public function __construct(
         private readonly OrganizationContext $organizationContext,
         private readonly TeamOverviewBuilder $teamOverviewBuilder,
+        private readonly OrganizationPresenceOverview $organizationPresenceOverview,
     ) {}
 
     public function index(Request $request): Response
@@ -41,6 +43,8 @@ final class TeamController extends Controller
                 'pendingMemberships' => [],
                 'isAdmin' => $isAdmin,
                 'awaitingOrganizationInvite' => $user->role !== UserRole::Admin && $user->organization_id === null,
+                'presence' => null,
+                'initialTab' => 'teams',
             ]);
         }
 
@@ -71,6 +75,10 @@ final class TeamController extends Controller
             'pendingMemberships' => $pendingForApproval,
             'isAdmin' => $isAdmin,
             'awaitingOrganizationInvite' => false,
+            'presence' => $isAdmin
+                ? $this->organizationPresenceOverview->forOrganization($organization)
+                : null,
+            'initialTab' => $request->query('tab') === 'presence' ? 'presence' : 'teams',
         ]);
     }
 
