@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\TaskAvailability;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,7 @@ final class RemoveOrganizationMember
                 'employment_setup_completed_at' => null,
                 'employment_profile_id' => null,
                 'last_seen_at_office' => null,
+                'task_availability' => TaskAvailability::OpenForTasks,
                 'role' => UserRole::Employee,
             ])->save();
         });

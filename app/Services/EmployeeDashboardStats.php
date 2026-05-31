@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\LeaveRequestStatus;
+use App\Enums\TaskAvailability;
 use App\Models\LeaveRequest;
 use App\Models\Project;
 use App\Models\TimesheetEntry;
@@ -34,6 +35,8 @@ final class EmployeeDashboardStats
      *         user: array{id: int, name: string}
      *     }>,
      *     hasOrganization: bool,
+     *     taskAvailability: string|null,
+     *     taskAvailabilityOptions: list<array{value: string, label: string}>,
      *     recentNotifications: list<array{id: string, title: string, message: string, created_at: string}>
      * }
      */
@@ -100,6 +103,18 @@ final class EmployeeDashboardStats
             'weekStart' => $monday->toDateString(),
             'teamLeaveThisWeek' => $teamLeaveThisWeek,
             'hasOrganization' => $user->organization_id !== null,
+            'taskAvailability' => $user->organization_id !== null
+                ? ($user->task_availability ?? TaskAvailability::OpenForTasks)->value
+                : null,
+            'taskAvailabilityOptions' => $user->organization_id !== null
+                ? array_map(
+                    fn (TaskAvailability $option): array => [
+                        'value' => $option->value,
+                        'label' => $option->label(),
+                    ],
+                    TaskAvailability::cases(),
+                )
+                : [],
             'recentNotifications' => [],
         ];
     }

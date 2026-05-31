@@ -23,6 +23,8 @@ export type EmployeeDashboardProps = {
     weekStart: string;
     teamLeaveThisWeek: TeamLeaveItem[];
     hasOrganization: boolean;
+    taskAvailability: string | null;
+    taskAvailabilityOptions: { value: string; label: string }[];
     recentNotifications: DashboardNotification[];
 };
 

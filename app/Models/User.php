@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TaskAvailability;
 use App\Enums\UserRole;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
@@ -37,6 +38,7 @@ use Laravel\Sanctum\HasApiTokens;
     'organization_joined_at',
     'employment_setup_completed_at',
     'privacy_policy_accepted_at',
+    'task_availability',
 ])]
 #[Hidden(['password', 'remember_token', 'avatar_path'])]
 class User extends Authenticatable implements CanResetPasswordContract, MustVerifyEmailContract
@@ -66,6 +68,7 @@ class User extends Authenticatable implements CanResetPasswordContract, MustVeri
             'privacy_policy_accepted_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'task_availability' => TaskAvailability::class,
             'can_create_projects' => 'boolean',
         ];
     }

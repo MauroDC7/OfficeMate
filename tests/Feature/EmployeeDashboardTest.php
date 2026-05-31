@@ -49,7 +49,9 @@ it('shows employee dashboard stats', function () {
             ->where('openLeaveDays', 3)
             ->where('pendingLeaveRequestCount', 1)
             ->where('weekStart', $monday->toDateString())
-            ->has('recentNotifications', 0));
+            ->has('recentNotifications', 0)
+            ->where('taskAvailability', null)
+            ->has('taskAvailabilityOptions', 0));
 });
 
 it('renders admin dashboard for administrators', function () {

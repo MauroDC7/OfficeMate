@@ -3,6 +3,7 @@ import { router } from '@inertiajs/react';
 import { useAlert } from '@/components/alert';
 import { RowActionsMenu, type RowActionItem } from '@/components/leave-requests/row-actions-menu';
 import { PresenceStatusBadge } from '@/components/presence/presence-status-badge';
+import { TaskAvailabilityBadge } from '@/components/presence/task-availability-badge';
 import { UserAvatar } from '@/components/user-avatar';
 import { getUserDisplayFullName } from '@/lib/user-display';
 import type { PresenceEmployee } from '@/types/presence';
@@ -115,6 +116,10 @@ export function PeopleEmployeeCard({ employee, currentUserId }: PeopleEmployeeCa
                 <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
                     {roleLabel(employee.role)}
                 </span>
+                <TaskAvailabilityBadge
+                    label={employee.task_availability_label}
+                    availability={employee.task_availability}
+                />
                 <PresenceStatusBadge label={employee.status_label} status={employee.status} />
                 {employee.leave_ends_on !== null ? (
                     <span className="text-xs text-gray-500">{formatLeaveUntil(employee.leave_ends_on)}</span>

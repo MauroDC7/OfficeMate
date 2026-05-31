@@ -28,6 +28,7 @@ use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
 use App\Http\Controllers\TimesheetEntryProposalController;
 use App\Http\Controllers\TimesheetTrackerWindowTitlesController;
+use App\Http\Controllers\UpdateTaskAvailabilityController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/email/verify', [VerifyEmailController::class, 'notice'])->name('verification.notice');
@@ -46,6 +47,8 @@ Route::middleware('auth')->group(function (): void {
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/', [AppPageController::class, 'dashboard'])->name('dashboard');
+    Route::patch('/dashboard/task-availability', UpdateTaskAvailabilityController::class)
+        ->name('dashboard.task-availability.update');
     Route::get('/timesheets', [AppPageController::class, 'timesheets'])->name('timesheets');
     Route::get('/timesheets/tracker-window-titles', TimesheetTrackerWindowTitlesController::class)
         ->name('timesheets.tracker-window-titles');

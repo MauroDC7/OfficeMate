@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\EmployeePresenceStatus;
 use App\Enums\LeaveRequestStatus;
 use App\Enums\LeaveType;
+use App\Enums\TaskAvailability;
 use App\Enums\TeamMembershipStatus;
 use App\Enums\UserRole;
 use App\Models\LeaveRequest;
@@ -42,6 +43,8 @@ final class OrganizationPresenceOverview
      *         status_label: string,
      *         leave_ends_on: string|null,
      *         role: string,
+     *         task_availability: string,
+     *         task_availability_label: string,
      *     }>
      * }
      */
@@ -55,7 +58,7 @@ final class OrganizationPresenceOverview
             ->where('organization_id', $organization->id)
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name', 'email', 'avatar_path', 'last_seen_at_office', 'role']);
+            ->get(['id', 'first_name', 'last_name', 'email', 'avatar_path', 'last_seen_at_office', 'role', 'task_availability']);
 
         if ($employees->isEmpty()) {
             return [
@@ -118,6 +121,8 @@ final class OrganizationPresenceOverview
                 'role' => $employee->role instanceof UserRole
                     ? $employee->role->value
                     : (string) $employee->role,
+                'task_availability' => ($employee->task_availability ?? TaskAvailability::OpenForTasks)->value,
+                'task_availability_label' => ($employee->task_availability ?? TaskAvailability::OpenForTasks)->label(),
             ];
         }
 
