@@ -80,7 +80,40 @@ it('shows admin dashboard stats for the organization', function () {
             ->where('hoursThisWeekMinutes', 240)
             ->where('weekStart', $monday->toDateString())
             ->has('pendingMemberships', 2)
-            ->has('currentLeave'));
+            ->has('currentLeave')
+            ->where('employmentSetupCount', 0));
+});
+
+it('lists new employees who still need a contract on the admin dashboard', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->forOrganization($organization)->create([
+        'role' => UserRole::Admin,
+    ]);
+
+    $newJoiner = User::factory()->forOrganization($organization)->create([
+        'role' => UserRole::Employee,
+        'first_name' => 'Nina',
+        'last_name' => 'Bakker',
+        'email' => 'nina@acme.test',
+        'organization_joined_at' => now(),
+        'employment_setup_completed_at' => null,
+    ]);
+
+    User::factory()->forOrganization($organization)->create([
+        'role' => UserRole::Employee,
+        'employment_setup_completed_at' => now(),
+        'organization_joined_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/dashboard')
+            ->where('employmentSetupCount', 1)
+            ->has('employeesNeedingEmploymentSetup', 1)
+            ->where('employeesNeedingEmploymentSetup.0.id', $newJoiner->id)
+            ->where('employeesNeedingEmploymentSetup.0.email', 'nina@acme.test'));
 });
 
 it('includes the admin\'s own data in the totals', function () {

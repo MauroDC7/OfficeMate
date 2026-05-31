@@ -65,6 +65,33 @@ it('accepts an invite when a new user registers after opening the link', functio
     expect($invite->fresh()->redeemed_by_user_id)->toBe($user?->id);
 });
 
+it('applies organization employment defaults when an invite is accepted', function () {
+    Notification::fake();
+
+    $organization = Organization::factory()->create([
+        'default_weekly_work_hours' => 36,
+        'default_annual_leave_days' => 22,
+    ]);
+    $admin = User::factory()->forOrganization($organization)->create(['role' => UserRole::Admin]);
+    $employee = User::factory()->create([
+        'role' => UserRole::Employee,
+        'email' => 'nieuw@example.com',
+    ]);
+
+    app(OrganizationInviteService::class)->send($organization, $admin, 'nieuw@example.com');
+
+    $invite = OrganizationInvite::query()->where('email', 'nieuw@example.com')->firstOrFail();
+
+    app(OrganizationInviteService::class)->accept($employee, $invite->token);
+
+    expect($employee->fresh())
+        ->weekly_work_hours->toBe(36)
+        ->annual_leave_days->toBe(22)
+        ->employment_profile_id->toBeNull()
+        ->organization_joined_at->not->toBeNull()
+        ->employment_setup_completed_at->toBeNull();
+});
+
 it('accepts an invite when an existing user logs in after opening the link', function () {
     Notification::fake();
 

@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 
 import { useAlert } from '@/components/alert';
 import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
@@ -93,6 +93,8 @@ export default function AdminDashboard() {
         weekStart,
         pendingMemberships,
         currentLeave,
+        employmentSetupCount,
+        employeesNeedingEmploymentSetup,
     } = usePage<AdminDashboardProps>().props;
     const { success } = useAlert();
 
@@ -154,6 +156,56 @@ export default function AdminDashboard() {
                             })}
                         />
                     </div>
+
+                    {employmentSetupCount > 0 ? (
+                        <section className="rounded-xl border border-amber-200 bg-amber-50/50 shadow-sm">
+                            <div className="border-b border-amber-200/80 px-4 py-3 sm:px-5">
+                                <h2 className="text-sm font-semibold text-gray-900">
+                                    Contract instellen
+                                </h2>
+                                <p className="mt-0.5 text-xs text-gray-600">
+                                    {employmentSetupCount === 1
+                                        ? '1 nieuwe medewerker wacht op een contracttype of uitzondering.'
+                                        : `${employmentSetupCount} nieuwe medewerkers wachten op een contracttype of uitzondering.`}
+                                </p>
+                            </div>
+                            <ul className="divide-y divide-amber-200/60">
+                                {employeesNeedingEmploymentSetup.map((employee) => (
+                                    <li
+                                        key={employee.id}
+                                        className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5"
+                                    >
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-medium text-gray-900">
+                                                {employee.name}
+                                            </p>
+                                            <p className="truncate text-xs text-gray-500">{employee.email}</p>
+                                        </div>
+                                        <Link
+                                            href={`${settings.url({
+                                                query: { employee: employee.id },
+                                                mergeQuery: false,
+                                            })}#employment-exception`}
+                                            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
+                                        >
+                                            Contract instellen
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                            {employmentSetupCount > employeesNeedingEmploymentSetup.length ? (
+                                <p className="border-t border-amber-200/80 px-4 py-2 text-center text-xs text-gray-500 sm:px-5">
+                                    Toon {employeesNeedingEmploymentSetup.length} van {employmentSetupCount}.{' '}
+                                    <Link
+                                        href={`${settings.url()}#employment-exception`}
+                                        className="font-medium text-gray-700 underline underline-offset-2 hover:text-gray-900"
+                                    >
+                                        Naar instellingen
+                                    </Link>
+                                </p>
+                            ) : null}
+                        </section>
+                    ) : null}
 
                     <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
                         <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">

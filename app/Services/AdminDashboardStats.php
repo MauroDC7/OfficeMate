@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\LeaveRequestStatus;
 use App\Enums\TeamMembershipStatus;
+use App\Enums\UserRole;
 use App\Models\LeaveRequest;
 use App\Models\Organization;
 use App\Models\OrganizationInvite;
@@ -19,6 +20,8 @@ final class AdminDashboardStats
     private const PENDING_MEMBERSHIPS_PREVIEW = 5;
 
     private const CURRENT_LEAVE_PREVIEW = 5;
+
+    private const EMPLOYMENT_SETUP_PREVIEW = 5;
 
     /**
      * @return array{
@@ -43,6 +46,13 @@ final class AdminDashboardStats
      *         type: string,
      *         type_label: string,
      *         user: array{id: int, name: string}
+     *     }>,
+     *     employmentSetupCount: int,
+     *     employeesNeedingEmploymentSetup: list<array{
+     *         id: int,
+     *         name: string,
+     *         email: string,
+     *         joined_at: string
      *     }>
      * }
      */
@@ -135,6 +145,26 @@ final class AdminDashboardStats
             ])
             ->all();
 
+        $employmentSetupQuery = User::query()
+            ->where('organization_id', $organization->id)
+            ->where('role', UserRole::Employee)
+            ->whereNull('employment_setup_completed_at')
+            ->whereNotNull('organization_joined_at');
+
+        $employmentSetupCount = (clone $employmentSetupQuery)->count();
+
+        $employeesNeedingEmploymentSetup = $employmentSetupQuery
+            ->orderByDesc('organization_joined_at')
+            ->limit(self::EMPLOYMENT_SETUP_PREVIEW)
+            ->get(['id', 'first_name', 'last_name', 'email', 'organization_joined_at'])
+            ->map(fn (User $employee): array => [
+                'id' => $employee->id,
+                'name' => $employee->name,
+                'email' => $employee->email,
+                'joined_at' => $employee->organization_joined_at?->toIso8601String() ?? '',
+            ])
+            ->all();
+
         return [
             'organizationName' => $organization->name,
             'memberCount' => count($memberIds),
@@ -147,6 +177,8 @@ final class AdminDashboardStats
             'weekStart' => $monday->toDateString(),
             'pendingMemberships' => $pendingMemberships,
             'currentLeave' => $currentLeave,
+            'employmentSetupCount' => $employmentSetupCount,
+            'employeesNeedingEmploymentSetup' => $employeesNeedingEmploymentSetup,
         ];
     }
 }

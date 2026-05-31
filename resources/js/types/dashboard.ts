@@ -50,6 +50,13 @@ export type AdminDashboardCurrentLeave = {
     };
 };
 
+export type AdminDashboardEmployeeNeedingEmploymentSetup = {
+    id: number;
+    name: string;
+    email: string;
+    joined_at: string;
+};
+
 export type AdminDashboardProps = {
     organizationName: string;
     memberCount: number;
@@ -62,4 +69,6 @@ export type AdminDashboardProps = {
     weekStart: string;
     pendingMemberships: AdminDashboardPendingMembership[];
     currentLeave: AdminDashboardCurrentLeave[];
+    employmentSetupCount: number;
+    employeesNeedingEmploymentSetup: AdminDashboardEmployeeNeedingEmploymentSetup[];
 };
