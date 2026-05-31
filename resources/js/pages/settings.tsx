@@ -1,6 +1,14 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 
 import { useAlert } from '@/components/alert';
+import {
+    EmploymentSettingsSection,
+    type EmploymentSettingsPayload,
+} from '@/components/settings/employment-settings-section';
+import {
+    TrackerSettingsSection,
+    type TrackerSettingsPayload,
+} from '@/components/settings/tracker-settings-section';
 import { UserAvatar } from '@/components/user-avatar';
 import { AppLayout } from '@/layouts/app-layout';
 import { getUserDisplayFullName, getUserInitials } from '@/lib/user-display';
@@ -11,6 +19,9 @@ import type { Auth, User } from '@/types/auth';
 type SettingsPageProps = {
     auth: Auth;
     awaitingOrganizationInvite: boolean;
+    tracker: TrackerSettingsPayload | null;
+    isAdmin: boolean;
+    employment: EmploymentSettingsPayload | null;
 };
 
 function IconUserOutline({ className }: { className?: string }) {
@@ -57,7 +68,8 @@ function formalName(user: User | null): string {
 }
 
 export default function Settings() {
-    const { auth, awaitingOrganizationInvite } = usePage<SettingsPageProps>().props;
+    const { auth, awaitingOrganizationInvite, tracker, isAdmin, employment } =
+        usePage<SettingsPageProps>().props;
     const { success } = useAlert();
     const user = auth.user;
 
@@ -75,7 +87,7 @@ export default function Settings() {
                     Instellingen
                 </h1>
                 <p className="mt-2 max-w-2xl text-pretty text-sm leading-relaxed text-gray-500 md:max-w-3xl lg:text-base xl:max-w-4xl 2xl:max-w-5xl">
-                    Beheer je profiel en account.
+                    Beheer je profiel{isAdmin ? ', je team' : ''} en de desktop-tracker.
                 </p>
 
                 {awaitingOrganizationInvite ? (
@@ -223,6 +235,10 @@ export default function Settings() {
                         </div>
                     </div>
                 </section>
+
+                {tracker !== null ? <TrackerSettingsSection tracker={tracker} /> : null}
+
+                {employment !== null ? <EmploymentSettingsSection employment={employment} /> : null}
             </main>
         </AppLayout>
     );
