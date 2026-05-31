@@ -37,7 +37,7 @@ it('prioritizes sick leave over vacation for the same day', function () {
         ->and($overview['employees'][0]['status'])->toBe('sick');
 });
 
-it('marks employees without leave as out of office until ip detection exists', function () {
+it('marks employees without leave as out of office until they are seen at the office', function () {
     $organization = Organization::factory()->create();
     User::factory()->forOrganization($organization)->create([
         'role' => UserRole::Employee,
@@ -48,4 +48,18 @@ it('marks employees without leave as out of office until ip detection exists', f
     expect($overview['summary']['out_of_office'])->toBe(1)
         ->and($overview['summary']['in_office'])->toBe(0)
         ->and($overview['employees'][0]['status'])->toBe('out_of_office');
+});
+
+it('marks employees as in office when they were seen at the office today', function () {
+    $organization = Organization::factory()->create();
+    User::factory()->forOrganization($organization)->create([
+        'role' => UserRole::Employee,
+        'last_seen_at_office' => CarbonImmutable::now(),
+    ]);
+
+    $overview = app(OrganizationPresenceOverview::class)->forOrganization($organization);
+
+    expect($overview['summary']['in_office'])->toBe(1)
+        ->and($overview['summary']['out_of_office'])->toBe(0)
+        ->and($overview['employees'][0]['status'])->toBe('in_office');
 });

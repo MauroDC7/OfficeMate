@@ -62,6 +62,7 @@ class User extends Authenticatable implements CanResetPasswordContract, MustVeri
             'email_verified_at' => 'datetime',
             'organization_joined_at' => 'datetime',
             'employment_setup_completed_at' => 'datetime',
+            'last_seen_at_office' => 'datetime',
             'privacy_policy_accepted_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,

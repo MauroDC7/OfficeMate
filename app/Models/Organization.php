@@ -15,11 +15,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'name',
     'default_weekly_work_hours',
     'default_annual_leave_days',
+    'office_ip_addresses',
 ])]
 class Organization extends Model
 {
     /** @use HasFactory<OrganizationFactory> */
     use HasFactory;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'office_ip_addresses' => 'array',
+        ];
+    }
 
     /**
      * @return HasMany<EmploymentProfile, $this>

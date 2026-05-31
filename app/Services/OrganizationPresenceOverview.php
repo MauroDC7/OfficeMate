@@ -53,7 +53,7 @@ final class OrganizationPresenceOverview
             ->where('organization_id', $organization->id)
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name', 'email', 'avatar_path']);
+            ->get(['id', 'first_name', 'last_name', 'email', 'avatar_path', 'last_seen_at_office']);
 
         if ($employees->isEmpty()) {
             return [
