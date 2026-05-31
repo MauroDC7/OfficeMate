@@ -6,7 +6,6 @@ use App\Models\Organization;
 use App\Models\Team;
 use App\Models\TeamMembership;
 use App\Models\User;
-use App\Services\OrganizationContext;
 
 it('shows teams page for employees with organization context', function () {
     $organization = Organization::factory()->create(['name' => 'Acme']);
@@ -86,8 +85,8 @@ it('forbids employees from creating teams', function () {
 });
 
 it('allows admins to create teams with members', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
     $colleague = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
 
     $this->actingAs($admin)
@@ -111,7 +110,7 @@ it('allows admins to create teams with members', function () {
 });
 
 it('allows admins to approve pending memberships', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $admin = User::factory()->admin()->create();
     $membership = TeamMembership::factory()->pending()->create();
 
     $this->actingAs($admin)
@@ -122,7 +121,7 @@ it('allows admins to approve pending memberships', function () {
 });
 
 it('allows admins to reject pending memberships', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $admin = User::factory()->admin()->create();
     $membership = TeamMembership::factory()->pending()->create();
 
     $this->actingAs($admin)
@@ -160,8 +159,8 @@ it('lets rejected employees request membership again', function () {
 });
 
 it('shows pending memberships for admins on the teams page', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
     $employee = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
     $team = Team::factory()->for($organization)->create(['name' => 'Support']);
     TeamMembership::factory()->for($team)->for($employee)->pending()->create();
@@ -178,9 +177,8 @@ it('shows pending memberships for admins on the teams page', function () {
 });
 
 it('allows admins to update organization name from teams', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
     $organization = Organization::factory()->create(['name' => 'Acme BV']);
-    $admin->forceFill(['organization_id' => $organization->id])->save();
+    $admin = User::factory()->admin($organization)->create();
 
     $this->actingAs($admin)
         ->patch(route('teams.organization.update', $organization), [

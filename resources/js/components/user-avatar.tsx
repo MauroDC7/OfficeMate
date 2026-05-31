@@ -2,8 +2,11 @@ import { getUserInitials } from '@/lib/user-display';
 import { cn } from '@/lib/utils';
 import type { User } from '@/types/auth';
 
+/** Minimale gebruikersgegevens voor avatar / initialen (o.a. lijsten). */
+export type UserAvatarFields = Pick<User, 'first_name' | 'last_name' | 'name' | 'avatar'>;
+
 type UserAvatarProps = {
-    user: User | null;
+    user: UserAvatarFields | null;
     className?: string;
     textClassName?: string;
     title?: string;

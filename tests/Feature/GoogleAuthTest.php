@@ -57,7 +57,8 @@ it('creates a new employee when no matching user exists', function (): void {
         'email' => 'nieuw@example.com',
     ]));
 
-    $this->get('/auth/google/callback')
+    $this->withSession(['privacy_policy_accepted' => true])
+        ->get('/auth/google/callback')
         ->assertRedirect(route('dashboard'));
 
     $user = User::query()->where('email', 'nieuw@example.com')->first();

@@ -80,7 +80,40 @@ it('shows admin dashboard stats for the organization', function () {
             ->where('hoursThisWeekMinutes', 240)
             ->where('weekStart', $monday->toDateString())
             ->has('pendingMemberships', 2)
-            ->has('currentLeave'));
+            ->has('currentLeave')
+            ->where('employmentSetupCount', 0));
+});
+
+it('lists new employees who still need a contract on the admin dashboard', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->forOrganization($organization)->create([
+        'role' => UserRole::Admin,
+    ]);
+
+    $newJoiner = User::factory()->forOrganization($organization)->create([
+        'role' => UserRole::Employee,
+        'first_name' => 'Nina',
+        'last_name' => 'Bakker',
+        'email' => 'nina@acme.test',
+        'organization_joined_at' => now(),
+        'employment_setup_completed_at' => null,
+    ]);
+
+    User::factory()->forOrganization($organization)->create([
+        'role' => UserRole::Employee,
+        'employment_setup_completed_at' => now(),
+        'organization_joined_at' => now()->subDay(),
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/dashboard')
+            ->where('employmentSetupCount', 1)
+            ->has('employeesNeedingEmploymentSetup', 1)
+            ->where('employeesNeedingEmploymentSetup.0.id', $newJoiner->id)
+            ->where('employeesNeedingEmploymentSetup.0.email', 'nina@acme.test'));
 });
 
 it('includes the admin\'s own data in the totals', function () {
@@ -122,7 +155,7 @@ it('includes the admin\'s own data in the totals', function () {
 });
 
 it('returns empty admin dashboard for an organization without data', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $admin = User::factory()->admin()->create();
 
     $monday = CarbonImmutable::now()->startOfWeek(CarbonImmutable::MONDAY);
 
@@ -253,10 +286,9 @@ it('lists approved leave that overlaps with the current week', function () {
 
     $monday = CarbonImmutable::now()->startOfWeek(CarbonImmutable::MONDAY);
 
-    LeaveRequest::factory()->for($employee)->approved()->create([
+    LeaveRequest::factory()->for($employee)->approved()->vacation()->create([
         'starts_on' => $monday->addDay()->toDateString(),
         'ends_on' => $monday->addDays(3)->toDateString(),
-        'label' => 'Vakantie',
     ]);
 
     LeaveRequest::factory()->for($employee)->approved()->create([
@@ -276,5 +308,5 @@ it('lists approved leave that overlaps with the current week', function () {
             ->component('admin/dashboard')
             ->has('currentLeave', 1)
             ->where('currentLeave.0.user.name', 'Lena Janssens')
-            ->where('currentLeave.0.label', 'Vakantie'));
+            ->where('currentLeave.0.type_label', 'Vakantie'));
 });

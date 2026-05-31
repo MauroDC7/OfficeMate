@@ -21,7 +21,23 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['first_name', 'last_name', 'username', 'email', 'google_id', 'password', 'role', 'can_create_projects', 'organization_id', 'privacy_policy_accepted_at'])]
+#[Fillable([
+    'first_name',
+    'last_name',
+    'username',
+    'email',
+    'google_id',
+    'password',
+    'role',
+    'can_create_projects',
+    'annual_leave_days',
+    'weekly_work_hours',
+    'employment_profile_id',
+    'organization_id',
+    'organization_joined_at',
+    'employment_setup_completed_at',
+    'privacy_policy_accepted_at',
+])]
 #[Hidden(['password', 'remember_token', 'avatar_path'])]
 class User extends Authenticatable implements CanResetPasswordContract, MustVerifyEmailContract
 {
@@ -44,6 +60,8 @@ class User extends Authenticatable implements CanResetPasswordContract, MustVeri
     {
         return [
             'email_verified_at' => 'datetime',
+            'organization_joined_at' => 'datetime',
+            'employment_setup_completed_at' => 'datetime',
             'privacy_policy_accepted_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
@@ -105,6 +123,14 @@ class User extends Authenticatable implements CanResetPasswordContract, MustVeri
     public function desktopActivities(): HasMany
     {
         return $this->hasMany(DesktopActivity::class);
+    }
+
+    /**
+     * @return BelongsTo<EmploymentProfile, $this>
+     */
+    public function employmentProfile(): BelongsTo
+    {
+        return $this->belongsTo(EmploymentProfile::class);
     }
 
     /**

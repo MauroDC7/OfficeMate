@@ -54,4 +54,17 @@ class UserFactory extends Factory
             'organization_id' => $organization->id,
         ]);
     }
+
+    public function admin(?Organization $organization = null): static
+    {
+        return $this->state(function (array $attributes) use ($organization): array {
+            $organization ??= Organization::factory()->create();
+
+            return [
+                'role' => UserRole::Admin,
+                'organization_id' => $organization->id,
+                'organization_joined_at' => now(),
+            ];
+        });
+    }
 }

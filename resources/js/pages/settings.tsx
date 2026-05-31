@@ -1,6 +1,16 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
 
 import { useAlert } from '@/components/alert';
+import { AdminAccessSettingsSection } from '@/components/settings/admin-access-settings-section';
+import {
+    EmploymentSettingsSection,
+    type EmploymentSettingsPayload,
+} from '@/components/settings/employment-settings-section';
+import { OrganizationSetupSection } from '@/components/settings/organization-setup-section';
+import {
+    TrackerSettingsSection,
+    type TrackerSettingsPayload,
+} from '@/components/settings/tracker-settings-section';
 import { UserAvatar } from '@/components/user-avatar';
 import { AppLayout } from '@/layouts/app-layout';
 import { getUserDisplayFullName, getUserInitials } from '@/lib/user-display';
@@ -11,6 +21,10 @@ import type { Auth, User } from '@/types/auth';
 type SettingsPageProps = {
     auth: Auth;
     awaitingOrganizationInvite: boolean;
+    canCreateOrganization: boolean;
+    tracker: TrackerSettingsPayload | null;
+    isAdmin: boolean;
+    employment: EmploymentSettingsPayload | null;
 };
 
 function IconUserOutline({ className }: { className?: string }) {
@@ -57,7 +71,8 @@ function formalName(user: User | null): string {
 }
 
 export default function Settings() {
-    const { auth, awaitingOrganizationInvite } = usePage<SettingsPageProps>().props;
+    const { auth, awaitingOrganizationInvite, canCreateOrganization, tracker, isAdmin, employment } =
+        usePage<SettingsPageProps>().props;
     const { success } = useAlert();
     const user = auth.user;
 
@@ -75,7 +90,7 @@ export default function Settings() {
                     Instellingen
                 </h1>
                 <p className="mt-2 max-w-2xl text-pretty text-sm leading-relaxed text-gray-500 md:max-w-3xl lg:text-base xl:max-w-4xl 2xl:max-w-5xl">
-                    Beheer je profiel en account.
+                    Beheer je profiel{isAdmin ? ', je team' : ''} en de desktop-tracker.
                 </p>
 
                 {awaitingOrganizationInvite ? (
@@ -87,6 +102,8 @@ export default function Settings() {
                         </p>
                     </section>
                 ) : null}
+
+                {canCreateOrganization ? <OrganizationSetupSection /> : null}
 
                 <section
                     className="mt-5 w-full min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6 sm:rounded-2xl lg:mt-7"
@@ -223,6 +240,12 @@ export default function Settings() {
                         </div>
                     </div>
                 </section>
+
+                {tracker !== null ? <TrackerSettingsSection tracker={tracker} /> : null}
+
+                {employment !== null ? <EmploymentSettingsSection employment={employment} /> : null}
+
+                {isAdmin ? <AdminAccessSettingsSection /> : null}
             </main>
         </AppLayout>
     );

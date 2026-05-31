@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\UserRole;
 use App\Models\User;
 
 it('shows the register page', function (): void {
@@ -17,7 +18,6 @@ it('registers a user with a valid password', function (): void {
         'email' => 'jan@example.com',
         'password' => 'WelkomOffice9!',
         'password_confirmation' => 'WelkomOffice9!',
-        'role' => 'employee',
         'privacy_policy_accepted' => '1',
     ])
         ->assertRedirect(route('verification.notice'));
@@ -26,7 +26,23 @@ it('registers a user with a valid password', function (): void {
 
     $user = User::query()->where('email', 'jan@example.com')->first();
     expect($user)->not->toBeNull()
+        ->and($user->role)->toBe(UserRole::Employee)
         ->and($user->privacy_policy_accepted_at)->not->toBeNull();
+});
+
+it('always registers users as employees without a role choice', function (): void {
+    $this->post(route('register'), [
+        'first_name' => 'Bea',
+        'last_name' => 'Beheer',
+        'email' => 'bea@example.com',
+        'password' => 'WelkomOffice9!',
+        'password_confirmation' => 'WelkomOffice9!',
+        'privacy_policy_accepted' => '1',
+    ])
+        ->assertRedirect(route('verification.notice'));
+
+    expect(User::query()->where('email', 'bea@example.com')->value('role'))
+        ->toBe(UserRole::Employee);
 });
 
 it('requires accepting the privacy policy to register', function (): void {
@@ -37,7 +53,6 @@ it('requires accepting the privacy policy to register', function (): void {
             'email' => 'jan@example.com',
             'password' => 'WelkomOffice9!',
             'password_confirmation' => 'WelkomOffice9!',
-            'role' => 'employee',
         ])
         ->assertRedirect(route('register'))
         ->assertSessionHasErrors('privacy_policy_accepted');
@@ -53,7 +68,6 @@ it('rejects a password that does not meet the requirements', function (): void {
             'email' => 'jan@example.com',
             'password' => 'kort1',
             'password_confirmation' => 'kort1',
-            'role' => 'employee',
             'privacy_policy_accepted' => '1',
         ])
         ->assertRedirect(route('register'))

@@ -7,11 +7,15 @@ use App\Models\TimesheetEntry;
 use App\Models\TimesheetEntryProposal;
 use App\Models\User;
 use App\Services\AdminDashboardStats;
+use App\Services\AdminLeaveRequestPageData;
 use App\Services\EmployeeDashboardStats;
+use App\Services\LeaveRequestPageData;
 use App\Services\OrganizationContext;
+use App\Services\SettingsPageData;
 use App\Services\TimesheetEntryWindowTitlesResolver;
 use App\Services\TimesheetProjectNormalizer;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -152,18 +156,36 @@ final class AppPageController extends Controller
         }
     }
 
-    public function leaveRequests(): Response
-    {
-        return Inertia::render('leaveRequests');
-    }
-
-    public function settings(Request $request): Response
+    public function leaveRequests(Request $request, LeaveRequestPageData $leaveRequestPageData): Response|RedirectResponse
     {
         $user = $request->user();
         abort_unless($user instanceof User, 401);
 
-        return Inertia::render('settings', [
-            'awaitingOrganizationInvite' => $user->role !== UserRole::Admin && $user->organization_id === null,
-        ]);
+        if ($user->role === UserRole::Admin) {
+            return redirect()->route('admin.leaveRequests');
+        }
+
+        return Inertia::render('leaveRequests', $leaveRequestPageData->forUser($user));
+    }
+
+    public function adminLeaveRequests(
+        Request $request,
+        AdminLeaveRequestPageData $adminLeaveRequestPageData,
+        OrganizationContext $organizationContext,
+    ): Response {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        $organization = $organizationContext->forUserOrFail($user);
+
+        return Inertia::render(
+            'admin/leaveRequests',
+            $adminLeaveRequestPageData->forOrganization($organization, $request),
+        );
+    }
+
+    public function settings(Request $request, SettingsPageData $settingsPageData): Response
+    {
+        return Inertia::render('settings', $settingsPageData->forRequest($request));
     }
 }

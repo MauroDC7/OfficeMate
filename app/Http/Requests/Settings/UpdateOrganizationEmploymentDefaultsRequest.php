@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Http\Requests\Settings;
+
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateOrganizationEmploymentDefaultsRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'default_weekly_work_hours' => ['required', 'integer', 'min:1', 'max:60'],
+            'default_annual_leave_days' => ['required', 'integer', 'min:0', 'max:365'],
+        ];
+    }
+}

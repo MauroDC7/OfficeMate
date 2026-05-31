@@ -7,13 +7,20 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\OrganizationInviteAcceptController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectCreatorAccessController;
 use App\Http\Controllers\Settings\AccountSettingsController;
+use App\Http\Controllers\Settings\EmployeeEmploymentSearchController;
+use App\Http\Controllers\Settings\EmployeeEmploymentSettingsController;
+use App\Http\Controllers\Settings\EmploymentProfileController;
+use App\Http\Controllers\Settings\GrantEmployeeAdminRoleController;
+use App\Http\Controllers\Settings\OrganizationEmploymentDefaultsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
+use App\Http\Controllers\Settings\StoreOrganizationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
@@ -57,8 +64,55 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->middleware('admin')
         ->name('projects.creator-access.update');
     Route::get('/leave-requests', [AppPageController::class, 'leaveRequests'])->name('leaveRequests');
+    Route::get('/admin/leave-requests', [AppPageController::class, 'adminLeaveRequests'])
+        ->middleware('admin')
+        ->name('admin.leaveRequests');
+    Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->name('leaveRequests.store');
+    Route::post('/leave-requests/bulk-approve', [LeaveRequestController::class, 'bulkApprove'])
+        ->middleware('admin')
+        ->name('leaveRequests.bulkApprove');
+    Route::patch('/leave-requests/{leave_request}', [LeaveRequestController::class, 'update'])
+        ->name('leaveRequests.update');
+    Route::delete('/leave-requests/{leave_request}', [LeaveRequestController::class, 'destroy'])
+        ->name('leaveRequests.destroy');
+    Route::get('/leave-requests/{leave_request}/medical-certificate', [LeaveRequestController::class, 'medicalCertificate'])
+        ->name('leaveRequests.medicalCertificate');
+    Route::post('/leave-requests/{leave_request}/approve', [LeaveRequestController::class, 'approve'])
+        ->middleware('admin')
+        ->name('leaveRequests.approve');
+    Route::post('/leave-requests/{leave_request}/reject', [LeaveRequestController::class, 'reject'])
+        ->middleware('admin')
+        ->name('leaveRequests.reject');
+    Route::post('/leave-requests/{leave_request}/revert-approval', [LeaveRequestController::class, 'revertApproval'])
+        ->middleware('admin')
+        ->name('leaveRequests.revertApproval');
+    Route::post('/leave-requests/{leave_request}/revert-rejection', [LeaveRequestController::class, 'revertRejection'])
+        ->middleware('admin')
+        ->name('leaveRequests.revertRejection');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
+    Route::post('/settings/organization', StoreOrganizationController::class)->name('settings.organization.store');
+    Route::patch('/settings/organization/employment-defaults', OrganizationEmploymentDefaultsController::class)
+        ->middleware('admin')
+        ->name('settings.organization.employment-defaults.update');
+    Route::post('/settings/employment-profiles', [EmploymentProfileController::class, 'store'])
+        ->middleware('admin')
+        ->name('settings.employment-profiles.store');
+    Route::patch('/settings/employment-profiles/{employment_profile}', [EmploymentProfileController::class, 'update'])
+        ->middleware('admin')
+        ->name('settings.employment-profiles.update');
+    Route::delete('/settings/employment-profiles/{employment_profile}', [EmploymentProfileController::class, 'destroy'])
+        ->middleware('admin')
+        ->name('settings.employment-profiles.destroy');
+    Route::get('/settings/employees/search', EmployeeEmploymentSearchController::class)
+        ->middleware('admin')
+        ->name('settings.employees.search');
+    Route::patch('/settings/employees/{user}/employment', [EmployeeEmploymentSettingsController::class, 'update'])
+        ->middleware('admin')
+        ->name('settings.employees.employment.update');
+    Route::post('/settings/employees/{user}/admin-role', GrantEmployeeAdminRoleController::class)
+        ->middleware('admin')
+        ->name('settings.employees.admin-role.store');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
     Route::patch('/teams/organization/{organization}', OrganizationSettingsController::class)
         ->middleware('admin')

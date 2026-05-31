@@ -10,7 +10,6 @@ use App\Services\OrganizationInviteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -41,9 +40,6 @@ class RegisterController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'privacy_policy_accepted' => ['accepted'],
-            'role' => $invite !== null
-                ? ['nullable']
-                : ['required', 'string', Rule::enum(UserRole::class)],
         ]);
 
         if ($invite !== null && strcasecmp($validated['email'], $invite->email) !== 0) {
@@ -58,9 +54,7 @@ class RegisterController extends Controller
             'email' => $validated['email'],
             'password' => $validated['password'],
             'privacy_policy_accepted_at' => now(),
-            'role' => $invite !== null
-                ? UserRole::Employee
-                : UserRole::from((string) $request->input('role')),
+            'role' => UserRole::Employee,
         ]);
 
         $user->sendEmailVerificationNotification();

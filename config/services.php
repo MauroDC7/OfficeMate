@@ -52,6 +52,10 @@ return [
     'timesheets' => [
         'timezone' => env('TIMESHEETS_TIMEZONE', 'Europe/Brussels'),
     ],
+
+    'timetraq' => [
+        'tracker_download_url' => env('TIMETRAQ_TRACKER_DOWNLOAD_URL'),
+    ],
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

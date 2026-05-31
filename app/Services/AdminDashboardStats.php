@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\LeaveRequestStatus;
 use App\Enums\TeamMembershipStatus;
+use App\Enums\UserRole;
 use App\Models\LeaveRequest;
 use App\Models\Organization;
 use App\Models\OrganizationInvite;
@@ -19,6 +20,8 @@ final class AdminDashboardStats
     private const PENDING_MEMBERSHIPS_PREVIEW = 5;
 
     private const CURRENT_LEAVE_PREVIEW = 5;
+
+    private const EMPLOYMENT_SETUP_PREVIEW = 5;
 
     /**
      * @return array{
@@ -40,8 +43,16 @@ final class AdminDashboardStats
      *         id: int,
      *         starts_on: string,
      *         ends_on: string,
-     *         label: string|null,
+     *         type: string,
+     *         type_label: string,
      *         user: array{id: int, name: string}
+     *     }>,
+     *     employmentSetupCount: int,
+     *     employeesNeedingEmploymentSetup: list<array{
+     *         id: int,
+     *         name: string,
+     *         email: string,
+     *         joined_at: string
      *     }>
      * }
      */
@@ -87,10 +98,11 @@ final class AdminDashboardStats
             ])
             ->all();
 
-        $pendingLeaveRequestCount = LeaveRequest::query()
+        $pendingLeaveQuery = LeaveRequest::query()
             ->whereIn('user_id', $memberIds)
-            ->where('status', LeaveRequestStatus::Pending)
-            ->count();
+            ->where('status', LeaveRequestStatus::Pending);
+
+        $pendingLeaveRequestCount = $pendingLeaveQuery->count();
 
         $pendingProposalCount = TimesheetEntryProposal::query()
             ->whereIn('user_id', $memberIds)
@@ -124,11 +136,32 @@ final class AdminDashboardStats
                 'id' => $leave->id,
                 'starts_on' => $leave->starts_on->format('Y-m-d'),
                 'ends_on' => $leave->ends_on->format('Y-m-d'),
-                'label' => $leave->label,
+                'type' => $leave->type->value,
+                'type_label' => $leave->type->label(),
                 'user' => [
                     'id' => $leave->user->id,
                     'name' => $leave->user->name,
                 ],
+            ])
+            ->all();
+
+        $employmentSetupQuery = User::query()
+            ->where('organization_id', $organization->id)
+            ->where('role', UserRole::Employee)
+            ->whereNull('employment_setup_completed_at')
+            ->whereNotNull('organization_joined_at');
+
+        $employmentSetupCount = (clone $employmentSetupQuery)->count();
+
+        $employeesNeedingEmploymentSetup = $employmentSetupQuery
+            ->orderByDesc('organization_joined_at')
+            ->limit(self::EMPLOYMENT_SETUP_PREVIEW)
+            ->get(['id', 'first_name', 'last_name', 'email', 'organization_joined_at'])
+            ->map(fn (User $employee): array => [
+                'id' => $employee->id,
+                'name' => $employee->name,
+                'email' => $employee->email,
+                'joined_at' => $employee->organization_joined_at?->toIso8601String() ?? '',
             ])
             ->all();
 
@@ -144,6 +177,8 @@ final class AdminDashboardStats
             'weekStart' => $monday->toDateString(),
             'pendingMemberships' => $pendingMemberships,
             'currentLeave' => $currentLeave,
+            'employmentSetupCount' => $employmentSetupCount,
+            'employeesNeedingEmploymentSetup' => $employeesNeedingEmploymentSetup,
         ];
     }
 }
