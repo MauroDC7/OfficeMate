@@ -16,7 +16,7 @@ it('sends a verification email when registering', function (): void {
         'email' => 'jan@example.com',
         'password' => 'WelkomOffice9!',
         'password_confirmation' => 'WelkomOffice9!',
-        'role' => 'employee',
+        'privacy_policy_accepted' => '1',
     ])
         ->assertRedirect(route('verification.notice'));
 

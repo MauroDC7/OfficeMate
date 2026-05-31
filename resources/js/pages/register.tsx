@@ -9,12 +9,6 @@ import { privacy } from '@/routes';
 
 const footerLinkClassName = 'font-medium text-red-600 hover:text-red-700';
 
-const roleRowClassName =
-    'flex cursor-pointer items-center gap-2.5 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm transition has-[:checked]:border-red-500/40 has-[:checked]:bg-red-50/50 has-[:focus-within]:ring-2 has-[:focus-within]:ring-red-500/20';
-
-const roleInputClassName =
-    'size-4 shrink-0 border-gray-300 text-red-600 focus:ring-red-500/30';
-
 const privacyRowClassName =
     'flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm transition has-[:checked]:border-red-500/40 has-[:checked]:bg-red-50/50 has-[:focus-within]:ring-2 has-[:focus-within]:ring-red-500/20';
 
@@ -58,49 +52,6 @@ export default function Register() {
                                     placeholder="Achternaam"
                                     error={errors.last_name}
                                 />
-
-                                {fromInvite ? null : (
-                                    <fieldset>
-                                        <legend className={authLabelClassName}>Rol</legend>
-                                        <div
-                                            className="mt-2 space-y-2"
-                                            role="radiogroup"
-                                            aria-label="Rol"
-                                        >
-                                            <label className={roleRowClassName}>
-                                                <input
-                                                    type="radio"
-                                                    name="role"
-                                                    value="employee"
-                                                    defaultChecked
-                                                    className={roleInputClassName}
-                                                />
-                                                <span className="font-medium text-gray-800">
-                                                    Medewerker
-                                                </span>
-                                            </label>
-                                            <label className={roleRowClassName}>
-                                                <input
-                                                    type="radio"
-                                                    name="role"
-                                                    value="admin"
-                                                    className={roleInputClassName}
-                                                />
-                                                <span className="font-medium text-gray-800">
-                                                    Beheerder
-                                                </span>
-                                            </label>
-                                        </div>
-                                        {errors.role ? (
-                                            <p
-                                                className="mt-2 text-xs font-medium text-red-600"
-                                                role="alert"
-                                            >
-                                                {errors.role}
-                                            </p>
-                                        ) : null}
-                                    </fieldset>
-                                )}
 
                                 {fromInvite ? (
                                     <div>
