@@ -44,7 +44,20 @@ it('shows all organization projects to admins', function () {
         ->assertInertia(fn ($page) => $page
             ->where('isAdmin', true)
             ->where('canCreate', true)
+            ->where('weeklyStatus', null)
             ->has('projectCards', 2));
+});
+
+it('forbids admins from submitting a weekly debrief', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)
+        ->post(route('weekly-status.store'), [
+            'week_start' => '2026-06-02',
+            'difficult_this_week' => 'Test',
+            'plans_next_week' => 'Test',
+        ])
+        ->assertForbidden();
 });
 
 it('forbids employees without permission from creating projects', function () {

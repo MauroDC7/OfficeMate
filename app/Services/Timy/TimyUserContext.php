@@ -130,7 +130,7 @@ final class TimyUserContext
      */
     private function weeklyDebriefContext(User $user): ?array
     {
-        if ($user->organization_id === null) {
+        if ($user->organization_id === null || $user->role === UserRole::Admin) {
             return null;
         }
 
