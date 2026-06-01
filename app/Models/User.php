@@ -153,6 +153,14 @@ class User extends Authenticatable implements CanResetPasswordContract, MustVeri
         return $this->hasMany(TeamMembership::class);
     }
 
+    /**
+     * @return HasMany<WeeklyStatusUpdate, $this>
+     */
+    public function weeklyStatusUpdates(): HasMany
+    {
+        return $this->hasMany(WeeklyStatusUpdate::class);
+    }
+
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new VerifyEmailNotification);
