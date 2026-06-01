@@ -3,6 +3,7 @@ import { useEffect, useState, type PropsWithChildren } from 'react';
 
 import { AppHeader } from '@/components/app/app-header';
 import { AppSidebar } from '@/components/app/app-sidebar';
+import { ChatbotWidget } from '@/components/chatbot/chatbot-widget';
 import { FlashAlerts } from '@/components/flash-alerts';
 
 export function AppLayout({ children }: PropsWithChildren) {
@@ -39,6 +40,7 @@ export function AppLayout({ children }: PropsWithChildren) {
                 </div>
             </div>
             <FlashAlerts />
+            <ChatbotWidget />
         </div>
     );
 }
