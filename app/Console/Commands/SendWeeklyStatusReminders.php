@@ -5,8 +5,10 @@ namespace App\Console\Commands;
 use App\Models\User;
 use App\Models\WeeklyStatusUpdate;
 use App\Notifications\WeeklyStatusReminderNotification;
+use App\Services\WeeklyDebriefSchedule;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 final class SendWeeklyStatusReminders extends Command
 {
@@ -18,15 +20,20 @@ final class SendWeeklyStatusReminders extends Command
     /**
      * @var string
      */
-    protected $description = 'Stuur vrijdag om 15u herinneringen voor de weekly debrief';
+    protected $description = 'Stuur e-mailherinneringen voor de weekly debrief';
+
+    public function __construct(
+        private readonly WeeklyDebriefSchedule $weeklyDebriefSchedule,
+    ) {
+        parent::__construct();
+    }
 
     public function handle(): int
     {
-        $timezone = config('services.timesheets.timezone', 'Europe/Brussels');
-        $now = CarbonImmutable::now($timezone);
+        $now = CarbonImmutable::now($this->weeklyDebriefSchedule->timezone());
 
-        if (! $now->isFriday()) {
-            $this->info('Geen vrijdag — geen herinneringen verstuurd.');
+        if (! $this->weeklyDebriefSchedule->isReminderSendMinute($now)) {
+            $this->info('Geen herinneringsmoment — geen e-mails verstuurd.');
 
             return self::SUCCESS;
         }
@@ -35,9 +42,10 @@ final class SendWeeklyStatusReminders extends Command
         $sent = 0;
 
         User::query()
+            ->whereNotNull('organization_id')
             ->whereNotNull('email_verified_at')
             ->orderBy('id')
-            ->chunkById(100, function ($users) use ($weekStart, &$sent): void {
+            ->chunkById(100, function ($users) use ($weekStart, $now, &$sent): void {
                 $submittedUserIds = WeeklyStatusUpdate::query()
                     ->whereDate('week_start', $weekStart)
                     ->whereIn('user_id', $users->pluck('id'))
@@ -48,19 +56,19 @@ final class SendWeeklyStatusReminders extends Command
                         continue;
                     }
 
-                    if ($user->notifications()
-                        ->where('type', WeeklyStatusReminderNotification::class)
-                        ->whereDate('created_at', today())
-                        ->exists()) {
+                    $cacheKey = "weekly-debrief-reminder:{$user->id}:{$weekStart}";
+
+                    if (Cache::has($cacheKey)) {
                         continue;
                     }
 
                     $user->notify(new WeeklyStatusReminderNotification);
+                    Cache::put($cacheKey, true, $now->endOfWeek());
                     $sent++;
                 }
             });
 
-        $this->info("{$sent} herinnering(en) verstuurd.");
+        $this->info("{$sent} e-mailherinnering(en) verstuurd.");
 
         return self::SUCCESS;
     }

@@ -9,6 +9,10 @@ use Carbon\CarbonImmutable;
 
 final class ProjectsEmployeeContext
 {
+    public function __construct(
+        private readonly WeeklyDebriefSchedule $weeklyDebriefSchedule,
+    ) {}
+
     /**
      * @return array{
      *     weeklyStatus: array{
@@ -31,8 +35,7 @@ final class ProjectsEmployeeContext
             ];
         }
 
-        $timezone = config('services.timesheets.timezone', 'Europe/Brussels');
-        $now = CarbonImmutable::now($timezone);
+        $now = CarbonImmutable::now($this->weeklyDebriefSchedule->timezone());
         $monday = $now->startOfWeek(CarbonImmutable::MONDAY);
 
         $weeklyStatusRow = WeeklyStatusUpdate::query()
@@ -45,8 +48,7 @@ final class ProjectsEmployeeContext
                 'week_start' => $monday->toDateString(),
                 'difficult_this_week' => $weeklyStatusRow?->difficult_this_week,
                 'plans_next_week' => $weeklyStatusRow?->plans_next_week,
-                'reminder_due' => $now->isFriday()
-                    && $now->format('H:i') >= '15:00'
+                'reminder_due' => $this->weeklyDebriefSchedule->isReminderDue($now)
                     && $weeklyStatusRow === null,
             ],
             'taskAvailability' => ($user->task_availability ?? TaskAvailability::OpenForTasks)->value,

@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Mail\WeeklyDebriefReminderMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -14,17 +15,14 @@ final class WeeklyStatusReminderNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['mail'];
     }
 
-    /**
-     * @return array{title: string, message: string}
-     */
-    public function toDatabase(object $notifiable): array
+    public function toMail(object $notifiable): WeeklyDebriefReminderMail
     {
-        return [
-            'title' => 'Weekly debrief invullen',
-            'message' => 'Wat was deze week moeilijk en wat ga je volgende week doen?',
-        ];
+        return (new WeeklyDebriefReminderMail(
+            firstName: $notifiable->first_name,
+            projectsUrl: route('projects'),
+        ))->to($notifiable->routeNotificationFor('mail'));
     }
 }

@@ -1,5 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useAlert } from '@/components/alert';
 import { ProjectAccessPanel } from '@/components/projects/project-access-panel';
@@ -49,7 +49,7 @@ const FILTERS: { value: TypeFilter; label: string }[] = [
 ];
 
 export default function Projects() {
-    const { success, warning } = useAlert();
+    const { success } = useAlert();
     const {
         organization,
         projectCards,
@@ -73,31 +73,6 @@ export default function Projects() {
     const weeklyStatusPending =
         weeklyStatus !== null &&
         (weeklyStatus.difficult_this_week === null || weeklyStatus.difficult_this_week === '');
-
-    useEffect(() => {
-        if (weeklyStatus === null || !weeklyStatus.reminder_due) {
-            return;
-        }
-
-        const key = `weekly-status-reminder-${weeklyStatus.week_start}`;
-
-        try {
-            if (sessionStorage.getItem(key) === '1') {
-                return;
-            }
-
-            sessionStorage.setItem(key, '1');
-        } catch {
-            // ignore
-        }
-
-        warning('Vul je weekly debrief in: wat was moeilijk en wat ga je volgende week doen?', {
-            title: 'Vrijdag 15:00',
-            duration: 0,
-        });
-
-        setShowWeeklyStatus(true);
-    }, [weeklyStatus, warning]);
 
     const filteredProjects = useMemo(
         () =>

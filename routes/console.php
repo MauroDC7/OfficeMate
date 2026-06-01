@@ -10,7 +10,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('weekly-status:send-reminders')
-    ->weeklyOn(5, '15:00');
+    ->everyMinute();
 
 Artisan::command('slack:webhook-test', function (): void {
     $slack = app(SlackIncomingWebhook::class);
