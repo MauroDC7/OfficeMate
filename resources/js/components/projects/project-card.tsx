@@ -54,9 +54,25 @@ export function ProjectCard({ project, isAdmin, onEdit, onDeleted }: ProjectCard
                 </span>
             </div>
 
-            <h3 className="mt-2 text-lg font-semibold tracking-tight text-gray-900">
-                {project.name}
-            </h3>
+            <div className="mt-3 flex items-start gap-3">
+                {project.logo !== null ? (
+                    <img
+                        src={project.logo}
+                        alt=""
+                        className="size-12 shrink-0 rounded-lg border border-gray-200 object-cover"
+                    />
+                ) : (
+                    <div
+                        className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 text-sm font-semibold text-gray-500"
+                        aria-hidden
+                    >
+                        {project.name.trim().charAt(0).toUpperCase() || '?'}
+                    </div>
+                )}
+                <h3 className="min-w-0 flex-1 text-lg font-semibold tracking-tight text-gray-900">
+                    {project.name}
+                </h3>
+            </div>
 
             <div className="mt-4">
                 <div className="flex items-center justify-between text-xs">

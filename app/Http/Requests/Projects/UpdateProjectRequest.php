@@ -35,6 +35,15 @@ class UpdateProjectRequest extends FormRequest
                     fn ($query) => $query->where('organization_id', $organizationId),
                 ),
             ],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:2048'],
+            'remove_logo' => ['sometimes', 'boolean'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'remove_logo' => $this->boolean('remove_logo'),
+        ]);
     }
 }

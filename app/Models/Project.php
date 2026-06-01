@@ -7,16 +7,18 @@ use App\Enums\ProjectType;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @use HasFactory<ProjectFactory>
  */
-#[Fillable(['organization_id', 'name', 'type', 'status', 'hours_budget', 'client_name', 'created_by', 'is_active'])]
+#[Fillable(['organization_id', 'name', 'type', 'status', 'hours_budget', 'client_name', 'logo_path', 'created_by', 'is_active'])]
 class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */
@@ -33,6 +35,22 @@ class Project extends Model
             'hours_budget' => 'integer',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Publieke URL van het projectlogo, of null als er geen logo is.
+     */
+    protected function logo(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            $path = $this->logo_path;
+
+            if ($path === null || $path === '') {
+                return null;
+            }
+
+            return Storage::disk('public')->url($path);
+        });
     }
 
     /**

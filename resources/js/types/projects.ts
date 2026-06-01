@@ -25,6 +25,7 @@ export type ProjectCard = {
     type: ProjectType;
     status: ProjectStatus;
     client_name: string | null;
+    logo: string | null;
     hours_budget: number | null;
     tracked_minutes: number;
     member_count: number;
