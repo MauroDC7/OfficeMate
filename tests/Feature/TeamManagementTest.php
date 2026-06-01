@@ -84,6 +84,66 @@ it('forbids employees from creating teams', function () {
         ->assertForbidden();
 });
 
+it('allows admins to update teams with members', function () {
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
+    $team = Team::factory()->for($organization)->create([
+        'name' => 'Support',
+        'department' => 'Operations',
+    ]);
+    $kept = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+    $added = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+    $removed = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+
+    TeamMembership::factory()->for($team)->for($kept)->approved()->create();
+    TeamMembership::factory()->for($team)->for($removed)->approved()->create();
+
+    $this->actingAs($admin)
+        ->patch(route('teams.update', $team), [
+            'name' => 'Support & Care',
+            'department' => 'Customer success',
+            'member_ids' => [$kept->id, $added->id],
+        ])
+        ->assertRedirect(route('teams'));
+
+    $team->refresh();
+
+    expect($team->name)->toBe('Support & Care')
+        ->and($team->department)->toBe('Customer success');
+
+    $this->assertDatabaseHas('team_memberships', [
+        'team_id' => $team->id,
+        'user_id' => $kept->id,
+        'status' => TeamMembershipStatus::Approved->value,
+    ]);
+
+    $this->assertDatabaseHas('team_memberships', [
+        'team_id' => $team->id,
+        'user_id' => $added->id,
+        'status' => TeamMembershipStatus::Approved->value,
+    ]);
+
+    $this->assertDatabaseMissing('team_memberships', [
+        'team_id' => $team->id,
+        'user_id' => $removed->id,
+        'status' => TeamMembershipStatus::Approved->value,
+    ]);
+});
+
+it('includes member ids on team cards for admins', function () {
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
+    $team = Team::factory()->for($organization)->create();
+    $employee = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+    TeamMembership::factory()->for($team)->for($employee)->approved()->create();
+
+    $this->actingAs($admin)
+        ->get(route('teams'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('teamCards.0.member_ids', [$employee->id]));
+});
+
 it('allows admins to create teams with members', function () {
     $admin = User::factory()->admin()->create();
     $organization = Organization::query()->findOrFail($admin->organization_id);

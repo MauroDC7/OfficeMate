@@ -2,7 +2,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 
 import { useAlert } from '@/components/alert';
-import { CreateTeamFormPanel } from '@/components/teams/create-team-form-panel';
+import { TeamFormPanel } from '@/components/teams/team-form-panel';
 import {
     OrganizationSettingsPanel,
     OrganizationSettingsTrigger,
@@ -16,6 +16,8 @@ import { settings, teams as teamsRoute } from '@/routes';
 import { approve, reject } from '@/routes/team-memberships';
 import type { Auth } from '@/types/auth';
 import type { TeamsPageProps } from '@/types/teams';
+
+type TeamCardData = TeamsPageProps['teamCards'][number];
 
 function matchesSearch(
     query: string,
@@ -66,6 +68,7 @@ export default function Teams() {
     const [search, setSearch] = useState('');
     const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const [editingTeam, setEditingTeam] = useState<TeamCardData | null>(null);
     const [showOrganizationSettings, setShowOrganizationSettings] = useState(false);
     const [activeTab, setActiveTab] = useState<TeamsAdminTab>(initialTab);
 
@@ -87,7 +90,17 @@ export default function Teams() {
         [teamCards, search],
     );
 
-    const openCreateForm = () => setShowCreateForm(true);
+    const openCreateForm = () => {
+        setEditingTeam(null);
+        setSelectedMemberIds([]);
+        setShowCreateForm(true);
+    };
+
+    const openEditForm = (team: TeamCardData) => {
+        setShowCreateForm(false);
+        setEditingTeam(team);
+        setSelectedMemberIds(team.member_ids ?? []);
+    };
 
     const hasTeams = teamCards.length > 0;
     const showFeaturedOrganizationSettings = isAdmin && !hasTeams;
@@ -338,6 +351,7 @@ export default function Teams() {
                                     key={team.id}
                                     team={team}
                                     isAdmin={isAdmin}
+                                    onEdit={openEditForm}
                                     onDeleted={() => success('Team verwijderd.')}
                                 />
                             ))}
@@ -366,13 +380,24 @@ export default function Teams() {
 
             {isAdmin ? (
                 <>
-                    <CreateTeamFormPanel
+                    <TeamFormPanel
+                        mode="create"
                         open={showCreateForm}
                         onClose={() => setShowCreateForm(false)}
                         organizationUsers={organizationUsers}
                         selectedMemberIds={selectedMemberIds}
                         onMemberIdsChange={setSelectedMemberIds}
                         onSuccess={() => success('Team aangemaakt.')}
+                    />
+                    <TeamFormPanel
+                        mode="edit"
+                        team={editingTeam ?? undefined}
+                        open={editingTeam !== null}
+                        onClose={() => setEditingTeam(null)}
+                        organizationUsers={organizationUsers}
+                        selectedMemberIds={selectedMemberIds}
+                        onMemberIdsChange={setSelectedMemberIds}
+                        onSuccess={() => success('Team bijgewerkt.')}
                     />
                     {!showFeaturedOrganizationSettings ? (
                         <OrganizationSettingsPanel

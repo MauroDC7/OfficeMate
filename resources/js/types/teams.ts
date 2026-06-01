@@ -18,6 +18,8 @@ export type TeamCard = {
     member_count: number;
     members_preview: TeamMemberPreview[];
     my_status: TeamMembershipStatus | null;
+    /** Alleen voor beheerders (team bewerken). */
+    member_ids?: number[];
 };
 
 export type OrganizationUserOption = TeamMemberPreview;

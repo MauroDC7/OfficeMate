@@ -28,7 +28,8 @@ final class TeamOverviewBuilder
      *         last_name: string,
      *         avatar: string|null
      *     }>,
-     *     my_status: string|null
+     *     my_status: string|null,
+     *     member_ids?: list<int>
      * }>
      */
     public function cardsFor(Organization $organization, User $viewer, bool $isAdmin): array
@@ -38,7 +39,7 @@ final class TeamOverviewBuilder
                 'memberships' => fn ($query) => $query
                     ->where('status', TeamMembershipStatus::Approved)
                     ->with('user:id,first_name,last_name,email,avatar_path')
-                    ->limit(self::MEMBER_PREVIEW_LIMIT),
+                    ->when(! $isAdmin, fn (Builder $membershipQuery) => $membershipQuery->limit(self::MEMBER_PREVIEW_LIMIT)),
             ])
             ->withCount([
                 'memberships as member_count' => fn (Builder $query) => $query
@@ -54,7 +55,7 @@ final class TeamOverviewBuilder
             ->keyBy('team_id');
 
         return $teams
-            ->map(fn (Team $team): array => $this->cardPayload($team, $myStatuses->get($team->id)))
+            ->map(fn (Team $team): array => $this->cardPayload($team, $myStatuses->get($team->id), $isAdmin))
             ->all();
     }
 
@@ -131,25 +132,37 @@ final class TeamOverviewBuilder
      *         last_name: string,
      *         avatar: string|null
      *     }>,
-     *     my_status: string|null
+     *     my_status: string|null,
+     *     member_ids?: list<int>
      * }
      */
-    private function cardPayload(Team $team, ?TeamMembership $myMembership): array
+    private function cardPayload(Team $team, ?TeamMembership $myMembership, bool $isAdmin): array
     {
         /** @var Collection<int, TeamMembership> $memberships */
         $memberships = $team->memberships;
 
-        return [
+        $payload = [
             'id' => $team->id,
             'name' => $team->name,
             'department' => $team->department,
             'member_count' => (int) $team->member_count,
             'members_preview' => $memberships
+                ->take(self::MEMBER_PREVIEW_LIMIT)
                 ->map(fn (TeamMembership $membership): array => $this->userPayload($membership->user))
                 ->values()
                 ->all(),
             'my_status' => $myMembership?->status->value,
         ];
+
+        if ($isAdmin) {
+            $payload['member_ids'] = $memberships
+                ->pluck('user_id')
+                ->map(fn (mixed $id): int => (int) $id)
+                ->values()
+                ->all();
+        }
+
+        return $payload;
     }
 
     /**

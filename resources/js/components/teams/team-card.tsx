@@ -9,6 +9,7 @@ import type { TeamCard as TeamCardType } from '@/types/teams';
 type TeamCardProps = {
     team: TeamCardType;
     isAdmin: boolean;
+    onEdit?: (team: TeamCardType) => void;
     onDeleted?: () => void;
 };
 
@@ -18,7 +19,7 @@ const STATUS_LABEL = {
     rejected: 'Afgewezen',
 } as const;
 
-export function TeamCard({ team, isAdmin, onDeleted }: TeamCardProps) {
+export function TeamCard({ team, isAdmin, onEdit, onDeleted }: TeamCardProps) {
     const { confirm } = useAlert();
     const departmentLabel = team.department?.trim() ?? 'Algemeen';
 
@@ -63,27 +64,36 @@ export function TeamCard({ team, isAdmin, onDeleted }: TeamCardProps) {
             </div>
 
             {isAdmin ? (
-                <button
-                    type="button"
-                    onClick={async () => {
-                        const accepted = await confirm({
-                            message: `Team “${team.name}” verwijderen?`,
-                            confirmLabel: 'Verwijderen',
-                            variant: 'danger',
-                        });
+                <div className="absolute end-3 top-3 flex gap-1 opacity-0 transition group-hover:opacity-100">
+                    <button
+                        type="button"
+                        onClick={() => onEdit?.(team)}
+                        className="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                    >
+                        Bewerken
+                    </button>
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            const accepted = await confirm({
+                                message: `Team “${team.name}” verwijderen?`,
+                                confirmLabel: 'Verwijderen',
+                                variant: 'danger',
+                            });
 
-                        if (!accepted) {
-                            return;
-                        }
+                            if (!accepted) {
+                                return;
+                            }
 
-                        router.delete(destroyTeam.url({ team: team.id }), {
-                            onSuccess: onDeleted,
-                        });
-                    }}
-                    className="absolute end-3 top-3 rounded-md px-2 py-1 text-xs font-medium text-gray-400 opacity-0 transition group-hover:opacity-100 hover:bg-red-50 hover:text-red-700"
-                >
-                    Verwijderen
-                </button>
+                            router.delete(destroyTeam.url({ team: team.id }), {
+                                onSuccess: onDeleted,
+                            });
+                        }}
+                        className="rounded-md px-2 py-1 text-xs font-medium text-gray-400 hover:bg-red-50 hover:text-red-700"
+                    >
+                        Verwijderen
+                    </button>
+                </div>
             ) : null}
         </article>
     );
