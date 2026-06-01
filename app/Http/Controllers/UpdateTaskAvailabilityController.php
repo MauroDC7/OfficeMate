@@ -16,7 +16,7 @@ final class UpdateTaskAvailabilityController extends Controller
         $user->update($request->validated());
 
         return redirect()
-            ->route('dashboard')
+            ->route('projects')
             ->with('status', 'Taakstatus bijgewerkt.');
     }
 }

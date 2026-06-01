@@ -1,6 +1,5 @@
 import { Head, usePage } from '@inertiajs/react';
 
-import { DashboardTaskStatusSelect } from '@/components/dashboard/dashboard-task-status-select';
 import { DashboardNotificationsPanel } from '@/components/dashboard/dashboard-notifications-panel';
 import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
 import { DashboardTeamAgendaSnippet } from '@/components/dashboard/dashboard-team-agenda-snippet';
@@ -69,8 +68,6 @@ export default function Dashboard() {
         weekStart,
         teamLeaveThisWeek,
         hasOrganization,
-        taskAvailability,
-        taskAvailabilityOptions,
         recentNotifications,
     } = usePage<EmployeeDashboardProps>().props;
 
@@ -86,13 +83,6 @@ export default function Dashboard() {
                 </p>
 
                 <div className="mt-5 space-y-5">
-                    {hasOrganization && taskAvailability !== null ? (
-                        <DashboardTaskStatusSelect
-                            value={taskAvailability}
-                            options={taskAvailabilityOptions}
-                        />
-                    ) : null}
-
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <DashboardStatCard
                             label="Actieve projecten"

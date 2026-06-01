@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-it('shows task availability on the employee dashboard when linked to an organization', function () {
+it('shows task availability on the projects page when linked to an organization', function () {
     $organization = Organization::factory()->create();
     $employee = User::factory()->forOrganization($organization)->create([
         'role' => UserRole::Employee,
@@ -16,10 +16,10 @@ it('shows task availability on the employee dashboard when linked to an organiza
     ]);
 
     $this->actingAs($employee)
-        ->get(route('dashboard'))
+        ->get(route('projects'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('dashboard')
+            ->component('projects')
             ->where('taskAvailability', 'on_task')
             ->has('taskAvailabilityOptions', 2));
 });
@@ -35,7 +35,7 @@ it('lets employees update their task availability', function () {
         ->patch(route('dashboard.task-availability.update'), [
             'task_availability' => TaskAvailability::OnTask->value,
         ])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('projects'));
 
     expect($employee->fresh()->task_availability)->toBe(TaskAvailability::OnTask);
 });

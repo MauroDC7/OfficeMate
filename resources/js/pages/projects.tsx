@@ -1,11 +1,13 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useAlert } from '@/components/alert';
 import { ProjectAccessPanel } from '@/components/projects/project-access-panel';
 import { ProjectCard } from '@/components/projects/project-card';
 import { ProjectFormPanel } from '@/components/projects/project-form-panel';
 import { PROJECT_STATUS_LABELS, PROJECT_TYPE_LABELS } from '@/components/projects/project-helpers';
+import { TaskAvailabilityToggle } from '@/components/projects/task-availability-toggle';
+import { WeeklyStatusFormPanel } from '@/components/projects/weekly-status-form-panel';
 import { AppLayout } from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { settings } from '@/routes';
@@ -47,7 +49,7 @@ const FILTERS: { value: TypeFilter; label: string }[] = [
 ];
 
 export default function Projects() {
-    const { success } = useAlert();
+    const { success, warning } = useAlert();
     const {
         organization,
         projectCards,
@@ -57,6 +59,8 @@ export default function Projects() {
         isAdmin,
         canCreate,
         awaitingOrganizationInvite,
+        weeklyStatus,
+        taskAvailability,
     } = usePage<ProjectsPageProps>().props;
 
     const [search, setSearch] = useState('');
@@ -64,6 +68,36 @@ export default function Projects() {
     const [showForm, setShowForm] = useState(false);
     const [editingProject, setEditingProject] = useState<ProjectCardType | null>(null);
     const [showAccess, setShowAccess] = useState(false);
+    const [showWeeklyStatus, setShowWeeklyStatus] = useState(false);
+
+    const weeklyStatusPending =
+        weeklyStatus !== null &&
+        (weeklyStatus.difficult_this_week === null || weeklyStatus.difficult_this_week === '');
+
+    useEffect(() => {
+        if (weeklyStatus === null || !weeklyStatus.reminder_due) {
+            return;
+        }
+
+        const key = `weekly-status-reminder-${weeklyStatus.week_start}`;
+
+        try {
+            if (sessionStorage.getItem(key) === '1') {
+                return;
+            }
+
+            sessionStorage.setItem(key, '1');
+        } catch {
+            // ignore
+        }
+
+        warning('Vul je weekly debrief in: wat was moeilijk en wat ga je volgende week doen?', {
+            title: 'Vrijdag 15:00',
+            duration: 0,
+        });
+
+        setShowWeeklyStatus(true);
+    }, [weeklyStatus, warning]);
 
     const filteredProjects = useMemo(
         () =>
@@ -130,7 +164,7 @@ export default function Projects() {
         <AppLayout>
             <Head title="Projecten" />
             <main className="mx-auto box-border w-full min-w-0 max-w-7xl px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="flex flex-col gap-4">
                     <div className="min-w-0">
                         <h1 className="text-lg font-semibold tracking-tight text-gray-900 sm:text-xl lg:text-2xl">
                             Projecten Overzicht
@@ -142,8 +176,8 @@ export default function Projects() {
                         </p>
                     </div>
 
-                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:max-w-2xl">
-                        <div className="relative min-w-0 flex-1">
+                    <div className="flex flex-col gap-3">
+                        <div className="relative min-w-0 w-full">
                             <label htmlFor="project-search" className="sr-only">
                                 Zoek projecten
                             </label>
@@ -153,7 +187,7 @@ export default function Projects() {
                                 value={search}
                                 onChange={(event) => setSearch(event.target.value)}
                                 placeholder="Zoek een project of klant…"
-                                className="w-full rounded-lg border border-gray-300 bg-white py-2.5 ps-10 pe-4 text-sm shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
+                                className="h-10 w-full rounded-lg border border-gray-300 bg-white py-0 ps-10 pe-4 text-sm shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
                             />
                             <span
                                 className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -163,27 +197,50 @@ export default function Projects() {
                             </span>
                         </div>
 
-                        <div className="flex shrink-0 flex-wrap items-center gap-2">
-                            {isAdmin ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAccess(true)}
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-                                >
-                                    Rechten
-                                </button>
-                            ) : null}
-                            {canCreate ? (
-                                <button
-                                    type="button"
-                                    onClick={openCreate}
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
-                                >
-                                    <IconPlus />
-                                    Nieuw project
-                                </button>
-                            ) : null}
-                        </div>
+                        {(taskAvailability !== null ||
+                            weeklyStatus !== null ||
+                            isAdmin ||
+                            canCreate) && (
+                            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                                {taskAvailability !== null ? (
+                                    <TaskAvailabilityToggle value={taskAvailability} />
+                                ) : null}
+                                {weeklyStatus !== null ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowWeeklyStatus(true)}
+                                        className="relative inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 sm:w-auto"
+                                    >
+                                        Weekly debrief
+                                        {weeklyStatusPending || weeklyStatus.reminder_due ? (
+                                            <span
+                                                className="absolute -top-1 -end-1 size-2.5 rounded-full bg-red-600 ring-2 ring-white"
+                                                aria-hidden
+                                            />
+                                        ) : null}
+                                    </button>
+                                ) : null}
+                                {isAdmin ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAccess(true)}
+                                        className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 sm:w-auto"
+                                    >
+                                        Rechten
+                                    </button>
+                                ) : null}
+                                {canCreate ? (
+                                    <button
+                                        type="button"
+                                        onClick={openCreate}
+                                        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 sm:ms-auto sm:w-auto"
+                                    >
+                                        <IconPlus />
+                                        Nieuw project
+                                    </button>
+                                ) : null}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -293,6 +350,14 @@ export default function Projects() {
                     onClose={() => setShowAccess(false)}
                     users={organizationUsers}
                     onSuccess={(message) => success(message)}
+                />
+            ) : null}
+
+            {showWeeklyStatus && weeklyStatus !== null ? (
+                <WeeklyStatusFormPanel
+                    weeklyStatus={weeklyStatus}
+                    onClose={() => setShowWeeklyStatus(false)}
+                    onSuccess={() => success('Weekly debrief opgeslagen.')}
                 />
             ) : null}
         </AppLayout>

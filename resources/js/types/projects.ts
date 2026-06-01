@@ -56,4 +56,12 @@ export type ProjectsPageProps = {
     isAdmin: boolean;
     canCreate: boolean;
     awaitingOrganizationInvite: boolean;
+    weeklyStatus: {
+        week_start: string;
+        difficult_this_week: string | null;
+        plans_next_week: string | null;
+        reminder_due: boolean;
+    } | null;
+    taskAvailability: string | null;
+    taskAvailabilityOptions: { value: string; label: string }[];
 };
