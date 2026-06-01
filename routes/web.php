@@ -29,6 +29,7 @@ use App\Http\Controllers\TimesheetEntryController;
 use App\Http\Controllers\TimesheetEntryProposalController;
 use App\Http\Controllers\TimesheetTrackerWindowTitlesController;
 use App\Http\Controllers\UpdateTaskAvailabilityController;
+use App\Http\Controllers\WeeklyStatusController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/email/verify', [VerifyEmailController::class, 'notice'])->name('verification.notice');
@@ -47,6 +48,8 @@ Route::middleware('auth')->group(function (): void {
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/', [AppPageController::class, 'dashboard'])->name('dashboard');
+    Route::post('/projects/weekly-status', [WeeklyStatusController::class, 'store'])
+        ->name('weekly-status.store');
     Route::patch('/dashboard/task-availability', UpdateTaskAvailabilityController::class)
         ->name('dashboard.task-availability.update');
     Route::get('/timesheets', [AppPageController::class, 'timesheets'])->name('timesheets');

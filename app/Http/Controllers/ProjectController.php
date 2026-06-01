@@ -11,6 +11,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Services\OrganizationContext;
 use App\Services\ProjectOverviewBuilder;
+use App\Services\ProjectsEmployeeContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,6 +22,7 @@ final class ProjectController extends Controller
     public function __construct(
         private readonly OrganizationContext $organizationContext,
         private readonly ProjectOverviewBuilder $projectOverviewBuilder,
+        private readonly ProjectsEmployeeContext $projectsEmployeeContext,
     ) {}
 
     public function index(Request $request): Response
@@ -42,6 +44,7 @@ final class ProjectController extends Controller
                 'isAdmin' => $isAdmin,
                 'canCreate' => $canCreate,
                 'awaitingOrganizationInvite' => ! $isAdmin && $user->organization_id === null,
+                ...$this->projectsEmployeeContext->forUser($user),
             ]);
         }
 
@@ -59,6 +62,7 @@ final class ProjectController extends Controller
             'isAdmin' => $isAdmin,
             'canCreate' => $canCreate,
             'awaitingOrganizationInvite' => false,
+            ...$this->projectsEmployeeContext->forUser($user),
         ]);
     }
 
