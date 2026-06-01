@@ -29,6 +29,7 @@ use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
 use App\Http\Controllers\TimesheetEntryProposalController;
 use App\Http\Controllers\TimesheetTrackerWindowTitlesController;
+use App\Http\Controllers\TimyConversationController;
 use App\Http\Controllers\UpdateTaskAvailabilityController;
 use App\Http\Controllers\WeeklyStatusController;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +57,16 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('weekly-status.store');
     Route::patch('/dashboard/task-availability', UpdateTaskAvailabilityController::class)
         ->name('dashboard.task-availability.update');
+    Route::get('/timy/conversations', [TimyConversationController::class, 'index'])
+        ->name('timy.conversations.index');
+    Route::post('/timy/conversations', [TimyConversationController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('timy.conversations.store');
+    Route::get('/timy/conversations/{timy_conversation}', [TimyConversationController::class, 'show'])
+        ->name('timy.conversations.show');
+    Route::post('/timy/conversations/{timy_conversation}/messages', [TimyConversationController::class, 'storeMessage'])
+        ->middleware('throttle:30,1')
+        ->name('timy.conversations.messages.store');
     Route::get('/timesheets', [AppPageController::class, 'timesheets'])->name('timesheets');
     Route::get('/timesheets/tracker-window-titles', TimesheetTrackerWindowTitlesController::class)
         ->name('timesheets.tracker-window-titles');

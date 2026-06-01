@@ -1,5 +1,8 @@
+import { Link } from '@inertiajs/react';
+
 import { UserAvatar, type UserAvatarFields } from '@/components/user-avatar';
 import { cn } from '@/lib/utils';
+import type { TimyAction } from '@/types/timy';
 
 export type ChatMessageRole = 'user' | 'assistant';
 
@@ -7,6 +10,7 @@ type ChatbotMessageBubbleProps = {
     role: ChatMessageRole;
     content: string;
     user: UserAvatarFields | null;
+    actions?: TimyAction[] | null;
     isWelcome?: boolean;
 };
 
@@ -31,9 +35,11 @@ export function ChatbotMessageBubble({
     role,
     content,
     user,
+    actions = null,
     isWelcome = false,
 }: ChatbotMessageBubbleProps) {
     const isUser = role === 'user';
+    const actionLinks = actions ?? [];
 
     return (
         <div
@@ -72,6 +78,19 @@ export function ChatbotMessageBubble({
                 >
                     <p className="text-pretty whitespace-pre-wrap">{content}</p>
                 </div>
+                {!isUser && actionLinks.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {actionLinks.map((action) => (
+                            <Link
+                                key={`${action.href}-${action.label}`}
+                                href={action.href}
+                                className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
+                            >
+                                {action.label}
+                            </Link>
+                        ))}
+                    </div>
+                ) : null}
             </div>
         </div>
     );

@@ -7,29 +7,29 @@ import {
 } from 'react';
 
 import { ChatbotMessageBubble } from '@/components/chatbot/chatbot-message-bubble';
-import { ChatbotSuggestionChips } from '@/components/chatbot/chatbot-suggestion-chips';
+import {
+    ChatbotSuggestionChips,
+    resolveTimyPageKey,
+} from '@/components/chatbot/chatbot-suggestion-chips';
 import { ChatbotTypingIndicator } from '@/components/chatbot/chatbot-typing-indicator';
 import { cn } from '@/lib/utils';
 import type { User } from '@/types/auth';
-
-export type ChatMessage = {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-};
-
-export const PLACEHOLDER_REPLY =
-    'Ik ben nog in ontwikkeling, maar straks help ik je hier direct met timesheets, verlof en projecten. Probeer het gerust nog een keer zodra ik volledig live ben.';
+import type { TimyMessage } from '@/types/timy';
 
 type ChatbotPanelProps = {
     isOpen: boolean;
-    messages: ChatMessage[];
+    pagePath: string;
+    messages: TimyMessage[];
     draft: string;
-    isTyping: boolean;
+    isLoading: boolean;
+    isSending: boolean;
+    error: string | null;
+    aiConfigured: boolean;
     user: User;
     onDraftChange: (value: string) => void;
     onSend: () => void;
     onSuggestionSelect: (text: string) => void;
+    onNewChat: () => void;
     onClose: () => void;
 };
 
@@ -48,21 +48,30 @@ function IconClose({ className }: { className?: string }) {
 
 export function ChatbotPanel({
     isOpen,
+    pagePath,
     messages,
     draft,
-    isTyping,
+    isLoading,
+    isSending,
+    error,
+    aiConfigured,
     user,
     onDraftChange,
     onSend,
     onSuggestionSelect,
+    onNewChat,
     onClose,
 }: ChatbotPanelProps) {
     const titleId = useId();
     const listRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const pageKey = resolveTimyPageKey(pagePath);
 
     const showSuggestions =
-        messages.length === 1 && messages[0]?.id === 'welcome' && !isTyping;
+        !isLoading &&
+        !isSending &&
+        messages.length === 1 &&
+        messages[0]?.role === 'assistant';
 
     useEffect(() => {
         if (!isOpen) {
@@ -75,10 +84,10 @@ export function ChatbotPanel({
         }
 
         list.scrollTop = list.scrollHeight;
-    }, [isOpen, messages, isTyping]);
+    }, [isOpen, messages, isSending]);
 
     useEffect(() => {
-        if (!isOpen) {
+        if (!isOpen || isLoading) {
             return;
         }
 
@@ -87,7 +96,7 @@ export function ChatbotPanel({
         });
 
         return () => window.cancelAnimationFrame(frame);
-    }, [isOpen]);
+    }, [isOpen, isLoading]);
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
@@ -119,7 +128,7 @@ export function ChatbotPanel({
                     className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gray-100/80 via-transparent to-transparent"
                     aria-hidden
                 />
-                <div className="relative flex items-center justify-between gap-3">
+                <div className="relative flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-3">
                         <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white p-1.5 shadow-sm">
                             <img
@@ -140,16 +149,31 @@ export function ChatbotPanel({
                             >
                                 Timy
                             </h2>
+                            {!aiConfigured ? (
+                                <p className="truncate text-xs text-gray-500">
+                                    Eenvoudige modus (zonder OpenAI)
+                                </p>
+                            ) : null}
                         </div>
                     </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="shrink-0 rounded-lg p-2 text-gray-500 transition hover:bg-white/80 hover:text-gray-800"
-                        aria-label="Chat sluiten"
-                    >
-                        <IconClose />
-                    </button>
+                    <div className="flex shrink-0 items-center gap-0.5">
+                        <button
+                            type="button"
+                            onClick={onNewChat}
+                            disabled={isLoading || isSending}
+                            className="rounded-lg px-2.5 py-2 text-xs font-medium text-gray-600 transition hover:bg-white/80 hover:text-gray-900 disabled:opacity-50"
+                        >
+                            Nieuw
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-lg p-2 text-gray-500 transition hover:bg-white/80 hover:text-gray-800"
+                            aria-label="Chat sluiten"
+                        >
+                            <IconClose />
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -157,24 +181,38 @@ export function ChatbotPanel({
                 ref={listRef}
                 className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain bg-gray-50/40 px-4 py-4"
             >
-                {messages.map((message) => (
+                {isLoading ? (
+                    <p className="text-center text-sm text-gray-500">Gesprek laden…</p>
+                ) : null}
+
+                {error !== null ? (
+                    <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+                        {error}
+                    </p>
+                ) : null}
+
+                {messages.map((message, index) => (
                     <ChatbotMessageBubble
                         key={message.id}
                         role={message.role}
                         content={message.content}
+                        actions={message.actions}
                         user={user}
-                        isWelcome={message.id === 'welcome'}
+                        isWelcome={index === 0 && message.role === 'assistant'}
                     />
                 ))}
 
-                {isTyping ? <ChatbotTypingIndicator /> : null}
+                {isSending ? <ChatbotTypingIndicator /> : null}
 
                 {showSuggestions ? (
                     <div className="pt-1">
                         <p className="mb-2 text-xs font-medium text-gray-500">
                             Inspiratie nodig?
                         </p>
-                        <ChatbotSuggestionChips onSelect={onSuggestionSelect} />
+                        <ChatbotSuggestionChips
+                            pageKey={pageKey}
+                            onSelect={onSuggestionSelect}
+                        />
                     </div>
                 ) : null}
             </div>
@@ -195,7 +233,7 @@ export function ChatbotPanel({
                         onChange={(event) => onDraftChange(event.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Stel je vraag…"
-                        disabled={isTyping}
+                        disabled={isLoading || isSending}
                         className="block max-h-32 min-h-[2.75rem] w-full resize-none bg-transparent px-2.5 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:opacity-60"
                     />
                     <div className="flex items-center justify-between gap-2 px-1 pb-0.5">
@@ -204,7 +242,7 @@ export function ChatbotPanel({
                         </p>
                         <button
                             type="submit"
-                            disabled={draft.trim() === '' || isTyping}
+                            disabled={draft.trim() === '' || isLoading || isSending}
                             className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Versturen

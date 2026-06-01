@@ -1,55 +1,93 @@
 import { usePage } from '@inertiajs/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { ChatbotPanel } from '@/components/chatbot/chatbot-panel';
 import {
-    ChatbotPanel,
-    PLACEHOLDER_REPLY,
-    type ChatMessage,
-} from '@/components/chatbot/chatbot-panel';
+    createTimyConversation,
+    listTimyConversations,
+    loadTimyConversation,
+    sendTimyMessage,
+} from '@/components/chatbot/timy-api';
 import { cn } from '@/lib/utils';
-import { getUserFirstName } from '@/lib/user-display';
-
-const TYPING_DELAY_MS = 900;
-
-function createMessageId(): string {
-    return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function welcomeMessage(firstName: string): ChatMessage {
-    const greeting =
-        firstName !== '' ? `Hoi ${firstName}!` : 'Hoi!';
-
-    return {
-        id: 'welcome',
-        role: 'assistant',
-        content: `${greeting} Ik ben Timy. Waar kan ik je vandaag mee helpen? Straks beantwoord ik je vragen over timesheets, verlof en projecten — direct vanuit TimeTraq.`,
-    };
-}
+import type { TimyConversation, TimyMessage } from '@/types/timy';
 
 export function ChatbotWidget() {
     const user = usePage().props.auth.user;
-    const firstName = getUserFirstName(user);
+    const pagePath = usePage().url;
 
     const [isOpen, setIsOpen] = useState(false);
+    const [conversation, setConversation] = useState<TimyConversation | null>(null);
+    const [messages, setMessages] = useState<TimyMessage[]>([]);
     const [draft, setDraft] = useState('');
-    const [isTyping, setIsTyping] = useState(false);
-    const [messages, setMessages] = useState<ChatMessage[]>(() => [
-        welcomeMessage(firstName),
-    ]);
-    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSending, setIsSending] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [aiConfigured, setAiConfigured] = useState(true);
 
-    useEffect(() => {
-        setMessages([welcomeMessage(firstName)]);
-    }, [firstName]);
+    const ensureConversation = useCallback(async (): Promise<TimyConversation | null> => {
+        const listed = await listTimyConversations();
+        if ('error' in listed) {
+            setError(listed.error);
 
-    useEffect(() => {
-        return () => {
-            if (typingTimeoutRef.current !== null) {
-                clearTimeout(typingTimeoutRef.current);
+            return null;
+        }
+
+        setAiConfigured(listed.aiConfigured);
+
+        if (listed.conversations.length > 0) {
+            const latest = listed.conversations[0];
+            if (latest === undefined) {
+                return null;
             }
-        };
+
+            const loaded = await loadTimyConversation(latest.id);
+            if ('error' in loaded) {
+                setError(loaded.error);
+
+                return null;
+            }
+
+            setConversation(loaded.conversation);
+            setMessages(loaded.messages);
+            setAiConfigured(loaded.aiConfigured);
+
+            return loaded.conversation;
+        }
+
+        const created = await createTimyConversation();
+        if ('error' in created) {
+            setError(created.error);
+
+            return null;
+        }
+
+        setConversation(created.conversation);
+        setMessages(created.messages);
+
+        return created.conversation;
     }, []);
+
+    useEffect(() => {
+        if (!isOpen || conversation !== null || user === null) {
+            return;
+        }
+
+        let cancelled = false;
+
+        setIsLoading(true);
+        setError(null);
+
+        void ensureConversation().finally(() => {
+            if (!cancelled) {
+                setIsLoading(false);
+            }
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isOpen, conversation, user, ensureConversation]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -67,44 +105,73 @@ export function ChatbotWidget() {
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [isOpen]);
 
-    const sendMessage = useCallback((text: string) => {
-        const trimmed = text.trim();
-        if (trimmed === '' || user === null || isTyping) {
+    const handleNewChat = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        setDraft('');
+
+        const created = await createTimyConversation();
+        setIsLoading(false);
+
+        if ('error' in created) {
+            setError(created.error);
+
             return;
         }
 
-        setMessages((current) => [
-            ...current,
-            { id: createMessageId(), role: 'user', content: trimmed },
-        ]);
-        setDraft('');
-        setIsTyping(true);
+        setConversation(created.conversation);
+        setMessages(created.messages);
+    }, []);
 
-        if (typingTimeoutRef.current !== null) {
-            clearTimeout(typingTimeoutRef.current);
-        }
+    const sendMessage = useCallback(
+        async (text: string) => {
+            const trimmed = text.trim();
+            if (trimmed === '' || isSending || user === null) {
+                return;
+            }
 
-        typingTimeoutRef.current = setTimeout(() => {
-            setMessages((current) => [
-                ...current,
-                {
-                    id: createMessageId(),
-                    role: 'assistant',
-                    content: PLACEHOLDER_REPLY,
-                },
-            ]);
-            setIsTyping(false);
-            typingTimeoutRef.current = null;
-        }, TYPING_DELAY_MS);
-    }, [isTyping, user]);
+            let activeConversation = conversation;
+            if (activeConversation === null) {
+                setIsLoading(true);
+                activeConversation = await ensureConversation();
+                setIsLoading(false);
+            }
+
+            if (activeConversation === null) {
+                return;
+            }
+
+            setIsSending(true);
+            setError(null);
+            setDraft('');
+
+            const result = await sendTimyMessage(
+                activeConversation.id,
+                trimmed,
+                pagePath,
+            );
+
+            setIsSending(false);
+
+            if ('error' in result) {
+                setError(result.error);
+                setDraft(trimmed);
+
+                return;
+            }
+
+            setMessages((current) => [...current, ...result.messages]);
+        },
+        [conversation, ensureConversation, isSending, pagePath, user],
+    );
 
     const handleSend = useCallback(() => {
-        sendMessage(draft);
+        void sendMessage(draft);
     }, [draft, sendMessage]);
 
     const handleSuggestionSelect = useCallback(
         (text: string) => {
-            sendMessage(text);
+            void sendMessage(text);
         },
         [sendMessage],
     );
@@ -117,13 +184,18 @@ export function ChatbotWidget() {
         <>
             <ChatbotPanel
                 isOpen={isOpen}
+                pagePath={pagePath}
                 messages={messages}
                 draft={draft}
-                isTyping={isTyping}
+                isLoading={isLoading}
+                isSending={isSending}
+                error={error}
+                aiConfigured={aiConfigured}
                 user={user}
                 onDraftChange={setDraft}
                 onSend={handleSend}
                 onSuggestionSelect={handleSuggestionSelect}
+                onNewChat={() => void handleNewChat()}
                 onClose={() => setIsOpen(false)}
             />
 
