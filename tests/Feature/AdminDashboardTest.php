@@ -81,7 +81,12 @@ it('shows admin dashboard stats for the organization', function () {
             ->where('weekStart', $monday->toDateString())
             ->has('pendingMemberships', 2)
             ->has('currentLeave')
-            ->where('employmentSetupCount', 0));
+            ->where('employmentSetupCount', 0)
+            ->where('presenceSummary.in_office', 0)
+            ->where('presenceSummary.out_of_office', 4)
+            ->where('presenceSummary.vacation', 0)
+            ->where('presenceSummary.sick', 0)
+            ->where('presenceSummary.other_leave', 0));
 });
 
 it('lists new employees who still need a contract on the admin dashboard', function () {

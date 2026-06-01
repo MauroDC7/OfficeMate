@@ -106,6 +106,7 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                 <Form
                     {...formProps}
                     options={{ preserveScroll: true }}
+                    encType="multipart/form-data"
                     onSuccess={() => {
                         onSuccess(isEdit ? 'Project bijgewerkt.' : 'Project aangemaakt.');
                         onClose();
@@ -129,6 +130,41 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                                 />
                                 {errors.name ? (
                                     <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+                                ) : null}
+                            </div>
+
+                            <div>
+                                <p className="text-sm font-medium text-gray-800">Logo</p>
+                                <p className="mt-0.5 text-xs text-gray-500">
+                                    Optioneel. JPEG, PNG, WebP of GIF, max. 2&nbsp;MB.
+                                </p>
+                                {isEdit && project.logo !== null ? (
+                                    <img
+                                        src={project.logo}
+                                        alt=""
+                                        className="mt-3 size-16 rounded-lg border border-gray-200 object-cover"
+                                    />
+                                ) : null}
+                                <input
+                                    id="project-logo"
+                                    type="file"
+                                    name="logo"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    className="mt-3 max-w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-800 hover:file:bg-gray-200"
+                                />
+                                {errors.logo ? (
+                                    <p className="mt-1 text-xs text-red-600">{errors.logo}</p>
+                                ) : null}
+                                {isEdit && project.logo !== null ? (
+                                    <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-red-600">
+                                        <input
+                                            type="checkbox"
+                                            name="remove_logo"
+                                            value="1"
+                                            className="size-4 rounded border-gray-300 text-red-600 focus:ring-red-500/30"
+                                        />
+                                        Logo verwijderen
+                                    </label>
                                 ) : null}
                             </div>
 

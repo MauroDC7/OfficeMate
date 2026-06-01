@@ -10,7 +10,7 @@ import {
     teams,
     timesheets,
 } from '@/routes';
-import { leaveRequests as adminLeaveRequests } from '@/routes/admin';
+import { leaveRequests as adminLeaveRequests, weeklyDebrief as adminWeeklyDebrief } from '@/routes/admin';
 
 const row = 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition';
 
@@ -46,6 +46,15 @@ export function AppSidebar({ isMobileOpen, onCloseMobile }: AppSidebarProps) {
             route: role === 'admin' ? adminLeaveRequests : leaveRequests,
             src: '/img/Calendar Icons Material Outlined.png',
         },
+        ...(role === 'admin'
+            ? [
+                  {
+                      label: 'Weekly debrief',
+                      route: adminWeeklyDebrief,
+                      src: '/img/Folder Icon 24.png',
+                  },
+              ]
+            : []),
         ...baseLinks.slice(4),
     ];
 

@@ -35,6 +35,7 @@ class StoreProjectRequest extends FormRequest
                     fn ($query) => $query->where('organization_id', $organizationId),
                 ),
             ],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:2048'],
         ];
     }
 }

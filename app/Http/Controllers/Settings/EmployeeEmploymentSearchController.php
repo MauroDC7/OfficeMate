@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Settings;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\OrganizationContext;
@@ -31,7 +30,6 @@ final class EmployeeEmploymentSearchController extends Controller
 
         $results = User::query()
             ->where('organization_id', $organization->id)
-            ->where('role', UserRole::Employee)
             ->where(function ($builder) use ($like): void {
                 $builder
                     ->where('email', 'like', $like)

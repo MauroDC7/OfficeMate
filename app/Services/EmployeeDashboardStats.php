@@ -34,7 +34,7 @@ final class EmployeeDashboardStats
      *         user: array{id: int, name: string}
      *     }>,
      *     hasOrganization: bool,
-     *     recentNotifications: list<array{id: string, title: string, message: string, created_at: string}>
+     *     recentNotifications: list<array{id: string, title: string, message: string, created_at: string}>,
      * }
      */
     public function forUser(User $user): array
@@ -100,7 +100,18 @@ final class EmployeeDashboardStats
             'weekStart' => $monday->toDateString(),
             'teamLeaveThisWeek' => $teamLeaveThisWeek,
             'hasOrganization' => $user->organization_id !== null,
-            'recentNotifications' => [],
+            'recentNotifications' => $user->notifications()
+                ->latest()
+                ->limit(5)
+                ->get()
+                ->map(fn ($notification): array => [
+                    'id' => $notification->id,
+                    'title' => $notification->data['title'] ?? 'Melding',
+                    'message' => $notification->data['message'] ?? '',
+                    'created_at' => $notification->created_at?->toIso8601String() ?? '',
+                ])
+                ->values()
+                ->all(),
         ];
     }
 

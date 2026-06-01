@@ -8,6 +8,8 @@ use App\Models\Team;
 use App\Models\TeamMembership;
 use App\Models\TimesheetEntry;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 it('shows projects an employee is involved in through their team', function () {
     $organization = Organization::factory()->create();
@@ -183,6 +185,83 @@ it('forbids employees from granting project creation rights', function () {
             'can_create_projects' => true,
         ])
         ->assertForbidden();
+});
+
+it('stores a project logo on create', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->admin()->create();
+    $logo = UploadedFile::fake()->image('logo.png', 64, 64);
+
+    $this->actingAs($admin)
+        ->post(route('projects.store'), [
+            'name' => 'Met Logo',
+            'type' => 'internal',
+            'logo' => $logo,
+        ])
+        ->assertRedirect(route('projects'));
+
+    $project = Project::query()->where('name', 'Met Logo')->first();
+
+    expect($project)->not->toBeNull()
+        ->and($project->logo_path)->not->toBeNull()
+        ->and($project->logo)->not->toBeNull();
+
+    Storage::disk('public')->assertExists($project->logo_path);
+});
+
+it('replaces and removes a project logo on update', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
+    $project = Project::factory()->for($organization)->internal()->create();
+    $oldPath = UploadedFile::fake()->image('old.png')->store('project-logos', 'public');
+    $project->update(['logo_path' => $oldPath]);
+
+    $newLogo = UploadedFile::fake()->image('new.png', 48, 48);
+
+    $this->actingAs($admin)
+        ->patch(route('projects.update', $project), [
+            'name' => $project->name,
+            'type' => $project->type->value,
+            'status' => $project->status->value,
+            'logo' => $newLogo,
+        ])
+        ->assertRedirect(route('projects'));
+
+    $project->refresh();
+    $newPath = $project->logo_path;
+
+    expect($newPath)->not->toBe($oldPath);
+    Storage::disk('public')->assertMissing($oldPath);
+    Storage::disk('public')->assertExists($newPath);
+
+    $this->actingAs($admin)
+        ->patch(route('projects.update', $project), [
+            'name' => $project->name,
+            'type' => $project->type->value,
+            'status' => $project->status->value,
+            'remove_logo' => true,
+        ])
+        ->assertRedirect(route('projects'));
+
+    expect($project->fresh()->logo_path)->toBeNull();
+    Storage::disk('public')->assertMissing($newPath);
+});
+
+it('rejects invalid project logos', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)
+        ->post(route('projects.store'), [
+            'name' => 'Ongeldig Logo',
+            'type' => 'internal',
+            'logo' => UploadedFile::fake()->create('brief.pdf', 100, 'application/pdf'),
+        ])
+        ->assertSessionHasErrors('logo');
 });
 
 it('tracks hours per project from linked timesheet entries', function () {

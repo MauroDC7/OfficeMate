@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TaskAvailability;
 use App\Enums\UserRole;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
@@ -37,6 +38,7 @@ use Laravel\Sanctum\HasApiTokens;
     'organization_joined_at',
     'employment_setup_completed_at',
     'privacy_policy_accepted_at',
+    'task_availability',
 ])]
 #[Hidden(['password', 'remember_token', 'avatar_path'])]
 class User extends Authenticatable implements CanResetPasswordContract, MustVerifyEmailContract
@@ -62,9 +64,11 @@ class User extends Authenticatable implements CanResetPasswordContract, MustVeri
             'email_verified_at' => 'datetime',
             'organization_joined_at' => 'datetime',
             'employment_setup_completed_at' => 'datetime',
+            'last_seen_at_office' => 'datetime',
             'privacy_policy_accepted_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'task_availability' => TaskAvailability::class,
             'can_create_projects' => 'boolean',
         ];
     }
@@ -147,6 +151,14 @@ class User extends Authenticatable implements CanResetPasswordContract, MustVeri
     public function teamMemberships(): HasMany
     {
         return $this->hasMany(TeamMembership::class);
+    }
+
+    /**
+     * @return HasMany<WeeklyStatusUpdate, $this>
+     */
+    public function weeklyStatusUpdates(): HasMany
+    {
+        return $this->hasMany(WeeklyStatusUpdate::class);
     }
 
     public function sendEmailVerificationNotification(): void

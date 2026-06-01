@@ -7,6 +7,7 @@ import { AppLayout } from '@/layouts/app-layout';
 import { leaveRequests as adminLeaveRequests } from '@/routes/admin';
 import { settings, teams, timesheets } from '@/routes';
 import { AdminLeaveManagementTeaser } from '@/components/leave-requests/admin-leave-management-teaser';
+import { AdminPresenceTeaser } from '@/components/presence/admin-presence-teaser';
 import { approve, reject } from '@/routes/team-memberships';
 import type {
     AdminDashboardCurrentLeave,
@@ -95,6 +96,7 @@ export default function AdminDashboard() {
         currentLeave,
         employmentSetupCount,
         employeesNeedingEmploymentSetup,
+        presenceSummary,
     } = usePage<AdminDashboardProps>().props;
     const { success } = useAlert();
 
@@ -156,6 +158,8 @@ export default function AdminDashboard() {
                             })}
                         />
                     </div>
+
+                    <AdminPresenceTeaser summary={presenceSummary} />
 
                     {employmentSetupCount > 0 ? (
                         <section className="rounded-xl border border-amber-200 bg-amber-50/50 shadow-sm">

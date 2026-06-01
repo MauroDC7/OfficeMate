@@ -10,7 +10,9 @@ use App\Http\Requests\Projects\UpdateProjectRequest;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\OrganizationContext;
+use App\Services\ProjectLogoStorage;
 use App\Services\ProjectOverviewBuilder;
+use App\Services\ProjectsEmployeeContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,6 +23,8 @@ final class ProjectController extends Controller
     public function __construct(
         private readonly OrganizationContext $organizationContext,
         private readonly ProjectOverviewBuilder $projectOverviewBuilder,
+        private readonly ProjectsEmployeeContext $projectsEmployeeContext,
+        private readonly ProjectLogoStorage $projectLogoStorage,
     ) {}
 
     public function index(Request $request): Response
@@ -42,6 +46,7 @@ final class ProjectController extends Controller
                 'isAdmin' => $isAdmin,
                 'canCreate' => $canCreate,
                 'awaitingOrganizationInvite' => ! $isAdmin && $user->organization_id === null,
+                ...$this->projectsEmployeeContext->forUser($user),
             ]);
         }
 
@@ -59,6 +64,7 @@ final class ProjectController extends Controller
             'isAdmin' => $isAdmin,
             'canCreate' => $canCreate,
             'awaitingOrganizationInvite' => false,
+            ...$this->projectsEmployeeContext->forUser($user),
         ]);
     }
 
@@ -86,6 +92,12 @@ final class ProjectController extends Controller
 
         $project->teams()->sync($this->teamIds($validated));
 
+        if ($request->hasFile('logo')) {
+            $project->update([
+                'logo_path' => $this->projectLogoStorage->store($request->file('logo')),
+            ]);
+        }
+
         return redirect()->route('projects');
     }
 
@@ -101,12 +113,23 @@ final class ProjectController extends Controller
         $validated = $request->validated();
         $type = ProjectType::from($validated['type']);
 
+        $logoPath = $project->logo_path;
+
+        if ($request->boolean('remove_logo')) {
+            $this->projectLogoStorage->delete($logoPath);
+            $logoPath = null;
+        } elseif ($request->hasFile('logo')) {
+            $this->projectLogoStorage->delete($logoPath);
+            $logoPath = $this->projectLogoStorage->store($request->file('logo'));
+        }
+
         $project->update([
             'name' => $validated['name'],
             'type' => $type,
             'status' => ProjectStatus::from($validated['status']),
             'hours_budget' => $validated['hours_budget'] ?? null,
             'client_name' => $type === ProjectType::External ? ($validated['client_name'] ?? null) : null,
+            'logo_path' => $logoPath,
         ]);
 
         $project->teams()->sync($this->teamIds($validated));
@@ -123,6 +146,7 @@ final class ProjectController extends Controller
         abort_unless($project->organization_id === $organization->id, 404);
         $this->authorize('delete', $project);
 
+        $this->projectLogoStorage->delete($project->logo_path);
         $project->delete();
 
         return redirect()->route('projects');

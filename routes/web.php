@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminWeeklyDebriefController;
 use App\Http\Controllers\AppPageController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GoogleAuthController;
@@ -19,13 +20,17 @@ use App\Http\Controllers\Settings\EmploymentProfileController;
 use App\Http\Controllers\Settings\GrantEmployeeAdminRoleController;
 use App\Http\Controllers\Settings\OrganizationEmploymentDefaultsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
+use App\Http\Controllers\Settings\OrganizationOfficeIpsController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
+use App\Http\Controllers\Settings\RemoveOrganizationMemberController;
 use App\Http\Controllers\Settings\StoreOrganizationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
 use App\Http\Controllers\TimesheetEntryProposalController;
 use App\Http\Controllers\TimesheetTrackerWindowTitlesController;
+use App\Http\Controllers\UpdateTaskAvailabilityController;
+use App\Http\Controllers\WeeklyStatusController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/email/verify', [VerifyEmailController::class, 'notice'])->name('verification.notice');
@@ -44,6 +49,13 @@ Route::middleware('auth')->group(function (): void {
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/', [AppPageController::class, 'dashboard'])->name('dashboard');
+    Route::post('/projects/weekly-status/draft', [WeeklyStatusController::class, 'draft'])
+        ->middleware('throttle:10,1')
+        ->name('weekly-status.draft');
+    Route::post('/projects/weekly-status', [WeeklyStatusController::class, 'store'])
+        ->name('weekly-status.store');
+    Route::patch('/dashboard/task-availability', UpdateTaskAvailabilityController::class)
+        ->name('dashboard.task-availability.update');
     Route::get('/timesheets', [AppPageController::class, 'timesheets'])->name('timesheets');
     Route::get('/timesheets/tracker-window-titles', TimesheetTrackerWindowTitlesController::class)
         ->name('timesheets.tracker-window-titles');
@@ -67,6 +79,15 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/admin/leave-requests', [AppPageController::class, 'adminLeaveRequests'])
         ->middleware('admin')
         ->name('admin.leaveRequests');
+    Route::get('/admin/weekly-debrief', [AdminWeeklyDebriefController::class, 'index'])
+        ->middleware('admin')
+        ->name('admin.weeklyDebrief');
+    Route::post('/admin/weekly-debrief/summary', [AdminWeeklyDebriefController::class, 'summarize'])
+        ->middleware('admin')
+        ->name('admin.weeklyDebrief.summarize');
+    Route::get('/admin/presence', fn () => redirect()->route('teams', ['tab' => 'people']))
+        ->middleware('admin')
+        ->name('admin.presence');
     Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->name('leaveRequests.store');
     Route::post('/leave-requests/bulk-approve', [LeaveRequestController::class, 'bulkApprove'])
         ->middleware('admin')
@@ -95,6 +116,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::patch('/settings/organization/employment-defaults', OrganizationEmploymentDefaultsController::class)
         ->middleware('admin')
         ->name('settings.organization.employment-defaults.update');
+    Route::patch('/settings/organization/office-ips', OrganizationOfficeIpsController::class)
+        ->middleware('admin')
+        ->name('settings.organization.office-ips.update');
     Route::post('/settings/employment-profiles', [EmploymentProfileController::class, 'store'])
         ->middleware('admin')
         ->name('settings.employment-profiles.store');
@@ -113,6 +137,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/settings/employees/{user}/admin-role', GrantEmployeeAdminRoleController::class)
         ->middleware('admin')
         ->name('settings.employees.admin-role.store');
+    Route::delete('/settings/employees/{user}', RemoveOrganizationMemberController::class)
+        ->middleware('admin')
+        ->name('settings.employees.destroy');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
     Route::patch('/teams/organization/{organization}', OrganizationSettingsController::class)
         ->middleware('admin')

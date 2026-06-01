@@ -53,6 +53,11 @@ return [
         'timezone' => env('TIMESHEETS_TIMEZONE', 'Europe/Brussels'),
     ],
 
+    'weekly_debrief' => [
+        'reminder_weekday' => (int) env('WEEKLY_DEBRIEF_REMINDER_WEEKDAY', 5),
+        'reminder_time' => env('WEEKLY_DEBRIEF_REMINDER_TIME', '15:00'),
+    ],
+
     'timetraq' => [
         'tracker_download_url' => env('TIMETRAQ_TRACKER_DOWNLOAD_URL'),
     ],

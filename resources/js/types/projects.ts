@@ -25,6 +25,7 @@ export type ProjectCard = {
     type: ProjectType;
     status: ProjectStatus;
     client_name: string | null;
+    logo: string | null;
     hours_budget: number | null;
     tracked_minutes: number;
     member_count: number;
@@ -56,4 +57,13 @@ export type ProjectsPageProps = {
     isAdmin: boolean;
     canCreate: boolean;
     awaitingOrganizationInvite: boolean;
+    weeklyStatus: {
+        week_start: string;
+        difficult_this_week: string | null;
+        plans_next_week: string | null;
+        reminder_due: boolean;
+        ai_draft_available: boolean;
+    } | null;
+    taskAvailability: string | null;
+    taskAvailabilityOptions: { value: string; label: string }[];
 };

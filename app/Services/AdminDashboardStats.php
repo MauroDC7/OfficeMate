@@ -17,6 +17,10 @@ use Carbon\CarbonImmutable;
 
 final class AdminDashboardStats
 {
+    public function __construct(
+        private readonly OrganizationPresenceOverview $organizationPresenceOverview,
+    ) {}
+
     private const PENDING_MEMBERSHIPS_PREVIEW = 5;
 
     private const CURRENT_LEAVE_PREVIEW = 5;
@@ -53,7 +57,14 @@ final class AdminDashboardStats
      *         name: string,
      *         email: string,
      *         joined_at: string
-     *     }>
+     *     }>,
+     *     presenceSummary: array{
+     *         in_office: int,
+     *         out_of_office: int,
+     *         vacation: int,
+     *         sick: int,
+     *         other_leave: int,
+     *     }
      * }
      */
     public function forOrganization(Organization $organization): array
@@ -165,6 +176,9 @@ final class AdminDashboardStats
             ])
             ->all();
 
+        $presenceSummary = $this->organizationPresenceOverview
+            ->forOrganization($organization)['summary'];
+
         return [
             'organizationName' => $organization->name,
             'memberCount' => count($memberIds),
@@ -179,6 +193,7 @@ final class AdminDashboardStats
             'currentLeave' => $currentLeave,
             'employmentSetupCount' => $employmentSetupCount,
             'employeesNeedingEmploymentSetup' => $employeesNeedingEmploymentSetup,
+            'presenceSummary' => $presenceSummary,
         ];
     }
 }
