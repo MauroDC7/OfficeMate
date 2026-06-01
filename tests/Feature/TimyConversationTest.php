@@ -29,6 +29,19 @@ it('requires authentication for timy routes', function () {
     ])->assertUnauthorized();
 });
 
+it('lists conversations with a preview of the latest message', function () {
+    $user = timyUser();
+    $conversation = TimyConversation::factory()->for($user)->create();
+    TimyMessage::factory()->for($conversation, 'conversation')->assistant()->create([
+        'content' => 'Laatste bericht voor preview',
+    ]);
+
+    $this->actingAs($user)
+        ->getJson(route('timy.conversations.index'))
+        ->assertOk()
+        ->assertJsonPath('conversations.0.preview', 'Laatste bericht voor preview');
+});
+
 it('creates a conversation with a welcome message from timy', function () {
     $user = timyUser();
 

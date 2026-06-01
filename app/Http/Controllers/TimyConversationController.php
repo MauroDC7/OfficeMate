@@ -26,7 +26,15 @@ final class TimyConversationController extends Controller
 
         $conversations = TimyConversation::query()
             ->where('user_id', $user->id)
-            ->with('latestMessage:id,timy_conversation_id,content,role,created_at')
+            ->with([
+                'latestMessage' => fn ($query) => $query->select(
+                    'timy_messages.id',
+                    'timy_messages.timy_conversation_id',
+                    'timy_messages.content',
+                    'timy_messages.role',
+                    'timy_messages.created_at',
+                ),
+            ])
             ->orderByDesc('updated_at')
             ->limit(20)
             ->get();
