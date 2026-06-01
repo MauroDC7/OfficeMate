@@ -3,10 +3,14 @@
 use App\Services\Slack\SlackIncomingWebhook;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Schedule::command('weekly-status:send-reminders')
+    ->weeklyOn(5, '15:00');
 
 Artisan::command('slack:webhook-test', function (): void {
     $slack = app(SlackIncomingWebhook::class);
