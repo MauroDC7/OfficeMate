@@ -75,8 +75,15 @@ function formalName(user: User | null): string {
 }
 
 export default function Settings() {
-    const { auth, awaitingOrganizationInvite, canCreateOrganization, tracker, isAdmin, employment, officePresence } =
-        usePage<SettingsPageProps>().props;
+    const {
+        auth,
+        awaitingOrganizationInvite,
+        canCreateOrganization,
+        tracker,
+        isAdmin,
+        employment,
+        officePresence,
+    } = usePage<SettingsPageProps>().props;
     const { success } = useAlert();
     const user = auth.user;
 
