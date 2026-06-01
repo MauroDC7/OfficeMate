@@ -1,6 +1,7 @@
 import { Form } from '@inertiajs/react';
-import { useEffect, useId } from 'react';
+import { useEffect, useId, useState } from 'react';
 
+import { fetchWeeklyDebriefDraft } from '@/components/projects/fetch-weekly-debrief-draft';
 import { cn } from '@/lib/utils';
 import { store } from '@/routes/weekly-status';
 import type { ProjectsPageProps } from '@/types/projects';
@@ -29,6 +30,10 @@ function IconClose({ className }: { className?: string }) {
 
 export function WeeklyStatusFormPanel({ weeklyStatus, onClose, onSuccess }: WeeklyStatusFormPanelProps) {
     const titleId = useId();
+    const [difficult, setDifficult] = useState(weeklyStatus.difficult_this_week ?? '');
+    const [plans, setPlans] = useState(weeklyStatus.plans_next_week ?? '');
+    const [draftLoading, setDraftLoading] = useState(false);
+    const [draftError, setDraftError] = useState<string | null>(null);
 
     useEffect(() => {
         const previousOverflow = document.body.style.overflow;
@@ -47,6 +52,24 @@ export function WeeklyStatusFormPanel({ weeklyStatus, onClose, onSuccess }: Week
             window.removeEventListener('keydown', onKeyDown);
         };
     }, [onClose]);
+
+    async function loadDraft() {
+        setDraftLoading(true);
+        setDraftError(null);
+
+        const result = await fetchWeeklyDebriefDraft(weeklyStatus.week_start);
+
+        setDraftLoading(false);
+
+        if ('error' in result) {
+            setDraftError(result.error);
+
+            return;
+        }
+
+        setDifficult(result.draft.difficult_this_week);
+        setPlans(result.draft.plans_next_week);
+    }
 
     return (
         <div
@@ -97,6 +120,26 @@ export function WeeklyStatusFormPanel({ weeklyStatus, onClose, onSuccess }: Week
                         <>
                             <input type="hidden" name="week_start" value={weeklyStatus.week_start} />
 
+                            {weeklyStatus.ai_draft_available ? (
+                                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
+                                    <p className="text-xs text-gray-600">
+                                        Op basis van je geregistreerde uren deze week kun je een voorstel laten
+                                        invullen. Je past het altijd zelf aan vóór je opslaat.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => void loadDraft()}
+                                        disabled={draftLoading || processing}
+                                        className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 disabled:opacity-60"
+                                    >
+                                        {draftLoading ? 'Voorstel laden…' : 'Vul voorstel in'}
+                                    </button>
+                                    {draftError !== null ? (
+                                        <p className="mt-2 text-xs text-red-600">{draftError}</p>
+                                    ) : null}
+                                </div>
+                            ) : null}
+
                             <div>
                                 <label htmlFor="weekly-difficult" className="text-sm font-medium text-gray-800">
                                     Wat was er deze week moeilijk? <span className="text-red-600">*</span>
@@ -106,7 +149,8 @@ export function WeeklyStatusFormPanel({ weeklyStatus, onClose, onSuccess }: Week
                                     name="difficult_this_week"
                                     rows={4}
                                     required
-                                    defaultValue={weeklyStatus.difficult_this_week ?? ''}
+                                    value={difficult}
+                                    onChange={(event) => setDifficult(event.target.value)}
                                     placeholder="Bijv. complexe bug, onduidelijke requirements…"
                                     className={inputClass}
                                 />
@@ -124,7 +168,8 @@ export function WeeklyStatusFormPanel({ weeklyStatus, onClose, onSuccess }: Week
                                     name="plans_next_week"
                                     rows={4}
                                     required
-                                    defaultValue={weeklyStatus.plans_next_week ?? ''}
+                                    value={plans}
+                                    onChange={(event) => setPlans(event.target.value)}
                                     placeholder="Bijv. feature afronden, sprint planning…"
                                     className={inputClass}
                                 />

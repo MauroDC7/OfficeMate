@@ -49,6 +49,9 @@ Route::middleware('auth')->group(function (): void {
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/', [AppPageController::class, 'dashboard'])->name('dashboard');
+    Route::post('/projects/weekly-status/draft', [WeeklyStatusController::class, 'draft'])
+        ->middleware('throttle:10,1')
+        ->name('weekly-status.draft');
     Route::post('/projects/weekly-status', [WeeklyStatusController::class, 'store'])
         ->name('weekly-status.store');
     Route::patch('/dashboard/task-availability', UpdateTaskAvailabilityController::class)

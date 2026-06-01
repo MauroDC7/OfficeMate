@@ -11,6 +11,7 @@ final class ProjectsEmployeeContext
 {
     public function __construct(
         private readonly WeeklyDebriefSchedule $weeklyDebriefSchedule,
+        private readonly WeeklyDebriefDraftGenerator $weeklyDebriefDraftGenerator,
     ) {}
 
     /**
@@ -20,6 +21,7 @@ final class ProjectsEmployeeContext
      *         difficult_this_week: string|null,
      *         plans_next_week: string|null,
      *         reminder_due: bool,
+     *         ai_draft_available: bool,
      *     }|null,
      *     taskAvailability: string|null,
      *     taskAvailabilityOptions: list<array{value: string, label: string}>,
@@ -50,6 +52,7 @@ final class ProjectsEmployeeContext
                 'plans_next_week' => $weeklyStatusRow?->plans_next_week,
                 'reminder_due' => $this->weeklyDebriefSchedule->isReminderDue($now)
                     && $weeklyStatusRow === null,
+                'ai_draft_available' => $this->weeklyDebriefDraftGenerator->isConfigured(),
             ],
             'taskAvailability' => ($user->task_availability ?? TaskAvailability::OpenForTasks)->value,
             'taskAvailabilityOptions' => array_map(
