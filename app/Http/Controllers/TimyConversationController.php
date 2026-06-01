@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserRole;
 use App\Http\Requests\Timy\StoreTimyMessageRequest;
 use App\Models\TimyConversation;
 use App\Models\TimyMessage;
 use App\Models\User;
 use App\Services\Timy\TimyAssistant;
+use App\Services\Timy\TimyLeaveRequestProposer;
 use App\Services\Timy\TimyUserContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 final class TimyConversationController extends Controller
@@ -17,6 +20,7 @@ final class TimyConversationController extends Controller
     public function __construct(
         private readonly TimyAssistant $timyAssistant,
         private readonly TimyUserContext $timyUserContext,
+        private readonly TimyLeaveRequestProposer $timyLeaveRequestProposer,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -125,13 +129,14 @@ final class TimyConversationController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        $reply = $this->timyAssistant->reply($user, $content, $history, $pagePath);
+        $reply = $this->buildAssistantReply($user, $content, $history, $pagePath);
 
         $assistantMessage = TimyMessage::query()->create([
             'timy_conversation_id' => $timyConversation->id,
             'role' => 'assistant',
             'content' => $reply['content'],
             'actions' => $reply['actions'] !== [] ? $reply['actions'] : null,
+            'pending_action' => $reply['pending_action'] ?? null,
         ]);
 
         $timyConversation->touch();
@@ -143,6 +148,46 @@ final class TimyConversationController extends Controller
             ],
             ...$this->contextPayload($user, $pagePath),
         ]);
+    }
+
+    /**
+     * @param  Collection<int, TimyMessage>  $history
+     * @return array{content: string, actions: list<array{label: string, href: string}>, pending_action?: array<string, mixed>|null}
+     */
+    private function buildAssistantReply(
+        User $user,
+        string $content,
+        Collection $history,
+        string $pagePath,
+    ): array {
+        $pending = $this->timyLeaveRequestProposer->tryPropose($user, $content);
+
+        if ($pending !== null) {
+            return [
+                'content' => 'Ik stel voor om dit verlof in te dienen: '.$pending['summary'].'. Klopt dit? Bevestig hieronder.',
+                'actions' => [
+                    ['label' => 'Verlofoverzicht', 'href' => route('leaveRequests')],
+                ],
+                'pending_action' => $pending,
+            ];
+        }
+
+        if ($user->role === UserRole::Employee && $this->timyLeaveRequestProposer->looksLikeLeaveIntentWithoutDates($content)) {
+            return [
+                'content' => $this->timyLeaveRequestProposer->missingDatesHelpMessage(),
+                'actions' => [
+                    ['label' => 'Naar verlof', 'href' => route('leaveRequests')],
+                ],
+                'pending_action' => null,
+            ];
+        }
+
+        $reply = $this->timyAssistant->reply($user, $content, $history, $pagePath);
+
+        return [
+            ...$reply,
+            'pending_action' => null,
+        ];
     }
 
     /**
@@ -172,7 +217,14 @@ final class TimyConversationController extends Controller
     }
 
     /**
-     * @return array{id: int, role: string, content: string, actions: list<array{label: string, href: string}>|null, created_at: string|null}
+     * @return array{
+     *     id: int,
+     *     role: string,
+     *     content: string,
+     *     actions: list<array{label: string, href: string}>|null,
+     *     pending_action: array<string, mixed>|null,
+     *     created_at: string|null,
+     * }
      */
     private function messagePayload(TimyMessage $message): array
     {
@@ -181,6 +233,7 @@ final class TimyConversationController extends Controller
             'role' => $message->role,
             'content' => $message->content,
             'actions' => $message->actions,
+            'pending_action' => $message->pending_action,
             'created_at' => $message->created_at?->toIso8601String(),
         ];
     }

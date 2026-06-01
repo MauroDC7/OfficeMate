@@ -1,18 +1,20 @@
 import { usePage } from '@inertiajs/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { ChatbotPanel } from '@/components/chatbot/chatbot-panel';
 import {
     createTimyConversation,
+    executeTimyAction,
     fetchTimyContext,
     listTimyConversations,
     loadTimyConversation,
     sendTimyMessage,
     type TimyContextHints,
 } from '@/components/chatbot/timy-api';
+import { leaveRequests } from '@/routes';
 import { cn } from '@/lib/utils';
-import type { TimyConversation, TimyMessage } from '@/types/timy';
+import type { TimyConversation, TimyMessage, TimyPendingAction } from '@/types/timy';
 
 function applyContextHints(
     setTips: (tips: string[]) => void,
@@ -34,8 +36,27 @@ export function ChatbotWidget() {
     const [draft, setDraft] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSending, setIsSending] = useState(false);
+    const [isExecutingAction, setIsExecutingAction] = useState(false);
+    const [dismissedPendingMessageId, setDismissedPendingMessageId] = useState<
+        number | null
+    >(null);
     const [error, setError] = useState<string | null>(null);
     const [aiConfigured, setAiConfigured] = useState(true);
+
+    const pendingAction = useMemo((): TimyPendingAction | null => {
+        for (let index = messages.length - 1; index >= 0; index -= 1) {
+            const message = messages[index];
+            if (
+                message?.role === 'assistant' &&
+                message.pending_action !== null &&
+                message.id !== dismissedPendingMessageId
+            ) {
+                return message.pending_action;
+            }
+        }
+
+        return null;
+    }, [messages, dismissedPendingMessageId]);
 
     const ensureConversation = useCallback(async (): Promise<TimyConversation | null> => {
         const listed = await listTimyConversations();
@@ -211,6 +232,61 @@ export function ChatbotWidget() {
         [sendMessage],
     );
 
+    const handleConfirmPendingAction = useCallback(async () => {
+        if (pendingAction === null || isExecutingAction) {
+            return;
+        }
+
+        setIsExecutingAction(true);
+        setError(null);
+
+        const result = await executeTimyAction(pendingAction);
+
+        setIsExecutingAction(false);
+
+        if ('error' in result) {
+            setError(result.error);
+
+            return;
+        }
+
+        setMessages((current) => {
+            const cleared = current.map((message) =>
+                message.pending_action !== null
+                    ? { ...message, pending_action: null }
+                    : message,
+            );
+
+            const confirmation: TimyMessage = {
+                id: -Date.now(),
+                role: 'assistant',
+                content: result.message,
+                actions: [{ label: 'Naar verlof', href: leaveRequests.url() }],
+                pending_action: null,
+                created_at: new Date().toISOString(),
+            };
+
+            return [...cleared, confirmation];
+        });
+        setDismissedPendingMessageId(null);
+
+        const context = await fetchTimyContext(pagePath);
+        if (!('error' in context)) {
+            applyContextHints(setTips, setAiConfigured, context);
+        }
+    }, [isExecutingAction, pagePath, pendingAction]);
+
+    const handleCancelPendingAction = useCallback(() => {
+        for (let index = messages.length - 1; index >= 0; index -= 1) {
+            const message = messages[index];
+            if (message?.pending_action !== null) {
+                setDismissedPendingMessageId(message.id);
+
+                return;
+            }
+        }
+    }, [messages]);
+
     if (user === null || typeof document === 'undefined') {
         return null;
     }
@@ -224,6 +300,8 @@ export function ChatbotWidget() {
                 draft={draft}
                 isLoading={isLoading}
                 isSending={isSending}
+                isExecutingAction={isExecutingAction}
+                pendingAction={pendingAction}
                 error={error}
                 aiConfigured={aiConfigured}
                 tips={tips}
@@ -233,6 +311,8 @@ export function ChatbotWidget() {
                 onSuggestionSelect={handleSuggestionSelect}
                 onNewChat={() => void handleNewChat()}
                 onClose={() => setIsOpen(false)}
+                onConfirmPendingAction={() => void handleConfirmPendingAction()}
+                onCancelPendingAction={handleCancelPendingAction}
             />
 
             <button

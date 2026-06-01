@@ -20,6 +20,7 @@ class TimyMessageFactory extends Factory
             'role' => 'assistant',
             'content' => fake()->sentence(),
             'actions' => null,
+            'pending_action' => null,
         ];
     }
 

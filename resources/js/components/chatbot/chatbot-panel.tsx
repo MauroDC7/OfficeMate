@@ -7,6 +7,7 @@ import {
 } from 'react';
 
 import { ChatbotMessageBubble } from '@/components/chatbot/chatbot-message-bubble';
+import { ChatbotPendingActionCard } from '@/components/chatbot/chatbot-pending-action';
 import { ChatbotTips } from '@/components/chatbot/chatbot-tips';
 import {
     ChatbotSuggestionChips,
@@ -15,7 +16,7 @@ import {
 import { ChatbotTypingIndicator } from '@/components/chatbot/chatbot-typing-indicator';
 import { cn } from '@/lib/utils';
 import type { User } from '@/types/auth';
-import type { TimyMessage } from '@/types/timy';
+import type { TimyMessage, TimyPendingAction } from '@/types/timy';
 
 type ChatbotPanelProps = {
     isOpen: boolean;
@@ -24,6 +25,8 @@ type ChatbotPanelProps = {
     draft: string;
     isLoading: boolean;
     isSending: boolean;
+    isExecutingAction: boolean;
+    pendingAction: TimyPendingAction | null;
     error: string | null;
     aiConfigured: boolean;
     tips: string[];
@@ -33,6 +36,8 @@ type ChatbotPanelProps = {
     onSuggestionSelect: (text: string) => void;
     onNewChat: () => void;
     onClose: () => void;
+    onConfirmPendingAction: () => void;
+    onCancelPendingAction: () => void;
 };
 
 function IconClose({ className }: { className?: string }) {
@@ -55,6 +60,8 @@ export function ChatbotPanel({
     draft,
     isLoading,
     isSending,
+    isExecutingAction,
+    pendingAction,
     error,
     aiConfigured,
     tips,
@@ -64,6 +71,8 @@ export function ChatbotPanel({
     onSuggestionSelect,
     onNewChat,
     onClose,
+    onConfirmPendingAction,
+    onCancelPendingAction,
 }: ChatbotPanelProps) {
     const titleId = useId();
     const listRef = useRef<HTMLDivElement>(null);
@@ -163,7 +172,7 @@ export function ChatbotPanel({
                         <button
                             type="button"
                             onClick={onNewChat}
-                            disabled={isLoading || isSending}
+                            disabled={isLoading || isSending || isExecutingAction}
                             className="rounded-lg px-2.5 py-2 text-xs font-medium text-gray-600 transition hover:bg-white/80 hover:text-gray-900 disabled:opacity-50"
                         >
                             Nieuw
@@ -209,6 +218,15 @@ export function ChatbotPanel({
 
                 {isSending ? <ChatbotTypingIndicator /> : null}
 
+                {pendingAction !== null ? (
+                    <ChatbotPendingActionCard
+                        pendingAction={pendingAction}
+                        isExecuting={isExecutingAction}
+                        onConfirm={onConfirmPendingAction}
+                        onCancel={onCancelPendingAction}
+                    />
+                ) : null}
+
                 {showSuggestions ? (
                     <div className="pt-1">
                         <p className="mb-2 text-xs font-medium text-gray-500">
@@ -238,7 +256,7 @@ export function ChatbotPanel({
                         onChange={(event) => onDraftChange(event.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Stel je vraag…"
-                        disabled={isLoading || isSending}
+                        disabled={isLoading || isSending || isExecutingAction}
                         className="block max-h-32 min-h-[2.75rem] w-full resize-none bg-transparent px-2.5 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:opacity-60"
                     />
                     <div className="flex items-center justify-between gap-2 px-1 pb-0.5">
@@ -247,7 +265,12 @@ export function ChatbotPanel({
                         </p>
                         <button
                             type="submit"
-                            disabled={draft.trim() === '' || isLoading || isSending}
+                            disabled={
+                                draft.trim() === '' ||
+                                isLoading ||
+                                isSending ||
+                                isExecutingAction
+                            }
                             className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Versturen

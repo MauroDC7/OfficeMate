@@ -4,7 +4,9 @@ import {
     store as timyConversationsStore,
 } from '@/routes/timy/conversations';
 import { store as timyStoreMessage } from '@/routes/timy/conversations/messages';
+import { store as timyExecuteAction } from '@/routes/timy/actions';
 import { context as timyContextRoute } from '@/routes/timy';
+import type { TimyPendingAction } from '@/types/timy';
 import type { TimyConversation, TimyConversationSummary, TimyMessage } from '@/types/timy';
 
 export type TimyContextHints = {
@@ -175,4 +177,25 @@ export async function sendTimyMessage(
         messages: result.data.messages,
         ...mapContextPayload(result.data),
     };
+}
+
+export async function executeTimyAction(
+    pendingAction: TimyPendingAction,
+): Promise<{ message: string } | { error: string }> {
+    const result = await timyFetch<{ message: string; result: Record<string, unknown> }>(
+        timyExecuteAction.url(),
+        {
+            method: 'POST',
+            body: JSON.stringify({
+                type: pendingAction.type,
+                params: pendingAction.params,
+            }),
+        },
+    );
+
+    if ('error' in result) {
+        return result;
+    }
+
+    return { message: result.data.message };
 }

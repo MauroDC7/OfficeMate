@@ -20,12 +20,14 @@ class TimyMessage extends Model
         'role',
         'content',
         'actions',
+        'pending_action',
     ];
 
     protected function casts(): array
     {
         return [
             'actions' => 'array',
+            'pending_action' => 'array',
         ];
     }
 

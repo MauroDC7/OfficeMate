@@ -18,7 +18,7 @@ const PAGE_SUGGESTIONS: Record<string, readonly string[]> = {
         'Geef een kort overzicht',
     ],
     leave_requests: [
-        'Hoe vraag ik verlof aan?',
+        'Vraag vakantie aan van 2026-07-01 tot 2026-07-05',
         'Wat is de status van mijn verlof?',
     ],
     admin_leave: [

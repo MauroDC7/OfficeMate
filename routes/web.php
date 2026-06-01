@@ -29,6 +29,7 @@ use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
 use App\Http\Controllers\TimesheetEntryProposalController;
 use App\Http\Controllers\TimesheetTrackerWindowTitlesController;
+use App\Http\Controllers\TimyActionController;
 use App\Http\Controllers\TimyContextController;
 use App\Http\Controllers\TimyConversationController;
 use App\Http\Controllers\UpdateTaskAvailabilityController;
@@ -60,6 +61,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('dashboard.task-availability.update');
     Route::get('/timy/context', TimyContextController::class)
         ->name('timy.context');
+    Route::post('/timy/actions', [TimyActionController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('timy.actions.store');
     Route::get('/timy/conversations', [TimyConversationController::class, 'index'])
         ->name('timy.conversations.index');
     Route::post('/timy/conversations', [TimyConversationController::class, 'store'])
