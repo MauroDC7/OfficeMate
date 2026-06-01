@@ -4,7 +4,14 @@ import {
     store as timyConversationsStore,
 } from '@/routes/timy/conversations';
 import { store as timyStoreMessage } from '@/routes/timy/conversations/messages';
+import { context as timyContextRoute } from '@/routes/timy';
 import type { TimyConversation, TimyConversationSummary, TimyMessage } from '@/types/timy';
+
+export type TimyContextHints = {
+    tips: string[];
+    page: string;
+    aiConfigured: boolean;
+};
 
 function csrfToken(): string {
     const meta = document.querySelector('meta[name="csrf-token"]');
@@ -47,6 +54,34 @@ async function timyFetch<T>(
     return { data };
 }
 
+function mapContextPayload(data: {
+    tips?: string[];
+    page?: string;
+    ai_configured?: boolean;
+}): TimyContextHints {
+    return {
+        tips: Array.isArray(data.tips) ? data.tips : [],
+        page: typeof data.page === 'string' ? data.page : 'dashboard',
+        aiConfigured: data.ai_configured ?? true,
+    };
+}
+
+export async function fetchTimyContext(
+    pagePath: string,
+): Promise<TimyContextHints | { error: string }> {
+    const result = await timyFetch<{
+        tips: string[];
+        page: string;
+        ai_configured: boolean;
+    }>(timyContextRoute.url({ query: { page_path: pagePath } }));
+
+    if ('error' in result) {
+        return result;
+    }
+
+    return mapContextPayload(result.data);
+}
+
 export async function listTimyConversations(): Promise<
     | { conversations: TimyConversationSummary[]; aiConfigured: boolean }
     | { error: string }
@@ -66,14 +101,19 @@ export async function listTimyConversations(): Promise<
     };
 }
 
-export async function createTimyConversation(): Promise<
-    | { conversation: TimyConversation; messages: TimyMessage[] }
+export async function createTimyConversation(
+    pagePath: string,
+): Promise<
+    | ({ conversation: TimyConversation; messages: TimyMessage[] } & TimyContextHints)
     | { error: string }
 > {
     const result = await timyFetch<{
         conversation: TimyConversation;
         messages: TimyMessage[];
-    }>(timyConversationsStore.url(), { method: 'POST' });
+        tips: string[];
+        page: string;
+        ai_configured: boolean;
+    }>(timyConversationsStore.url({ query: { page_path: pagePath } }), { method: 'POST' });
 
     if ('error' in result) {
         return result;
@@ -82,20 +122,24 @@ export async function createTimyConversation(): Promise<
     return {
         conversation: result.data.conversation,
         messages: result.data.messages,
+        ...mapContextPayload(result.data),
     };
 }
 
 export async function loadTimyConversation(
     conversationId: number,
+    pagePath: string,
 ): Promise<
-    | { conversation: TimyConversation; messages: TimyMessage[]; aiConfigured: boolean }
+    | ({ conversation: TimyConversation; messages: TimyMessage[] } & TimyContextHints)
     | { error: string }
 > {
     const result = await timyFetch<{
         conversation: TimyConversation;
         messages: TimyMessage[];
+        tips: string[];
+        page: string;
         ai_configured: boolean;
-    }>(timyConversationShow.url({ timy_conversation: conversationId }));
+    }>(timyConversationShow.url({ timy_conversation: conversationId, query: { page_path: pagePath } }));
 
     if ('error' in result) {
         return result;
@@ -104,7 +148,7 @@ export async function loadTimyConversation(
     return {
         conversation: result.data.conversation,
         messages: result.data.messages,
-        aiConfigured: result.data.ai_configured,
+        ...mapContextPayload(result.data),
     };
 }
 
@@ -112,18 +156,23 @@ export async function sendTimyMessage(
     conversationId: number,
     content: string,
     pagePath: string,
-): Promise<{ messages: TimyMessage[] } | { error: string }> {
-    const result = await timyFetch<{ messages: TimyMessage[] }>(
-        timyStoreMessage.url({ timy_conversation: conversationId }),
-        {
-            method: 'POST',
-            body: JSON.stringify({ content, page_path: pagePath }),
-        },
-    );
+): Promise<({ messages: TimyMessage[] } & TimyContextHints) | { error: string }> {
+    const result = await timyFetch<{
+        messages: TimyMessage[];
+        tips: string[];
+        page: string;
+        ai_configured: boolean;
+    }>(timyStoreMessage.url({ timy_conversation: conversationId }), {
+        method: 'POST',
+        body: JSON.stringify({ content, page_path: pagePath }),
+    });
 
     if ('error' in result) {
         return result;
     }
 
-    return { messages: result.data.messages };
+    return {
+        messages: result.data.messages,
+        ...mapContextPayload(result.data),
+    };
 }

@@ -5,12 +5,23 @@ import { createPortal } from 'react-dom';
 import { ChatbotPanel } from '@/components/chatbot/chatbot-panel';
 import {
     createTimyConversation,
+    fetchTimyContext,
     listTimyConversations,
     loadTimyConversation,
     sendTimyMessage,
+    type TimyContextHints,
 } from '@/components/chatbot/timy-api';
 import { cn } from '@/lib/utils';
 import type { TimyConversation, TimyMessage } from '@/types/timy';
+
+function applyContextHints(
+    setTips: (tips: string[]) => void,
+    setAiConfigured: (value: boolean) => void,
+    hints: TimyContextHints,
+): void {
+    setTips(hints.tips);
+    setAiConfigured(hints.aiConfigured);
+}
 
 export function ChatbotWidget() {
     const user = usePage().props.auth.user;
@@ -19,6 +30,7 @@ export function ChatbotWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [conversation, setConversation] = useState<TimyConversation | null>(null);
     const [messages, setMessages] = useState<TimyMessage[]>([]);
+    const [tips, setTips] = useState<string[]>([]);
     const [draft, setDraft] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -41,7 +53,7 @@ export function ChatbotWidget() {
                 return null;
             }
 
-            const loaded = await loadTimyConversation(latest.id);
+            const loaded = await loadTimyConversation(latest.id, pagePath);
             if ('error' in loaded) {
                 setError(loaded.error);
 
@@ -50,12 +62,12 @@ export function ChatbotWidget() {
 
             setConversation(loaded.conversation);
             setMessages(loaded.messages);
-            setAiConfigured(loaded.aiConfigured);
+            applyContextHints(setTips, setAiConfigured, loaded);
 
             return loaded.conversation;
         }
 
-        const created = await createTimyConversation();
+        const created = await createTimyConversation(pagePath);
         if ('error' in created) {
             setError(created.error);
 
@@ -64,9 +76,10 @@ export function ChatbotWidget() {
 
         setConversation(created.conversation);
         setMessages(created.messages);
+        applyContextHints(setTips, setAiConfigured, created);
 
         return created.conversation;
-    }, []);
+    }, [pagePath]);
 
     useEffect(() => {
         if (!isOpen || conversation !== null || user === null) {
@@ -90,6 +103,26 @@ export function ChatbotWidget() {
     }, [isOpen, conversation, user, ensureConversation]);
 
     useEffect(() => {
+        if (!isOpen || conversation === null || user === null) {
+            return;
+        }
+
+        let cancelled = false;
+
+        void fetchTimyContext(pagePath).then((result) => {
+            if (cancelled || 'error' in result) {
+                return;
+            }
+
+            applyContextHints(setTips, setAiConfigured, result);
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isOpen, conversation, pagePath, user]);
+
+    useEffect(() => {
         if (!isOpen) {
             return;
         }
@@ -110,7 +143,7 @@ export function ChatbotWidget() {
         setError(null);
         setDraft('');
 
-        const created = await createTimyConversation();
+        const created = await createTimyConversation(pagePath);
         setIsLoading(false);
 
         if ('error' in created) {
@@ -121,7 +154,8 @@ export function ChatbotWidget() {
 
         setConversation(created.conversation);
         setMessages(created.messages);
-    }, []);
+        applyContextHints(setTips, setAiConfigured, created);
+    }, [pagePath]);
 
     const sendMessage = useCallback(
         async (text: string) => {
@@ -161,6 +195,7 @@ export function ChatbotWidget() {
             }
 
             setMessages((current) => [...current, ...result.messages]);
+            applyContextHints(setTips, setAiConfigured, result);
         },
         [conversation, ensureConversation, isSending, pagePath, user],
     );
@@ -191,6 +226,7 @@ export function ChatbotWidget() {
                 isSending={isSending}
                 error={error}
                 aiConfigured={aiConfigured}
+                tips={tips}
                 user={user}
                 onDraftChange={setDraft}
                 onSend={handleSend}

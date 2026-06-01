@@ -7,6 +7,7 @@ import {
 } from 'react';
 
 import { ChatbotMessageBubble } from '@/components/chatbot/chatbot-message-bubble';
+import { ChatbotTips } from '@/components/chatbot/chatbot-tips';
 import {
     ChatbotSuggestionChips,
     resolveTimyPageKey,
@@ -25,6 +26,7 @@ type ChatbotPanelProps = {
     isSending: boolean;
     error: string | null;
     aiConfigured: boolean;
+    tips: string[];
     user: User;
     onDraftChange: (value: string) => void;
     onSend: () => void;
@@ -55,6 +57,7 @@ export function ChatbotPanel({
     isSending,
     error,
     aiConfigured,
+    tips,
     user,
     onDraftChange,
     onSend,
@@ -190,6 +193,8 @@ export function ChatbotPanel({
                         {error}
                     </p>
                 ) : null}
+
+                <ChatbotTips tips={tips} />
 
                 {messages.map((message, index) => (
                     <ChatbotMessageBubble

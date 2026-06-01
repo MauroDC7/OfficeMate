@@ -7,6 +7,7 @@ use App\Models\TimyConversation;
 use App\Models\TimyMessage;
 use App\Models\User;
 use App\Services\Timy\TimyAssistant;
+use App\Services\Timy\TimyUserContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -15,6 +16,7 @@ final class TimyConversationController extends Controller
 {
     public function __construct(
         private readonly TimyAssistant $timyAssistant,
+        private readonly TimyUserContext $timyUserContext,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -45,6 +47,8 @@ final class TimyConversationController extends Controller
         $user = $request->user();
         abort_unless($user instanceof User, 401);
 
+        $pagePath = (string) $request->query('page_path', '/');
+
         $conversation = TimyConversation::query()->create([
             'user_id' => $user->id,
         ]);
@@ -61,6 +65,7 @@ final class TimyConversationController extends Controller
         return response()->json([
             'conversation' => $this->conversationPayload($conversation),
             'messages' => [$this->messagePayload($welcome)],
+            ...$this->contextPayload($user, $pagePath),
         ], 201);
     }
 
@@ -74,10 +79,12 @@ final class TimyConversationController extends Controller
             ->orderBy('created_at')
             ->get();
 
+        $pagePath = (string) $request->query('page_path', '/');
+
         return response()->json([
             'conversation' => $this->conversationPayload($timyConversation),
             'messages' => $messages->map(fn (TimyMessage $message): array => $this->messagePayload($message))->all(),
-            'ai_configured' => $this->timyAssistant->isConfigured(),
+            ...$this->contextPayload($user, $pagePath),
         ]);
     }
 
@@ -126,7 +133,22 @@ final class TimyConversationController extends Controller
                 $this->messagePayload($userMessage),
                 $this->messagePayload($assistantMessage),
             ],
+            ...$this->contextPayload($user, $pagePath),
         ]);
+    }
+
+    /**
+     * @return array{tips: list<string>, page: string, ai_configured: bool}
+     */
+    private function contextPayload(User $user, string $pagePath): array
+    {
+        $context = $this->timyUserContext->build($user, $pagePath);
+
+        return [
+            'tips' => $context['tips'],
+            'page' => $context['page'],
+            'ai_configured' => $this->timyAssistant->isConfigured(),
+        ];
     }
 
     /**

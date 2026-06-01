@@ -79,6 +79,48 @@ it('answers about weekly hours using the fallback responder', function () {
     expect($assistantText)->toContain('week');
 });
 
+it('returns context tips for the current page', function () {
+    $user = timyUser();
+
+    $this->actingAs($user)
+        ->getJson(route('timy.context', ['page_path' => '/timesheets']))
+        ->assertOk()
+        ->assertJsonStructure(['tips', 'page', 'ai_configured'])
+        ->assertJsonPath('page', 'timesheets');
+});
+
+it('generates a weekly debrief draft when asked', function () {
+    Config::set('services.openai.key', 'sk-test');
+    Config::set('services.openai.model', 'gpt-4o-mini');
+
+    Http::fake([
+        'api.openai.com/v1/chat/completions' => Http::response([
+            'choices' => [
+                [
+                    'message' => [
+                        'content' => json_encode([
+                            'difficult_this_week' => 'Veel meetings.',
+                            'plans_next_week' => 'Meer focus op development.',
+                        ], JSON_THROW_ON_ERROR),
+                    ],
+                ],
+            ],
+        ]),
+    ]);
+
+    $user = timyUser();
+    $conversation = TimyConversation::factory()->for($user)->create();
+
+    $response = $this->actingAs($user)
+        ->postJson(route('timy.conversations.messages.store', $conversation), [
+            'content' => 'Genereer een weekly debrief concept',
+            'page_path' => '/projects',
+        ]);
+
+    $response->assertOk();
+    expect((string) $response->json('messages.1.content'))->toContain('Wat ging lastig');
+});
+
 it('uses openai when configured and returns structured actions', function () {
     Config::set('services.openai.key', 'sk-test');
     Config::set('services.openai.model', 'gpt-4o-mini');

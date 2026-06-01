@@ -4,8 +4,12 @@ namespace App\Services\Timy;
 
 use App\Models\TimyMessage;
 use App\Models\User;
+use App\Services\WeeklyDebriefDraftGenerator;
+use App\Services\WeeklyDebriefSchedule;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use JsonException;
 use RuntimeException;
 
@@ -22,6 +26,8 @@ final class TimyAssistant
     public function __construct(
         private readonly TimyUserContext $timyUserContext,
         private readonly TimyFallbackResponder $timyFallbackResponder,
+        private readonly WeeklyDebriefDraftGenerator $weeklyDebriefDraftGenerator,
+        private readonly WeeklyDebriefSchedule $weeklyDebriefSchedule,
     ) {}
 
     public function isConfigured(): bool
@@ -36,6 +42,10 @@ final class TimyAssistant
     public function reply(User $user, string $userMessage, Collection $history, string $pagePath): array
     {
         $context = $this->timyUserContext->build($user, $pagePath);
+
+        if ($this->isWeeklyDebriefDraftRequest($userMessage)) {
+            return $this->weeklyDebriefDraftReply($user);
+        }
 
         if (! $this->isConfigured()) {
             return $this->timyFallbackResponder->reply($userMessage, $context);
@@ -174,5 +184,61 @@ PROMPT;
         $greeting = $firstName !== '' ? "Hoi {$firstName}!" : 'Hoi!';
 
         return "{$greeting} Ik ben Timy. Stel een vraag over timesheets, verlof, projecten of waar je iets vindt in TimeTraq.";
+    }
+
+    private function isWeeklyDebriefDraftRequest(string $message): bool
+    {
+        $normalized = Str::lower(trim($message));
+
+        $wantsGeneration = Str::contains($normalized, [
+            'genereer', 'maak', 'schrijf', 'help met', 'concept', 'voorstel', 'draft',
+        ]);
+
+        $aboutDebrief = Str::contains($normalized, [
+            'debrief', 'weekstatus', 'weekly', 'week update', 'weekupdate',
+        ]);
+
+        return $wantsGeneration && $aboutDebrief;
+    }
+
+    /**
+     * @return array{content: string, actions: list<TimyActionLink>}
+     */
+    private function weeklyDebriefDraftReply(User $user): array
+    {
+        if (! $this->weeklyDebriefDraftGenerator->isConfigured()) {
+            return [
+                'content' => 'Een AI-concept voor je weekly debrief is nu niet beschikbaar. Vraag je beheerder om OPENAI_API_KEY in te stellen, of vul je debrief handmatig in op Projecten.',
+                'actions' => [
+                    ['label' => 'Naar projecten', 'href' => route('projects')],
+                ],
+            ];
+        }
+
+        try {
+            $weekStart = CarbonImmutable::now($this->weeklyDebriefSchedule->timezone())
+                ->startOfWeek(CarbonImmutable::MONDAY);
+
+            $draft = $this->weeklyDebriefDraftGenerator->generate($user, $weekStart);
+
+            $content = "Hier is een concept voor je weekly debrief deze week:\n\n"
+                ."Wat ging lastig:\n{$draft['difficult_this_week']}\n\n"
+                ."Plannen volgende week:\n{$draft['plans_next_week']}\n\n"
+                .'Kopieer dit naar het formulier op Projecten en pas het gerust aan.';
+
+            return [
+                'content' => $content,
+                'actions' => [
+                    ['label' => 'Weekly debrief invullen', 'href' => route('projects')],
+                ],
+            ];
+        } catch (RuntimeException $exception) {
+            return [
+                'content' => $exception->getMessage(),
+                'actions' => [
+                    ['label' => 'Naar projecten', 'href' => route('projects')],
+                ],
+            ];
+        }
     }
 }
