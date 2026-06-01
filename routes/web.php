@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminWeeklyDebriefController;
 use App\Http\Controllers\AppPageController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GoogleAuthController;
@@ -75,6 +76,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/admin/leave-requests', [AppPageController::class, 'adminLeaveRequests'])
         ->middleware('admin')
         ->name('admin.leaveRequests');
+    Route::get('/admin/weekly-debrief', [AdminWeeklyDebriefController::class, 'index'])
+        ->middleware('admin')
+        ->name('admin.weeklyDebrief');
+    Route::post('/admin/weekly-debrief/summary', [AdminWeeklyDebriefController::class, 'summarize'])
+        ->middleware('admin')
+        ->name('admin.weeklyDebrief.summarize');
     Route::get('/admin/presence', fn () => redirect()->route('teams', ['tab' => 'people']))
         ->middleware('admin')
         ->name('admin.presence');
