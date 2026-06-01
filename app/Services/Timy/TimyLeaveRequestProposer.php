@@ -7,7 +7,6 @@ use App\Enums\UserRole;
 use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Services\Timy\Actions\CreateLeaveRequestAction;
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 
 /**
@@ -19,6 +18,10 @@ use Illuminate\Support\Str;
  */
 final class TimyLeaveRequestProposer
 {
+    public function __construct(
+        private readonly TimyDutchDateRangeParser $dateRangeParser,
+    ) {}
+
     public function tryPropose(User $user, string $message): ?array
     {
         if ($user->role !== UserRole::Employee || ! $user->can('create', LeaveRequest::class)) {
@@ -45,7 +48,7 @@ final class TimyLeaveRequestProposer
     public function missingDatesHelpMessage(): string
     {
         return 'Om verlof aan te vragen via Timy, noem het type (vakantie of overig) en de datums. '
-            .'Voorbeeld: "Vraag vakantie aan van 2026-07-01 tot 2026-07-05". '
+            .'Voorbeeld: "Vraag verlof aan voor 7 juni tot 13 juni" of "vakantie van 01-07-2026 tot 05-07-2026". '
             .'Ziekteverlof met attest regel je via Verlof in het menu.';
     }
 
@@ -60,7 +63,7 @@ final class TimyLeaveRequestProposer
             return false;
         }
 
-        return preg_match('/\d{4}-\d{2}-\d{2}|\d{1,2}-\d{1,2}-\d{4}/', $message) === 1;
+        return $this->dateRangeParser->containsDateHint($message);
     }
 
     private function mentionsLeave(string $message): bool
@@ -82,18 +85,16 @@ final class TimyLeaveRequestProposer
     private function extractParams(string $message): ?array
     {
         $type = $this->extractType($message);
-        $dates = $this->extractDates($message);
+        $range = $this->dateRangeParser->extractRange($message);
 
-        if ($type === null || count($dates) < 2) {
+        if ($type === null || $range === null) {
             return null;
         }
 
-        [$startsOn, $endsOn] = $dates;
-
         return [
             'type' => $type->value,
-            'starts_on' => $startsOn,
-            'ends_on' => $endsOn,
+            'starts_on' => $range[0],
+            'ends_on' => $range[1],
             'notes' => null,
         ];
     }
@@ -111,33 +112,5 @@ final class TimyLeaveRequestProposer
         }
 
         return LeaveType::Vacation;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function extractDates(string $message): array
-    {
-        preg_match_all('/\d{4}-\d{2}-\d{2}/', $message, $isoMatches);
-        if (isset($isoMatches[0]) && count($isoMatches[0]) >= 2) {
-            return array_values(array_slice($isoMatches[0], 0, 2));
-        }
-
-        preg_match_all('/\d{1,2}-\d{1,2}-\d{4}/', $message, $europeanMatches);
-        if (! isset($europeanMatches[0]) || count($europeanMatches[0]) < 2) {
-            return [];
-        }
-
-        $parsed = [];
-
-        foreach (array_slice($europeanMatches[0], 0, 2) as $raw) {
-            try {
-                $parsed[] = CarbonImmutable::createFromFormat('d-m-Y', $raw)->toDateString();
-            } catch (\Throwable) {
-                return [];
-            }
-        }
-
-        return $parsed;
     }
 }

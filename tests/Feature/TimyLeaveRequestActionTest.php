@@ -25,6 +25,22 @@ function timyEmployee(): User
     ]);
 }
 
+it('proposes a leave request from dutch month names', function () {
+    $user = timyEmployee();
+    $conversation = TimyConversation::factory()->for($user)->create();
+
+    $response = $this->actingAs($user)
+        ->postJson(route('timy.conversations.messages.store', $conversation), [
+            'content' => 'Vraag verlof aan voor 7 juni tot 13 juni',
+            'page_path' => '/leave-requests',
+        ]);
+
+    $response->assertOk()
+        ->assertJsonPath('messages.1.pending_action.type', 'create_leave_request')
+        ->assertJsonPath('messages.1.pending_action.params.starts_on', '2026-06-07')
+        ->assertJsonPath('messages.1.pending_action.params.ends_on', '2026-06-13');
+});
+
 it('proposes a leave request with pending confirmation', function () {
     $user = timyEmployee();
     $conversation = TimyConversation::factory()->for($user)->create();
