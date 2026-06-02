@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -291,76 +292,100 @@ export function ChatbotWidget() {
         return null;
     }
 
-    return createPortal(
-        <>
-            <ChatbotPanel
-                isOpen={isOpen}
-                pagePath={pagePath}
-                messages={messages}
-                draft={draft}
-                isLoading={isLoading}
-                isSending={isSending}
-                isExecutingAction={isExecutingAction}
-                pendingAction={pendingAction}
-                error={error}
-                aiConfigured={aiConfigured}
-                tips={tips}
-                user={user}
-                onDraftChange={setDraft}
-                onSend={handleSend}
-                onSuggestionSelect={handleSuggestionSelect}
-                onNewChat={() => void handleNewChat()}
-                onClose={() => setIsOpen(false)}
-                onConfirmPendingAction={() => void handleConfirmPendingAction()}
-                onCancelPendingAction={handleCancelPendingAction}
-            />
+    const fabSpring = { type: 'spring' as const, stiffness: 500, damping: 34 };
 
-            <button
+    return createPortal(
+        <MotionConfig reducedMotion="user">
+            <AnimatePresence>{isOpen ? (
+                <ChatbotPanel
+                    key="timy-panel"
+                    pagePath={pagePath}
+                    messages={messages}
+                    draft={draft}
+                    isLoading={isLoading}
+                    isSending={isSending}
+                    isExecutingAction={isExecutingAction}
+                    pendingAction={pendingAction}
+                    error={error}
+                    aiConfigured={aiConfigured}
+                    tips={tips}
+                    user={user}
+                    onDraftChange={setDraft}
+                    onSend={handleSend}
+                    onSuggestionSelect={handleSuggestionSelect}
+                    onNewChat={() => void handleNewChat()}
+                    onClose={() => setIsOpen(false)}
+                    onConfirmPendingAction={() => void handleConfirmPendingAction()}
+                    onCancelPendingAction={handleCancelPendingAction}
+                />
+            ) : null}</AnimatePresence>
+
+            <motion.button
                 type="button"
+                layout
                 onClick={() => setIsOpen((open) => !open)}
                 aria-expanded={isOpen}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.94 }}
+                transition={fabSpring}
                 className={cn(
-                    'fixed end-4 bottom-4 z-[60] inline-flex items-center justify-center gap-2 rounded-full border shadow-lg transition duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:end-6 sm:bottom-6',
+                    'fixed end-4 bottom-4 z-[60] inline-flex items-center justify-center gap-2 overflow-hidden rounded-full border shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:end-6 sm:bottom-6',
                     isOpen
                         ? 'size-12 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-gray-900'
                         : 'border-gray-200 bg-white px-4 py-3 text-gray-900 shadow-md hover:border-gray-300 hover:bg-gray-50 focus-visible:outline-gray-900 sm:pe-5',
                 )}
                 aria-label={isOpen ? 'Chat sluiten' : 'Chat met Timy openen'}
             >
-                {isOpen ? (
-                    <svg
-                        width={20}
-                        height={20}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        aria-hidden
-                    >
-                        <path d="M6 6l12 12M18 6L6 18" />
-                    </svg>
-                ) : (
-                    <>
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-gray-100 bg-gray-50 p-1">
-                            <img
-                                src="/img/Logo.png"
-                                alt=""
-                                className="size-full object-contain"
-                                width={28}
-                                height={28}
-                                decoding="async"
-                                draggable={false}
-                                aria-hidden
-                            />
-                        </span>
-                        <span className="hidden text-sm font-semibold sm:inline">
-                            Timy
-                        </span>
-                    </>
-                )}
-            </button>
-        </>,
+                <AnimatePresence mode="wait" initial={false}>
+                    {isOpen ? (
+                        <motion.span
+                            key="close"
+                            initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
+                            animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                            exit={{ rotate: 90, opacity: 0, scale: 0.6 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center justify-center"
+                            aria-hidden
+                        >
+                            <svg
+                                width={20}
+                                height={20}
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                                strokeLinecap="round"
+                            >
+                                <path d="M6 6l12 12M18 6L6 18" />
+                            </svg>
+                        </motion.span>
+                    ) : (
+                        <motion.span
+                            key="open"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 10 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center gap-2"
+                            aria-hidden
+                        >
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-gray-100 bg-gray-50 p-1">
+                                <img
+                                    src="/img/Logo.png"
+                                    alt=""
+                                    className="size-full object-contain"
+                                    width={28}
+                                    height={28}
+                                    decoding="async"
+                                    draggable={false}
+                                />
+                            </span>
+                            <span className="hidden text-sm font-semibold sm:inline">Timy</span>
+                        </motion.span>
+                    )}
+                </AnimatePresence>
+            </motion.button>
+        </MotionConfig>,
         document.body,
     );
 }

@@ -17,9 +17,41 @@ import { ChatbotTypingIndicator } from '@/components/chatbot/chatbot-typing-indi
 import { cn } from '@/lib/utils';
 import type { User } from '@/types/auth';
 import type { TimyMessage, TimyPendingAction } from '@/types/timy';
+import { motion, type Transition, type Variants } from 'motion/react';
+
+const panelVariants: Variants = {
+    hidden: {
+        opacity: 0,
+        scale: 0.84,
+        y: 28,
+        transformOrigin: 'bottom right',
+    },
+    visible: {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        transformOrigin: 'bottom right',
+    },
+    exit: {
+        opacity: 0,
+        scale: 0.92,
+        y: 18,
+        transformOrigin: 'bottom right',
+        transition: {
+            duration: 0.18,
+            ease: [0.4, 0, 1, 1],
+        },
+    },
+};
+
+const panelTransition: Transition = {
+    type: 'spring',
+    stiffness: 420,
+    damping: 32,
+    mass: 0.85,
+};
 
 type ChatbotPanelProps = {
-    isOpen: boolean;
     pagePath: string;
     messages: TimyMessage[];
     draft: string;
@@ -54,7 +86,6 @@ function IconClose({ className }: { className?: string }) {
 }
 
 export function ChatbotPanel({
-    isOpen,
     pagePath,
     messages,
     draft,
@@ -86,20 +117,16 @@ export function ChatbotPanel({
         messages[0]?.role === 'assistant';
 
     useEffect(() => {
-        if (!isOpen) {
-            return;
-        }
-
         const list = listRef.current;
         if (list === null) {
             return;
         }
 
         list.scrollTop = list.scrollHeight;
-    }, [isOpen, messages, isSending]);
+    }, [messages, isSending]);
 
     useEffect(() => {
-        if (!isOpen || isLoading) {
+        if (isLoading) {
             return;
         }
 
@@ -108,7 +135,7 @@ export function ChatbotPanel({
         });
 
         return () => window.cancelAnimationFrame(frame);
-    }, [isOpen, isLoading]);
+    }, [isLoading]);
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
@@ -123,16 +150,17 @@ export function ChatbotPanel({
     }
 
     return (
-        <section
+        <motion.section
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            aria-hidden={!isOpen}
+            variants={panelVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={panelTransition}
             className={cn(
-                'pointer-events-none fixed end-3 bottom-[4.5rem] z-[60] flex h-[min(32rem,calc(100svh-6rem))] w-[min(100vw-1.5rem,24rem)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl transition duration-300 ease-out sm:end-5 sm:bottom-[5rem] sm:w-[26rem]',
-                isOpen
-                    ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
-                    : 'translate-y-3 scale-[0.98] opacity-0',
+                'fixed end-3 bottom-[4.5rem] z-[60] flex h-[min(32rem,calc(100svh-6rem))] w-[min(100vw-1.5rem,24rem)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl sm:end-5 sm:bottom-[5rem] sm:w-[26rem]',
             )}
         >
             <header className="relative shrink-0 overflow-hidden border-b border-gray-200 bg-gray-50/90 px-4 py-3.5">
@@ -292,6 +320,6 @@ export function ChatbotPanel({
                     </div>
                 </div>
             </form>
-        </section>
+        </motion.section>
     );
 }
