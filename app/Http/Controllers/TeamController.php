@@ -113,6 +113,15 @@ final class TeamController extends Controller
         return redirect()->route('teams');
     }
 
+    public function show(Request $request, Team $team): Response
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+        $this->authorize('view', $team);
+
+        return Inertia::render('teams/show', $this->teamOverviewBuilder->showPageFor($team, $user));
+    }
+
     public function update(UpdateTeamRequest $request, Team $team): RedirectResponse
     {
         $user = $request->user();
@@ -161,7 +170,7 @@ final class TeamController extends Controller
             }
         });
 
-        return redirect()->route('teams');
+        return redirect()->route('teams.show', $team);
     }
 
     public function destroy(Request $request, Team $team): RedirectResponse

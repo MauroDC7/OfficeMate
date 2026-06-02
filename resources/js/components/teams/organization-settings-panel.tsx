@@ -3,7 +3,7 @@ import { useEffect, useId, useRef } from 'react';
 
 import { cn } from '@/lib/utils';
 import { store as sendOrganizationInvite } from '@/routes/teams/organization-invites';
-import { update as updateOrganization } from '@/routes/teams/organization';
+import { startNew, update as updateOrganization } from '@/routes/teams/organization';
 import type { OrganizationSummary } from '@/types/teams';
 
 type OrganizationSettingsPanelProps = {
@@ -19,6 +19,9 @@ const inputClass =
 
 const primaryButtonClass =
     'rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60';
+
+const secondaryButtonClass =
+    'rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60';
 
 function IconBuilding({ className }: { className?: string }) {
     return (
@@ -58,17 +61,18 @@ function OrganizationSettingsBody({
     onClose?: () => void;
     variant: 'dialog' | 'featured';
 }) {
-    const nameFormId = useId();
+    const renameFormId = useId();
+    const newOrgFormId = useId();
     const inviteFormId = useId();
 
     return (
         <div className={cn('space-y-8', variant === 'featured' && 'sm:space-y-10')}>
             <Form
-                key={`organization-${organization.id}`}
-                {...updateOrganization.form.patch({ organization: organization.id })}
+                key={`organization-rename-${organization.id}`}
+                {...updateOrganization.form.patch()}
                 options={{ preserveScroll: true }}
                 onSuccess={() => {
-                    onSuccess('Organisatie opgeslagen.');
+                    onSuccess('Bedrijfsnaam opgeslagen.');
                 }}
                 className="space-y-4"
             >
@@ -76,16 +80,18 @@ function OrganizationSettingsBody({
                     <>
                         <div>
                             <label
-                                htmlFor={`${nameFormId}-organization-name`}
+                                htmlFor={`${renameFormId}-organization-name`}
                                 className="text-sm font-medium text-gray-800"
                             >
-                                Bedrijfsnaam
+                                Bedrijfsnaam aanpassen
                             </label>
                             <p className="mt-0.5 text-xs text-gray-500">
-                                Zichtbaar voor iedereen in je organisatie.
+                                Alleen de weergavenaam van{' '}
+                                <span className="font-medium text-gray-700">{organization.name}</span>. Teams en
+                                projecten blijven behouden.
                             </p>
                             <input
-                                id={`${nameFormId}-organization-name`}
+                                id={`${renameFormId}-organization-name`}
                                 type="text"
                                 name="name"
                                 required
@@ -97,13 +103,79 @@ function OrganizationSettingsBody({
                             ) : null}
                         </div>
                         <div className="flex justify-end">
-                            <button type="submit" disabled={processing} className={primaryButtonClass}>
+                            <button type="submit" disabled={processing} className={secondaryButtonClass}>
                                 {processing ? 'Opslaan…' : 'Naam opslaan'}
                             </button>
                         </div>
                     </>
                 )}
             </Form>
+
+            <div className="border-t border-gray-200 pt-8">
+                <Form
+                    key={`organization-new-${organization.id}`}
+                    {...startNew.form.post()}
+                    options={{ preserveScroll: true, preserveState: false }}
+                    onSuccess={() => {
+                        onSuccess('Nieuw bedrijf gestart.');
+                    }}
+                    className="space-y-4"
+                >
+                    {({ errors, processing }) => (
+                        <>
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-800">Nieuw bedrijf starten</h3>
+                                <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
+                                    Maak een apart bedrijf aan met een lege omgeving. Je huidige teams en
+                                    projecten bij <span className="font-medium">{organization.name}</span> blijven
+                                    bestaan voor collega&apos;s die daar nog zitten.
+                                </p>
+                            </div>
+                            <div>
+                                <label
+                                    htmlFor={`${newOrgFormId}-new-organization-name`}
+                                    className="text-sm font-medium text-gray-800"
+                                >
+                                    Naam van het nieuwe bedrijf
+                                </label>
+                                <input
+                                    id={`${newOrgFormId}-new-organization-name`}
+                                    type="text"
+                                    name="name"
+                                    required
+                                    autoComplete="organization"
+                                    placeholder="bijv. Nieuw project BV"
+                                    className={inputClass}
+                                />
+                                {errors.name !== undefined ? (
+                                    <p className="mt-1.5 text-xs text-red-600">{errors.name}</p>
+                                ) : null}
+                            </div>
+                            <label className="flex items-start gap-2.5 text-sm text-gray-700">
+                                <input
+                                    type="checkbox"
+                                    name="confirm"
+                                    value="1"
+                                    required
+                                    className="mt-0.5 size-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/20"
+                                />
+                                <span>
+                                    Ik begrijp dat ik een nieuw, apart bedrijf start en mijn huidige teams en
+                                    projecten hier niet meer zie.
+                                </span>
+                            </label>
+                            {errors.confirm !== undefined ? (
+                                <p className="text-xs text-red-600">{errors.confirm}</p>
+                            ) : null}
+                            <div className="flex justify-end">
+                                <button type="submit" disabled={processing} className={primaryButtonClass}>
+                                    {processing ? 'Bezig…' : 'Nieuw bedrijf starten'}
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </Form>
+            </div>
 
             <div className="border-t border-gray-200 pt-8">
                 <Form
@@ -216,7 +288,7 @@ export function OrganizationSettingsPanel({
                             Organisatie instellen
                         </h2>
                         <p className="mt-1 text-sm leading-relaxed text-gray-500">
-                            Pas je bedrijfsnaam aan en nodig collega&apos;s uit voordat je teams aanmaakt.
+                            Hernoem je bedrijf, start een nieuw bedrijf, of nodig collega&apos;s uit.
                         </p>
                     </div>
                 </div>
@@ -259,7 +331,7 @@ export function OrganizationSettingsPanel({
                                 Organisatie
                             </h2>
                             <p className="mt-0.5 text-sm text-gray-500">
-                                Bedrijfsnaam en uitnodigingen.
+                                Naam, nieuw bedrijf en uitnodigingen.
                             </p>
                         </div>
                     </div>

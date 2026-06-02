@@ -104,7 +104,7 @@ it('allows admins to update teams with members', function () {
             'department' => 'Customer success',
             'member_ids' => [$kept->id, $added->id],
         ])
-        ->assertRedirect(route('teams'));
+        ->assertRedirect(route('teams.show', $team));
 
     $team->refresh();
 
@@ -241,7 +241,7 @@ it('allows admins to update organization name from teams', function () {
     $admin = User::factory()->admin($organization)->create();
 
     $this->actingAs($admin)
-        ->patch(route('teams.organization.update', $organization), [
+        ->patch(route('teams.organization.update'), [
             'name' => 'Acme International',
         ])
         ->assertRedirect(route('teams'));
@@ -251,10 +251,10 @@ it('allows admins to update organization name from teams', function () {
 
 it('forbids employees from updating organization settings', function () {
     $employee = User::factory()->create(['role' => UserRole::Employee]);
-    $organization = Organization::factory()->create();
+    Organization::factory()->create();
 
     $this->actingAs($employee)
-        ->patch(route('teams.organization.update', $organization), [
+        ->patch(route('teams.organization.update'), [
             'name' => 'Hacked Inc',
         ])
         ->assertForbidden();

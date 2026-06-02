@@ -23,6 +23,7 @@ use App\Http\Controllers\Settings\OrganizationInviteController;
 use App\Http\Controllers\Settings\OrganizationOfficeIpsController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
 use App\Http\Controllers\Settings\RemoveOrganizationMemberController;
+use App\Http\Controllers\Settings\StartNewOrganizationController;
 use App\Http\Controllers\Settings\StoreOrganizationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMembershipController;
@@ -159,13 +160,17 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->middleware('admin')
         ->name('settings.employees.destroy');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
-    Route::patch('/teams/organization/{organization}', OrganizationSettingsController::class)
+    Route::patch('/teams/organization', OrganizationSettingsController::class)
         ->middleware('admin')
         ->name('teams.organization.update');
+    Route::post('/teams/organization/new', StartNewOrganizationController::class)
+        ->middleware('admin')
+        ->name('teams.organization.start-new');
     Route::post('/teams/organization-invites', [OrganizationInviteController::class, 'store'])
         ->middleware(['admin', 'throttle:10,1'])
         ->name('teams.organization-invites.store');
     Route::post('/teams', [TeamController::class, 'store'])->middleware('admin')->name('teams.store');
+    Route::get('/teams/{team}', [TeamController::class, 'show'])->name('teams.show');
     Route::patch('/teams/{team}', [TeamController::class, 'update'])->middleware('admin')->name('teams.update');
     Route::delete('/teams/{team}', [TeamController::class, 'destroy'])->middleware('admin')->name('teams.destroy');
     Route::post('/teams/{team}/join', [TeamMembershipController::class, 'store'])->name('teams.join');

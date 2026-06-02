@@ -43,6 +43,27 @@ export type OrganizationSummary = {
     name: string;
 };
 
+export type TeamShowPageProps = {
+    team: {
+        id: number;
+        name: string;
+        department: string | null;
+        member_count: number;
+    };
+    members: TeamMemberPreview[];
+    pendingMemberships: Array<{
+        id: number;
+        user: { id: number; name: string; email: string };
+    }>;
+    projects: Array<{ id: number; name: string }>;
+    teamLeaveUpcoming: import('@/types/leave-requests').TeamLeaveItem[];
+    isAdmin: boolean;
+    canManage: boolean;
+    myMembership: { id: number; status: TeamMembershipStatus } | null;
+    organizationUsers: OrganizationUserOption[];
+    member_ids: number[];
+};
+
 export type TeamsPageProps = {
     organization: OrganizationSummary | null;
     teamCards: TeamCard[];

@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 final class OrganizationLeaveOverview
 {
     /**
+     * @param  list<int>|null  $onlyUserIds
      * @return list<array{
      *     id: int,
      *     starts_on: string,
@@ -24,11 +25,16 @@ final class OrganizationLeaveOverview
         CarbonImmutable $rangeEnd,
         ?int $excludeUserId = null,
         ?int $limit = null,
+        ?array $onlyUserIds = null,
     ): array {
-        $memberIds = User::query()
-            ->where('organization_id', $organizationId)
-            ->pluck('id')
-            ->all();
+        if ($onlyUserIds !== null) {
+            $memberIds = array_values(array_unique($onlyUserIds));
+        } else {
+            $memberIds = User::query()
+                ->where('organization_id', $organizationId)
+                ->pluck('id')
+                ->all();
+        }
 
         if ($memberIds === []) {
             return [];

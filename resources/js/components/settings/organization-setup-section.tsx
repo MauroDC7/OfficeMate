@@ -16,8 +16,8 @@ export function OrganizationSetupSection() {
         <section className="mt-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:mt-6 sm:p-6 lg:mt-7">
             <h2 className="text-base font-semibold text-gray-900">Bedrijf starten</h2>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-500">
-                Nog geen uitnodiging ontvangen? Maak je organisatie aan en word beheerder om teams en
-                medewerkers te beheren.
+                Nog geen uitnodiging ontvangen? Maak je eerste bedrijf aan en word beheerder. Heb je al een
+                bedrijf en wil je opnieuw beginnen? Ga naar Teams → Organisatie → Nieuw bedrijf starten.
             </p>
             <Form
                 {...storeOrganization.form.post()}
