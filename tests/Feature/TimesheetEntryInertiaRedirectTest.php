@@ -16,6 +16,7 @@ it('returns back for inertia timesheet entry updates', function () {
         ->patch(route('timesheets.entries.update', $entry), [
             'title' => $entry->title,
             'description' => null,
+            'color' => $entry->color,
             'project_id' => $entry->project_id,
             'worked_on' => '2026-06-02',
             'start_minutes' => 600,

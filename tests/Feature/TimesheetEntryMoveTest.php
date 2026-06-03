@@ -15,6 +15,7 @@ it('updates times when a timesheet entry is moved on the calendar', function () 
         ->patch(route('timesheets.entries.update', $entry), [
             'title' => $entry->title,
             'description' => null,
+            'color' => $entry->color,
             'project_id' => $entry->project_id,
             'worked_on' => '2026-06-02',
             'start_minutes' => 600,
@@ -40,6 +41,7 @@ it('accepts fifteen minute time increments', function () {
         ->patch(route('timesheets.entries.update', $entry), [
             'title' => $entry->title,
             'description' => null,
+            'color' => $entry->color,
             'project_id' => $entry->project_id,
             'worked_on' => '2026-06-02',
             'start_minutes' => 545,
@@ -64,6 +66,7 @@ it('moves a timesheet entry to another weekday', function () {
         ->patch(route('timesheets.entries.update', $entry), [
             'title' => $entry->title,
             'description' => null,
+            'color' => $entry->color,
             'project_id' => $entry->project_id,
             'worked_on' => '2026-06-03',
             'start_minutes' => 540,
