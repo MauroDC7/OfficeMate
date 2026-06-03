@@ -76,6 +76,7 @@ final class AppPageController extends Controller
                         'id' => $e->id,
                         'title' => $e->title,
                         'description' => $e->description,
+                        'color' => $e->color,
                         'project_id' => $e->project_id,
                         'project_name' => $e->project?->name,
                         'client_name' => $e->client_name,

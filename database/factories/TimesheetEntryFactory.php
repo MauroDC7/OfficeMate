@@ -26,6 +26,7 @@ class TimesheetEntryFactory extends Factory
             'worked_on' => now()->startOfWeek()->addDays(fake()->numberBetween(0, 4)),
             'title' => fake()->sentence(3),
             'description' => fake()->optional(0.4)->paragraph(),
+            'color' => '#6b7280',
             'client_name' => fake()->optional(0.35)->company(),
             'start_minutes' => $start,
             'end_minutes' => $end,

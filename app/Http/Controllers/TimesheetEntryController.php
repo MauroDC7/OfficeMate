@@ -54,6 +54,7 @@ final class TimesheetEntryController extends CrudController
         return $request->safe()->only([
             'title',
             'description',
+            'color',
             'project_id',
             'client_name',
             'worked_on',
