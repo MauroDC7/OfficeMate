@@ -23,8 +23,17 @@ type TimesheetWeekBodyProps = {
     visibleDays: Date[];
     entriesByDay: Record<string, TimesheetEntryPayload[]>;
     gridDisplay: TimesheetGridDisplay;
-    onSlotClick: (dayKey: string, startMin: number, endMin: number) => void;
-    onEntryClick: (dayKey: string, entry: TimesheetEntryPayload) => void;
+    onSlotClick: (
+        dayKey: string,
+        startMin: number,
+        endMin: number,
+        anchor?: DOMRectReadOnly,
+    ) => void;
+    onEntryClick: (
+        dayKey: string,
+        entry: TimesheetEntryPayload,
+        anchor?: DOMRectReadOnly,
+    ) => void;
     onEntryMove: (
         entry: TimesheetEntryPayload,
         dayKey: string,

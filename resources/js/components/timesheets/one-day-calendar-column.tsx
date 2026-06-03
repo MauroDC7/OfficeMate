@@ -23,8 +23,17 @@ type OneDayCalendarColumnProps = {
     showNowLine: boolean;
     nowTopPx: number;
     preview: TimesheetInteractionPreview | null;
-    onSlotClick: (dayKey: string, startMin: number, endMin: number) => void;
-    onEntryClick: (dayKey: string, entry: TimesheetEntryPayload) => void;
+    onSlotClick: (
+        dayKey: string,
+        startMin: number,
+        endMin: number,
+        anchor?: DOMRectReadOnly,
+    ) => void;
+    onEntryClick: (
+        dayKey: string,
+        entry: TimesheetEntryPayload,
+        anchor?: DOMRectReadOnly,
+    ) => void;
     onEntryPointerDown: (
         mode: EntryInteractionMode,
         dayKey: string,
@@ -98,7 +107,14 @@ export function OneDayCalendarColumn({
                     <button
                         key={startMin}
                         type="button"
-                        onClick={() => onSlotClick(key, startMin, endMin)}
+                        onClick={(event) =>
+                            onSlotClick(
+                                key,
+                                startMin,
+                                endMin,
+                                event.currentTarget.getBoundingClientRect(),
+                            )
+                        }
                         title={`${minutesToTimeLabel(startMin)}–${minutesToTimeLabel(endMin)} — klik om toe te voegen`}
                         className={cn(
                             'absolute start-0 end-0 z-0 cursor-pointer text-start transition hover:bg-violet-100/50 focus-visible:z-[5] focus-visible:bg-violet-100/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-1px] focus-visible:outline-violet-500',
@@ -140,7 +156,7 @@ export function OneDayCalendarColumn({
                         endMinutes={entry.end_minutes}
                         top={top}
                         height={height}
-                        onOpen={() => onEntryClick(key, entry)}
+                        onOpen={(anchor) => onEntryClick(key, entry, anchor)}
                         onPointerDown={(mode, event) =>
                             onEntryPointerDown(mode, key, entry, event)
                         }

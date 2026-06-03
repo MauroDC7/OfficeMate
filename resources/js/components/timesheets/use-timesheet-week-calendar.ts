@@ -28,7 +28,7 @@ import type {
     TimesheetModalState,
     TimesheetWeekCalendarProps,
 } from '@/components/timesheets/week-calendar-types';
-import { emptyDraft } from '@/components/timesheets/week-calendar-types';
+import { emptyDraft, rectToPopoverAnchor } from '@/components/timesheets/week-calendar-types';
 import { useIsMobileViewport } from '@/lib/use-media-query';
 import { timesheets } from '@/routes';
 import { destroy, store, update } from '@/routes/timesheets/entries';
@@ -50,6 +50,7 @@ function buildEntryPayload(
     return {
         title: draft.title.trim(),
         description: trimmedDescription === '' ? null : trimmedDescription,
+        color: draft.color,
         project_id: draft.projectId === '' ? null : Number(draft.projectId),
         worked_on: workedOn,
         start_minutes: start,
@@ -360,13 +361,18 @@ export function useTimesheetWeekCalendar({
     }, [modal, closeModal]);
 
     const openModalForEntry = useCallback(
-        (dayKeyValue: string, entry: TimesheetEntryPayload) => {
+        (
+            dayKeyValue: string,
+            entry: TimesheetEntryPayload,
+            anchorRect?: DOMRectReadOnly,
+        ) => {
             clearErrors();
             setDraft({
                 title: entry.title,
                 description: entry.description ?? '',
                 projectId:
                     entry.project_id !== null ? String(entry.project_id) : '',
+                color: entry.color,
                 start: minutesToTimeInput(entry.start_minutes),
                 end: minutesToTimeInput(entry.end_minutes),
             });
@@ -374,13 +380,22 @@ export function useTimesheetWeekCalendar({
                 mode: 'edit',
                 dayKey: dayKeyValue,
                 entry,
+                anchor:
+                    anchorRect !== undefined
+                        ? rectToPopoverAnchor(anchorRect)
+                        : undefined,
             });
         },
         [clearErrors],
     );
 
     const openModalForSlot = useCallback(
-        (dayKeyValue: string, startMin: number, endMin: number) => {
+        (
+            dayKeyValue: string,
+            startMin: number,
+            endMin: number,
+            anchorRect?: DOMRectReadOnly,
+        ) => {
             clearErrors();
             setDraft({
                 ...emptyDraft(),
@@ -399,6 +414,10 @@ export function useTimesheetWeekCalendar({
                     startMin,
                     endMin,
                     trackerWindowTitles,
+                    anchor:
+                        anchorRect !== undefined
+                            ? rectToPopoverAnchor(anchorRect)
+                            : undefined,
                 });
             });
         },
@@ -567,6 +586,73 @@ export function useTimesheetWeekCalendar({
         });
     }, [modal, closeModal, success, confirm]);
 
+    const duplicateEntry = useCallback(() => {
+        if (modal === null || modal.mode !== 'edit') {
+            return;
+        }
+
+        if (draft.title.trim() === '') {
+            setFormError('Titel is verplicht.');
+
+            return;
+        }
+
+        const startMinutes = parseTimeInputToMinutes(draft.start);
+        const endMinutes = parseTimeInputToMinutes(draft.end);
+
+        if (startMinutes === null || endMinutes === null) {
+            setFormError('Vul geldige tijden in (uu:mm).');
+
+            return;
+        }
+
+        if (endMinutes <= startMinutes) {
+            setFormError('Eindtijd moet na de starttijd liggen.');
+
+            return;
+        }
+
+        const duration = endMinutes - startMinutes;
+        const duplicateStart = endMinutes;
+        const duplicateEnd = duplicateStart + duration;
+
+        if (duplicateEnd > 24 * 60) {
+            setFormError(
+                'Dupliceren past niet meer op deze dag. Pas de tijd aan of maak handmatig een nieuwe registratie.',
+            );
+
+            return;
+        }
+
+        const trimmedDescription = draft.description.trim();
+        const payload = {
+            title: draft.title.trim(),
+            description: trimmedDescription === '' ? null : trimmedDescription,
+            color: draft.color,
+            project_id: draft.projectId === '' ? null : Number(draft.projectId),
+            worked_on: modal.dayKey,
+            start_minutes: duplicateStart,
+            end_minutes: duplicateEnd,
+        };
+
+        clearErrors();
+        setSubmitting(true);
+
+        router.post(store.url(), payload, {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeModal();
+                success('Timesheetregistratie gedupliceerd.');
+            },
+            onError: (errors: ServerErrors) => {
+                setServerErrors(flattenFormErrors(errors));
+            },
+            onFinish: () => {
+                setSubmitting(false);
+            },
+        });
+    }, [modal, draft, clearErrors, closeModal, success]);
+
     const moveEntry = useCallback(
         (
             entry: TimesheetEntryPayload,
@@ -587,6 +673,7 @@ export function useTimesheetWeekCalendar({
             const payload = {
                 title: entry.title,
                 description: entry.description,
+                color: entry.color,
                 project_id: entry.project_id,
                 worked_on: workedOn,
                 start_minutes: startMinutes,
@@ -636,6 +723,7 @@ export function useTimesheetWeekCalendar({
         closeModal,
         saveModal,
         deleteEntry,
+        duplicateEntry,
         openModalForSlot,
         openModalForEntry,
         moveEntry,

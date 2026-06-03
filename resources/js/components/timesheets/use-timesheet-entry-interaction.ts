@@ -37,7 +37,11 @@ type UseTimesheetEntryInteractionOptions = {
     dayKeys: readonly string[];
     timelineHeightPx: number;
     gridDisplay: TimesheetGridDisplay;
-    onEntryClick: (dayKey: string, entry: TimesheetEntryPayload) => void;
+    onEntryClick: (
+        dayKey: string,
+        entry: TimesheetEntryPayload,
+        anchor?: DOMRectReadOnly,
+    ) => void;
     onEntryMove: (
         entry: TimesheetEntryPayload,
         dayKey: string,
@@ -193,7 +197,16 @@ export function useTimesheetEntryInteraction({
 
             if (!didDragRef.current) {
                 endInteraction();
-                onEntryClick(active.sourceDayKey, active.entry);
+
+                const entryEl = document.querySelector(
+                    `[data-timesheet-entry-id="${active.entry.id}"]`,
+                );
+                const anchor =
+                    entryEl instanceof HTMLElement
+                        ? entryEl.getBoundingClientRect()
+                        : undefined;
+
+                onEntryClick(active.sourceDayKey, active.entry, anchor);
 
                 return;
             }

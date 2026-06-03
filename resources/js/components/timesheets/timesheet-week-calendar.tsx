@@ -56,6 +56,7 @@ export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
                     onClose={calendar.closeModal}
                     onSave={calendar.saveModal}
                     onDelete={calendar.deleteEntry}
+                    onDuplicate={calendar.duplicateEntry}
                 />
             ) : null}
         </div>

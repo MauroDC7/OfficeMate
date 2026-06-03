@@ -131,6 +131,28 @@ export function formatMinutesRange(startMin: number, endMin: number): string {
     return `${minutesToTimeLabel(startMin)} – ${minutesToTimeLabel(endMin)}`;
 }
 
+export function formatDurationMinutes(startMin: number, endMin: number): string {
+    const total = Math.max(0, endMin - startMin);
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+
+    return `${h}:${String(m).padStart(2, '0')}:00`;
+}
+
+export function durationMinutesFromTimeInputs(
+    start: string,
+    end: string,
+): number | null {
+    const startMin = parseTimeInputToMinutes(start);
+    const endMin = parseTimeInputToMinutes(end);
+
+    if (startMin === null || endMin === null || endMin <= startMin) {
+        return null;
+    }
+
+    return endMin - startMin;
+}
+
 export function parseTimeInputToMinutes(value: string): number | null {
     const parts = value.trim().split(':');
 
