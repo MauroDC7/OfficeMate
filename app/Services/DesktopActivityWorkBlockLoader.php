@@ -13,6 +13,7 @@ final class DesktopActivityWorkBlockLoader
 {
     public function __construct(
         private readonly WorkBlockCoalescer $coalescer,
+        private readonly TrackerBlocklistMatcher $blocklistMatcher,
     ) {}
 
     /**
@@ -36,13 +37,15 @@ final class DesktopActivityWorkBlockLoader
         $from = $rangeStart->setTimezone($tz)->startOfDay()->utc();
         $to = $rangeEnd->setTimezone($tz)->endOfDay()->utc();
 
+        $blocklist = $this->blocklistMatcher->normalizeBlocklist($user->tracker_blocklist);
+
         $events = DesktopActivity::query()
             ->where('user_id', $user->id)
             ->where('started_at', '>=', $from)
             ->where('started_at', '<=', $to)
             ->orderBy('started_at')
             ->get()
-            ->map(fn (DesktopActivity $activity): ?array => $this->normaliseActivity($activity, $tz))
+            ->map(fn (DesktopActivity $activity): ?array => $this->normaliseActivity($activity, $tz, $blocklist))
             ->filter()
             ->values();
 
@@ -90,7 +93,10 @@ final class DesktopActivityWorkBlockLoader
      *     duration: float
      * }|null
      */
-    private function normaliseActivity(DesktopActivity $activity, string $timezone): ?array
+    /**
+     * @param  list<string>  $blocklist
+     */
+    private function normaliseActivity(DesktopActivity $activity, string $timezone, array $blocklist): ?array
     {
         $application = $this->coalescer->stripInvisibleChars($activity->app_name);
 
@@ -104,6 +110,16 @@ final class DesktopActivityWorkBlockLoader
 
         if ($windowTitle === '') {
             $windowTitle = $application;
+        }
+
+        if ($this->blocklistMatcher->matches(
+            $blocklist,
+            $application,
+            $this->coalescer->stripInvisibleChars($activity->window_title),
+            $this->coalescer->stripInvisibleChars((string) $activity->browser_tab_title),
+            $this->coalescer->stripInvisibleChars((string) $activity->browser_domain),
+        )) {
+            return null;
         }
 
         if (filled($activity->browser_domain)) {

@@ -39,6 +39,9 @@ use Laravel\Sanctum\HasApiTokens;
     'employment_setup_completed_at',
     'privacy_policy_accepted_at',
     'task_availability',
+    'tracker_use_ai_for_proposals',
+    'tracker_blocklist',
+    'tracker_tracking_enabled',
 ])]
 #[Hidden(['password', 'remember_token', 'avatar_path'])]
 class User extends Authenticatable implements CanResetPasswordContract, MustVerifyEmailContract
@@ -70,6 +73,9 @@ class User extends Authenticatable implements CanResetPasswordContract, MustVeri
             'role' => UserRole::class,
             'task_availability' => TaskAvailability::class,
             'can_create_projects' => 'boolean',
+            'tracker_use_ai_for_proposals' => 'boolean',
+            'tracker_blocklist' => 'array',
+            'tracker_tracking_enabled' => 'boolean',
         ];
     }
 

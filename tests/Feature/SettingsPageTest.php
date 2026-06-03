@@ -21,7 +21,7 @@ it('shows tracker status for organization members', function () {
     $employee->createToken('officemate-tracker');
 
     DesktopActivity::factory()->for($employee)->create([
-        'ended_at' => now()->subHour(),
+        'ended_at' => now()->subMinutes(5),
     ]);
 
     $this->actingAs($employee)
@@ -31,7 +31,11 @@ it('shows tracker status for organization members', function () {
             ->where('awaitingOrganizationInvite', false)
             ->where('isAdmin', false)
             ->where('tracker.is_connected', true)
+            ->where('tracker.is_active', true)
             ->where('tracker.last_activity_label', fn ($label) => is_string($label) && $label !== '')
+            ->where('tracker.recent_activity_count_7d', 1)
+            ->where('tracker.use_ai_for_proposals', true)
+            ->where('tracker.is_admin', false)
             ->where('employment', null));
 });
 

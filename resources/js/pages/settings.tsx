@@ -101,7 +101,7 @@ export default function Settings() {
                     Instellingen
                 </h1>
                 <p className="mt-2 max-w-2xl text-pretty text-sm leading-relaxed text-gray-500 md:max-w-3xl lg:text-base xl:max-w-4xl 2xl:max-w-5xl">
-                    Beheer je profiel{isAdmin ? ', je team' : ''} en de desktop-tracker.
+                    Beheer je profiel{isAdmin ? ', je team' : ''} en de TimeTraq Tracker op je computer.
                 </p>
 
                 {awaitingOrganizationInvite ? (

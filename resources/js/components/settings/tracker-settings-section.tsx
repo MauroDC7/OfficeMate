@@ -1,17 +1,35 @@
-import { Link } from '@inertiajs/react';
+import { Form, Link } from '@inertiajs/react';
+import { useState } from 'react';
 
-import { about, privacy } from '@/routes';
+import { useAlert } from '@/components/alert';
+import { SettingsSwitch } from '@/components/settings/settings-switch';
+import { about, privacy, timesheets } from '@/routes';
+import TrackerSettingsController from '@/actions/App/Http/Controllers/Settings/TrackerSettingsController';
 
 export type TrackerSettingsPayload = {
     is_connected: boolean;
+    is_active: boolean;
     last_activity_at: string | null;
     last_activity_label: string | null;
+    use_ai_for_proposals: boolean;
+    tracking_enabled: boolean;
+    blocklist: string[];
     download_url: string | null;
+    is_admin: boolean;
 };
 
 type TrackerSettingsSectionProps = {
     tracker: TrackerSettingsPayload;
 };
+
+const inputClass =
+    'mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10';
+
+const primaryButtonClass =
+    'rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60';
+
+const secondaryButtonClass =
+    'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60';
 
 function IconDesktop({ className }: { className?: string }) {
     return (
@@ -27,38 +45,51 @@ function IconDesktop({ className }: { className?: string }) {
     );
 }
 
-function ConnectionBadge({ tracker }: { tracker: TrackerSettingsPayload }) {
-    if (tracker.is_connected) {
-        return (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 ring-1 ring-emerald-600/20">
-                <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
-                Gekoppeld
-            </span>
-        );
+function trackerConnectionStatusLabel(tracker: TrackerSettingsPayload): string {
+    if (!tracker.tracking_enabled) {
+        return 'Tracking uit';
     }
 
-    return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 ring-1 ring-gray-200">
-            <span className="size-1.5 rounded-full bg-gray-400" aria-hidden />
-            Niet gekoppeld
-        </span>
-    );
+    if (tracker.is_active) {
+        return 'Actief';
+    }
+
+    if (tracker.is_connected) {
+        return 'Gekoppeld';
+    }
+
+    return 'Niet gekoppeld';
 }
 
 export function TrackerSettingsSection({ tracker }: TrackerSettingsSectionProps) {
-    const activityDetail =
-        tracker.last_activity_label !== null
-            ? `Laatste activiteit: ${tracker.last_activity_label}.`
-            : tracker.is_connected
-              ? 'Nog geen activiteit ontvangen sinds de koppeling.'
-              : 'Log in op de desktop-app om activiteit te synchroniseren.';
+    const { success } = useAlert();
+    const [useAi, setUseAi] = useState(tracker.use_ai_for_proposals);
+    const [trackingEnabled, setTrackingEnabled] = useState(tracker.tracking_enabled);
+    const [blocklist, setBlocklist] = useState<string[]>(tracker.blocklist);
+    const [newBlockEntry, setNewBlockEntry] = useState('');
+
+    const addBlockEntry = (): void => {
+        const trimmed = newBlockEntry.trim();
+
+        if (trimmed === '' || blocklist.includes(trimmed)) {
+            return;
+        }
+
+        setBlocklist((current) => [...current, trimmed]);
+        setNewBlockEntry('');
+    };
+
+    const removeBlockEntry = (entry: string): void => {
+        setBlocklist((current) => current.filter((item) => item !== entry));
+    };
 
     return (
         <section
+            id="tracker"
             className="mt-5 w-full min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6 sm:rounded-2xl lg:mt-7"
             aria-labelledby="tracker-settings-title"
         >
-            <div className="flex flex-col gap-3 border-b border-gray-200 px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6 sm:py-5">
+            <div className="border-b border-gray-200 px-5 py-4 sm:px-6 sm:py-5">
                 <div className="flex items-start gap-2.5">
                     <IconDesktop className="mt-0.5 shrink-0 text-gray-700" />
                     <div>
@@ -66,74 +97,201 @@ export function TrackerSettingsSection({ tracker }: TrackerSettingsSectionProps)
                             TimeTraq Tracker
                         </h2>
                         <p className="mt-1 max-w-xl text-sm leading-relaxed text-gray-500">
-                            Desktop-app die je werk registreert. Op de timesheet maak je daar AI-voorstellen van
-                            die je zelf goedkeurt.
+                            Desktop-app voor timesheet-voorstellen. Stel hier je voorkeuren in.
                         </p>
                     </div>
                 </div>
-                <ConnectionBadge tracker={tracker} />
             </div>
 
-            <div className="space-y-6 px-5 py-5 sm:px-6 sm:py-6">
-                <div className="rounded-lg border border-gray-100 bg-gray-50/80 px-4 py-4">
-                    <p className="text-sm font-medium text-gray-900">Status</p>
-                    <p className="mt-1 text-sm leading-relaxed text-gray-600">{activityDetail}</p>
-                </div>
-
-                <ol className="space-y-4 text-sm text-gray-700">
-                    <li className="flex gap-3">
-                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white">
-                            1
-                        </span>
-                        <span className="pt-0.5 leading-relaxed">
-                            {tracker.download_url !== null ? (
-                                <>
-                                    Installeer de{' '}
-                                    <a
-                                        href={tracker.download_url}
-                                        className="font-medium text-red-600 underline decoration-red-600/30 underline-offset-2 hover:text-red-700"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        TimeTraq Tracker
-                                    </a>{' '}
-                                    op je computer.
-                                </>
-                            ) : (
-                                <>Installeer de TimeTraq Tracker op je computer (link van je beheerder).</>
-                            )}
-                        </span>
-                    </li>
-                    <li className="flex gap-3">
-                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white">
-                            2
-                        </span>
-                        <span className="pt-0.5 leading-relaxed">
-                            Log in met hetzelfde e-mailadres en wachtwoord als op deze website.
-                        </span>
-                    </li>
-                    <li className="flex gap-3">
-                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white">
-                            3
-                        </span>
-                        <span className="pt-0.5 leading-relaxed">
-                            Ga naar Timesheets en klik op &ldquo;Genereer voor vandaag&rdquo; om voorstellen te
-                            maken. Jij keurt alles goed of past het aan.
-                        </span>
-                    </li>
-                </ol>
-
-                <p className="text-xs leading-relaxed text-gray-500">
-                    De tracker registreert venstertitels en sessieduur, geen toetsaanslagen. Meer uitleg op{' '}
-                    <Link href={about.url()} className="font-medium text-gray-700 underline underline-offset-2 hover:text-gray-900">
-                        Over TimeTraq
-                    </Link>{' '}
-                    en in het{' '}
-                    <Link href={privacy.url()} className="font-medium text-gray-700 underline underline-offset-2 hover:text-gray-900">
-                        privacybeleid
-                    </Link>
-                    .
+            <div className="px-5 py-5 sm:px-6 sm:py-6">
+                <p className="text-sm text-gray-600">
+                    {!trackingEnabled ? (
+                        'Tracking staat uit in je voorkeuren. De desktop-app verstuurt geen nieuwe activiteit naar TimeTraq.'
+                    ) : tracker.is_active ? (
+                        <>
+                            De tracker stuurt nu activiteit door.
+                            {tracker.last_activity_label !== null
+                                ? ` Laatste sync: ${tracker.last_activity_label}.`
+                                : null}
+                        </>
+                    ) : tracker.is_connected ? (
+                        <>
+                            Ingelogd, maar geen recente activiteit. Laat de app op je computer draaien.
+                            {tracker.last_activity_label !== null
+                                ? ` Laatst gezien: ${tracker.last_activity_label}.`
+                                : null}
+                        </>
+                    ) : (
+                        'Nog niet gekoppeld. Installeer de app en log in met dit account.'
+                    )}
                 </p>
+
+                <Form
+                    {...TrackerSettingsController.form.patch()}
+                    options={{ preserveScroll: true }}
+                    onSuccess={() => success('Tracker-instellingen opgeslagen.')}
+                    className="mt-6 space-y-6"
+                >
+                    {({ processing, errors }) => (
+                        <>
+                            <input type="hidden" name="tracker_use_ai_for_proposals" value={useAi ? '1' : '0'} />
+                            <input type="hidden" name="tracker_tracking_enabled" value={trackingEnabled ? '1' : '0'} />
+
+                            <div className="space-y-4 rounded-lg border border-gray-200 p-4">
+                                <SettingsSwitch
+                                    id="tracker-tracking-enabled"
+                                    checked={trackingEnabled}
+                                    onChange={setTrackingEnabled}
+                                    label="Tracker mag activiteit ontvangen"
+                                    description="Uit = niets nieuws wordt opgeslagen. De desktop-app kan nog draaien, maar TimeTraq negeert nieuwe syncs."
+                                />
+                                {errors.tracker_tracking_enabled !== undefined ? (
+                                    <p className="text-sm text-red-600">{errors.tracker_tracking_enabled}</p>
+                                ) : null}
+
+                                <SettingsSwitch
+                                    id="tracker-use-ai"
+                                    checked={useAi}
+                                    onChange={setUseAi}
+                                    label="Timesheet-voorstellen met AI"
+                                    description="Uit = je kunt nog steeds op Genereer klikken; je krijgt dan ruwe werkblokken zonder AI-samenvatting."
+                                />
+                                {errors.tracker_use_ai_for_proposals !== undefined ? (
+                                    <p className="text-sm text-red-600">{errors.tracker_use_ai_for_proposals}</p>
+                                ) : null}
+                            </div>
+
+                            <fieldset className="rounded-lg border border-gray-200 p-4">
+                                <legend className="px-1 text-sm font-medium text-gray-900">Blocklist</legend>
+                                <p className="mt-2 text-sm text-gray-500">
+                                    Apps of vensters die TimeTraq moet negeren (bijv. Spotify, WhatsApp). Ze worden niet
+                                    opgeslagen en tellen niet mee bij voorstellen.
+                                </p>
+
+                                {blocklist.map((entry, index) => (
+                                    <input
+                                        key={entry}
+                                        type="hidden"
+                                        name={`tracker_blocklist[${index}]`}
+                                        value={entry}
+                                    />
+                                ))}
+
+                                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+                                    <div className="min-w-0 flex-1">
+                                        <label htmlFor="tracker-blocklist-entry" className="sr-only">
+                                            Nieuw blocklist-item
+                                        </label>
+                                        <input
+                                            id="tracker-blocklist-entry"
+                                            type="text"
+                                            value={newBlockEntry}
+                                            onChange={(event) => setNewBlockEntry(event.target.value)}
+                                            onKeyDown={(event) => {
+                                                if (event.key === 'Enter') {
+                                                    event.preventDefault();
+                                                    addBlockEntry();
+                                                }
+                                            }}
+                                            placeholder="bijv. Netflix"
+                                            className={inputClass}
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={addBlockEntry}
+                                        className={secondaryButtonClass}
+                                    >
+                                        Toevoegen
+                                    </button>
+                                </div>
+
+                                {blocklist.length > 0 ? (
+                                    <ul className="mt-3 divide-y divide-gray-100 rounded-lg border border-gray-200">
+                                        {blocklist.map((entry) => (
+                                            <li
+                                                key={entry}
+                                                className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                                            >
+                                                <span className="text-gray-800">{entry}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeBlockEntry(entry)}
+                                                    className="shrink-0 text-sm font-medium text-red-600 hover:text-red-700"
+                                                >
+                                                    Verwijderen
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="mt-3 text-sm text-gray-500">Geen items op de blocklist.</p>
+                                )}
+
+                                {errors.tracker_blocklist !== undefined ? (
+                                    <p className="mt-2 text-sm text-red-600">{errors.tracker_blocklist}</p>
+                                ) : null}
+                            </fieldset>
+
+                            <details className="rounded-lg border border-gray-200 bg-gray-50/50 px-4 py-3">
+                                <summary className="cursor-pointer text-sm font-medium text-gray-900">
+                                    Meer info over de tracker
+                                </summary>
+                                <div className="mt-3 space-y-3 text-sm leading-relaxed text-gray-600">
+                                    <p>
+                                        <strong className="font-medium text-gray-800">Status:</strong>{' '}
+                                        {trackerConnectionStatusLabel({
+                                            ...tracker,
+                                            tracking_enabled: trackingEnabled,
+                                        })}
+                                    </p>
+                                    <p>
+                                        <strong className="font-medium text-gray-800">Installatie:</strong>{' '}
+                                        {tracker.download_url !== null ? (
+                                            <a
+                                                href={tracker.download_url}
+                                                className="text-red-600 underline underline-offset-2 hover:text-red-700"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                Download de tracker
+                                            </a>
+                                        ) : (
+                                            'Vraag de downloadlink aan je beheerder.'
+                                        )}
+                                        , log in met dit account en laat de app draaien.
+                                    </p>
+                                    <p>
+                                        <strong className="font-medium text-gray-800">Timesheets:</strong> ga naar{' '}
+                                        <Link
+                                            href={timesheets.url()}
+                                            className="font-medium text-gray-800 underline underline-offset-2"
+                                        >
+                                            timesheets
+                                        </Link>{' '}
+                                        en kies &ldquo;Genereer voor vandaag&rdquo;.
+                                    </p>
+                                    <p>
+                                        <strong className="font-medium text-gray-800">Privacy:</strong> venstertitels en
+                                        sessieduur, geen toetsaanslagen. Zie{' '}
+                                        <Link href={about.url()} className="underline underline-offset-2">
+                                            Over TimeTraq
+                                        </Link>{' '}
+                                        en het{' '}
+                                        <Link href={privacy.url()} className="underline underline-offset-2">
+                                            privacybeleid
+                                        </Link>
+                                        .
+                                    </p>
+                                </div>
+                            </details>
+
+                            <button type="submit" disabled={processing} className={primaryButtonClass}>
+                                {processing ? 'Opslaan…' : 'Tracker-instellingen opslaan'}
+                            </button>
+                        </>
+                    )}
+                </Form>
             </div>
         </section>
     );

@@ -25,6 +25,7 @@ use App\Http\Controllers\Settings\OrganizationSettingsController;
 use App\Http\Controllers\Settings\RemoveOrganizationMemberController;
 use App\Http\Controllers\Settings\StartNewOrganizationController;
 use App\Http\Controllers\Settings\StoreOrganizationController;
+use App\Http\Controllers\Settings\TrackerSettingsController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
@@ -131,6 +132,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('leaveRequests.revertRejection');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
+    Route::patch('/settings/tracker', TrackerSettingsController::class)
+        ->name('settings.tracker.update');
     Route::post('/settings/organization', StoreOrganizationController::class)->name('settings.organization.store');
     Route::patch('/settings/organization/employment-defaults', OrganizationEmploymentDefaultsController::class)
         ->middleware('admin')

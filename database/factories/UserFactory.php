@@ -35,6 +35,9 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'role' => UserRole::Employee,
+            'tracker_use_ai_for_proposals' => true,
+            'tracker_tracking_enabled' => true,
+            'tracker_blocklist' => [],
         ];
     }
 
