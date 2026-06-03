@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminWeeklyDebriefController;
 use App\Http\Controllers\AppPageController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\GoogleAuthController;
@@ -7,15 +8,33 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\LeaveRequestController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\OrganizationInviteAcceptController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectCreatorAccessController;
 use App\Http\Controllers\Settings\AccountSettingsController;
+use App\Http\Controllers\Settings\EmployeeEmploymentSearchController;
+use App\Http\Controllers\Settings\EmployeeEmploymentSettingsController;
+use App\Http\Controllers\Settings\EmploymentProfileController;
+use App\Http\Controllers\Settings\GrantEmployeeAdminRoleController;
+use App\Http\Controllers\Settings\OrganizationEmploymentDefaultsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
+use App\Http\Controllers\Settings\OrganizationOfficeIpsController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
+use App\Http\Controllers\Settings\RemoveOrganizationMemberController;
+use App\Http\Controllers\Settings\StartNewOrganizationController;
+use App\Http\Controllers\Settings\StoreOrganizationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
 use App\Http\Controllers\TimesheetEntryProposalController;
 use App\Http\Controllers\TimesheetTrackerWindowTitlesController;
+use App\Http\Controllers\TimyActionController;
+use App\Http\Controllers\TimyContextController;
+use App\Http\Controllers\TimyConversationController;
+use App\Http\Controllers\UpdateTaskAvailabilityController;
+use App\Http\Controllers\WeeklyStatusController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/email/verify', [VerifyEmailController::class, 'notice'])->name('verification.notice');
@@ -34,6 +53,28 @@ Route::middleware('auth')->group(function (): void {
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/', [AppPageController::class, 'dashboard'])->name('dashboard');
+    Route::post('/projects/weekly-status/draft', [WeeklyStatusController::class, 'draft'])
+        ->middleware('throttle:10,1')
+        ->name('weekly-status.draft');
+    Route::post('/projects/weekly-status', [WeeklyStatusController::class, 'store'])
+        ->name('weekly-status.store');
+    Route::patch('/dashboard/task-availability', UpdateTaskAvailabilityController::class)
+        ->name('dashboard.task-availability.update');
+    Route::get('/timy/context', TimyContextController::class)
+        ->name('timy.context');
+    Route::post('/timy/actions', [TimyActionController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('timy.actions.store');
+    Route::get('/timy/conversations', [TimyConversationController::class, 'index'])
+        ->name('timy.conversations.index');
+    Route::post('/timy/conversations', [TimyConversationController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('timy.conversations.store');
+    Route::get('/timy/conversations/{timy_conversation}', [TimyConversationController::class, 'show'])
+        ->name('timy.conversations.show');
+    Route::post('/timy/conversations/{timy_conversation}/messages', [TimyConversationController::class, 'storeMessage'])
+        ->middleware('throttle:30,1')
+        ->name('timy.conversations.messages.store');
     Route::get('/timesheets', [AppPageController::class, 'timesheets'])->name('timesheets');
     Route::get('/timesheets/tracker-window-titles', TimesheetTrackerWindowTitlesController::class)
         ->name('timesheets.tracker-window-titles');
@@ -46,20 +87,90 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::patch('/timesheets/proposals/{timesheet_entry_proposal}', [TimesheetEntryProposalController::class, 'update'])->name('timesheets.proposals.update');
     Route::post('/timesheets/proposals/{timesheet_entry_proposal}/approve', [TimesheetEntryProposalController::class, 'approve'])->name('timesheets.proposals.approve');
     Route::delete('/timesheets/proposals/{timesheet_entry_proposal}', [TimesheetEntryProposalController::class, 'destroy'])->name('timesheets.proposals.destroy');
-    Route::get('/projects', [AppPageController::class, 'projects'])->name('projects');
+    Route::get('/projects', [ProjectController::class, 'index'])->name('projects');
+    Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
+    Route::patch('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
+    Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
+    Route::patch('/projects/creator-access/{user}', [ProjectCreatorAccessController::class, 'update'])
+        ->middleware('admin')
+        ->name('projects.creator-access.update');
     Route::get('/leave-requests', [AppPageController::class, 'leaveRequests'])->name('leaveRequests');
-    Route::get('/shift-planning', [AppPageController::class, 'shiftPlanning'])->name('shiftPlanning');
+    Route::get('/admin/leave-requests', [AppPageController::class, 'adminLeaveRequests'])
+        ->middleware('admin')
+        ->name('admin.leaveRequests');
+    Route::get('/admin/weekly-debrief', [AdminWeeklyDebriefController::class, 'index'])
+        ->middleware('admin')
+        ->name('admin.weeklyDebrief');
+    Route::post('/admin/weekly-debrief/summary', [AdminWeeklyDebriefController::class, 'summarize'])
+        ->middleware('admin')
+        ->name('admin.weeklyDebrief.summarize');
+    Route::get('/admin/presence', fn () => redirect()->route('teams', ['tab' => 'people']))
+        ->middleware('admin')
+        ->name('admin.presence');
+    Route::post('/leave-requests', [LeaveRequestController::class, 'store'])->name('leaveRequests.store');
+    Route::post('/leave-requests/bulk-approve', [LeaveRequestController::class, 'bulkApprove'])
+        ->middleware('admin')
+        ->name('leaveRequests.bulkApprove');
+    Route::patch('/leave-requests/{leave_request}', [LeaveRequestController::class, 'update'])
+        ->name('leaveRequests.update');
+    Route::delete('/leave-requests/{leave_request}', [LeaveRequestController::class, 'destroy'])
+        ->name('leaveRequests.destroy');
+    Route::get('/leave-requests/{leave_request}/medical-certificate', [LeaveRequestController::class, 'medicalCertificate'])
+        ->name('leaveRequests.medicalCertificate');
+    Route::post('/leave-requests/{leave_request}/approve', [LeaveRequestController::class, 'approve'])
+        ->middleware('admin')
+        ->name('leaveRequests.approve');
+    Route::post('/leave-requests/{leave_request}/reject', [LeaveRequestController::class, 'reject'])
+        ->middleware('admin')
+        ->name('leaveRequests.reject');
+    Route::post('/leave-requests/{leave_request}/revert-approval', [LeaveRequestController::class, 'revertApproval'])
+        ->middleware('admin')
+        ->name('leaveRequests.revertApproval');
+    Route::post('/leave-requests/{leave_request}/revert-rejection', [LeaveRequestController::class, 'revertRejection'])
+        ->middleware('admin')
+        ->name('leaveRequests.revertRejection');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
-    Route::patch('/settings/organization/{organization}', OrganizationSettingsController::class)
+    Route::post('/settings/organization', StoreOrganizationController::class)->name('settings.organization.store');
+    Route::patch('/settings/organization/employment-defaults', OrganizationEmploymentDefaultsController::class)
         ->middleware('admin')
-        ->name('settings.organization.update');
-    Route::post('/settings/organization-invites', [OrganizationInviteController::class, 'store'])
-        ->middleware(['admin', 'throttle:10,1'])
-        ->name('settings.organization-invites.store');
-
+        ->name('settings.organization.employment-defaults.update');
+    Route::patch('/settings/organization/office-ips', OrganizationOfficeIpsController::class)
+        ->middleware('admin')
+        ->name('settings.organization.office-ips.update');
+    Route::post('/settings/employment-profiles', [EmploymentProfileController::class, 'store'])
+        ->middleware('admin')
+        ->name('settings.employment-profiles.store');
+    Route::patch('/settings/employment-profiles/{employment_profile}', [EmploymentProfileController::class, 'update'])
+        ->middleware('admin')
+        ->name('settings.employment-profiles.update');
+    Route::delete('/settings/employment-profiles/{employment_profile}', [EmploymentProfileController::class, 'destroy'])
+        ->middleware('admin')
+        ->name('settings.employment-profiles.destroy');
+    Route::get('/settings/employees/search', EmployeeEmploymentSearchController::class)
+        ->middleware('admin')
+        ->name('settings.employees.search');
+    Route::patch('/settings/employees/{user}/employment', [EmployeeEmploymentSettingsController::class, 'update'])
+        ->middleware('admin')
+        ->name('settings.employees.employment.update');
+    Route::post('/settings/employees/{user}/admin-role', GrantEmployeeAdminRoleController::class)
+        ->middleware('admin')
+        ->name('settings.employees.admin-role.store');
+    Route::delete('/settings/employees/{user}', RemoveOrganizationMemberController::class)
+        ->middleware('admin')
+        ->name('settings.employees.destroy');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
+    Route::patch('/teams/organization', OrganizationSettingsController::class)
+        ->middleware('admin')
+        ->name('teams.organization.update');
+    Route::post('/teams/organization/new', StartNewOrganizationController::class)
+        ->middleware('admin')
+        ->name('teams.organization.start-new');
+    Route::post('/teams/organization-invites', [OrganizationInviteController::class, 'store'])
+        ->middleware(['admin', 'throttle:10,1'])
+        ->name('teams.organization-invites.store');
     Route::post('/teams', [TeamController::class, 'store'])->middleware('admin')->name('teams.store');
+    Route::get('/teams/{team}', [TeamController::class, 'show'])->name('teams.show');
     Route::patch('/teams/{team}', [TeamController::class, 'update'])->middleware('admin')->name('teams.update');
     Route::delete('/teams/{team}', [TeamController::class, 'destroy'])->middleware('admin')->name('teams.destroy');
     Route::post('/teams/{team}/join', [TeamMembershipController::class, 'store'])->name('teams.join');
@@ -75,6 +186,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
 Route::get('/uitnodiging/{token}', OrganizationInviteAcceptController::class)
     ->name('organization-invite.show');
+
+Route::get('/privacybeleid', [LegalController::class, 'privacy'])->name('privacy');
+Route::get('/over-timetraq', [LegalController::class, 'aboutTimeTraq'])->name('about');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
@@ -92,7 +206,7 @@ Route::middleware('guest')->group(function (): void {
         ->name('password.update');
 
     Route::middleware('throttle:10,1')->group(function (): void {
-        Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])
+        Route::match(['get', 'post'], '/auth/google/redirect', [GoogleAuthController::class, 'redirect'])
             ->name('auth.google.redirect');
         Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])
             ->name('auth.google.callback');

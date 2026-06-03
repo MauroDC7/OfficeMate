@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\NormalizesTimesheetProject;
 use App\Models\TimesheetEntry;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -10,6 +11,8 @@ use Illuminate\Validation\Validator;
 
 class StoreTimesheetEntryRequest extends FormRequest
 {
+    use NormalizesTimesheetProject;
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -18,6 +21,7 @@ class StoreTimesheetEntryRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:10000'],
+            ...$this->timesheetProjectRules(),
             'client_name' => ['nullable', 'string', 'max:255'],
             'worked_on' => ['required', 'date', 'before_or_equal:today'],
             'start_minutes' => ['required', 'integer', 'min:0', 'max:1439'],
@@ -33,12 +37,12 @@ class StoreTimesheetEntryRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $description = $this->input('description');
-        $clientName = $this->input('client_name');
 
         $this->merge([
             'description' => is_string($description) && trim($description) !== '' ? trim($description) : null,
-            'client_name' => is_string($clientName) && trim($clientName) !== '' ? trim($clientName) : null,
         ]);
+
+        $this->mergeTimesheetProjectFields();
     }
 
     public function withValidator(Validator $validator): void

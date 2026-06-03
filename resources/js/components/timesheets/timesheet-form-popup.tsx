@@ -5,14 +5,17 @@ import {
     formatActivityDayLabel,
     formatMinutesRange,
 } from '@/components/timesheets/timesheet-helpers';
+import { TimesheetProjectSelect } from '@/components/timesheets/timesheet-project-select';
 import type {
     TimesheetDraft,
     TimesheetModalState,
 } from '@/components/timesheets/week-calendar-types';
+import type { TimesheetProjectOption } from '@/types/timesheets';
 
 type TimesheetFormPopupProps = {
     modal: TimesheetModalState;
     draft: TimesheetDraft;
+    projectOptions: TimesheetProjectOption[];
     trackerWindowTitles: string[];
     formError: string | null;
     serverErrors: Record<string, string>;
@@ -40,6 +43,7 @@ function modalTimeRange(modal: TimesheetModalState): {
 export function TimesheetFormPopup({
     modal,
     draft,
+    projectOptions,
     trackerWindowTitles,
     formError,
     serverErrors,
@@ -164,32 +168,13 @@ export function TimesheetFormPopup({
                             </p>
                         ) : null}
                     </div>
-                    <div>
-                        <label
-                            htmlFor="ts-client"
-                            className="text-sm font-medium text-gray-800"
-                        >
-                            Klantnaam{' '}
-                            <span className="font-normal text-gray-500">
-                                (optioneel)
-                            </span>
-                        </label>
-                        <input
-                            id="ts-client"
-                            type="text"
-                            value={draft.client}
-                            onChange={(e) =>
-                                onDraftChange('client', e.target.value)
-                            }
-                            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
-                            autoComplete="organization"
-                        />
-                        {serverErrors.client_name !== undefined ? (
-                            <p className="mt-1 text-sm text-red-600">
-                                {serverErrors.client_name}
-                            </p>
-                        ) : null}
-                    </div>
+                    <TimesheetProjectSelect
+                        id="ts-project"
+                        value={draft.projectId}
+                        options={projectOptions}
+                        onChange={(projectId) => onDraftChange('projectId', projectId)}
+                        error={serverErrors.project_id}
+                    />
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label

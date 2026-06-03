@@ -201,6 +201,7 @@ CREATE TABLE IF NOT EXISTS "teams"(
   "name" varchar not null,
   "created_at" datetime,
   "updated_at" datetime,
+  "department" varchar,
   foreign key("organization_id") references "organizations"("id") on delete cascade,
   foreign key("parent_id") references "teams"("id") on delete set null
 );
@@ -223,6 +224,7 @@ CREATE TABLE IF NOT EXISTS "users"(
   "avatar_path" varchar,
   "google_id" varchar,
   "organization_id" integer,
+  "privacy_policy_accepted_at" datetime,
   foreign key("organization_id") references "organizations"("id") on delete set null
 );
 CREATE UNIQUE INDEX "users_email_unique" on "users"("email");
@@ -231,18 +233,35 @@ CREATE UNIQUE INDEX "users_username_unique" on "users"("username");
 CREATE TABLE IF NOT EXISTS "organization_invites"(
   "id" integer primary key autoincrement not null,
   "organization_id" integer not null,
-  "code" varchar not null,
   "created_by_user_id" integer not null,
   "redeemed_at" datetime,
   "redeemed_by_user_id" integer,
   "created_at" datetime,
   "updated_at" datetime,
+  "email" varchar not null,
+  "token" varchar not null,
+  "expires_at" datetime not null,
   foreign key("organization_id") references "organizations"("id") on delete cascade,
   foreign key("created_by_user_id") references "users"("id") on delete cascade,
   foreign key("redeemed_by_user_id") references "users"("id") on delete set null
 );
-CREATE UNIQUE INDEX "organization_invites_code_unique" on "organization_invites"(
-  "code"
+CREATE UNIQUE INDEX "organization_invites_token_unique" on "organization_invites"(
+  "token"
+);
+CREATE TABLE IF NOT EXISTS "notifications"(
+  "id" varchar not null,
+  "type" varchar not null,
+  "notifiable_type" varchar not null,
+  "notifiable_id" integer not null,
+  "data" text not null,
+  "read_at" datetime,
+  "created_at" datetime,
+  "updated_at" datetime,
+  primary key("id")
+);
+CREATE INDEX "notifications_notifiable_type_notifiable_id_index" on "notifications"(
+  "notifiable_type",
+  "notifiable_id"
 );
 
 INSERT INTO migrations VALUES(1,'0001_01_01_000000_create_users_table',1);
@@ -263,3 +282,10 @@ INSERT INTO migrations VALUES(15,'2026_05_19_142926_create_team_memberships_tabl
 INSERT INTO migrations VALUES(16,'2026_05_19_142926_create_teams_table',5);
 INSERT INTO migrations VALUES(17,'2026_05_19_144603_add_organization_id_to_users_table',6);
 INSERT INTO migrations VALUES(18,'2026_05_19_144603_create_organization_invites_table',6);
+INSERT INTO migrations VALUES(19,'2026_05_19_142927_create_team_memberships_table',7);
+INSERT INTO migrations VALUES(20,'2026_05_20_125038_replace_organization_invite_codes_with_email_invites',8);
+INSERT INTO migrations VALUES(21,'2026_05_24_130410_add_approved_at_to_users_table',8);
+INSERT INTO migrations VALUES(22,'2026_05_24_140746_create_notifications_table',8);
+INSERT INTO migrations VALUES(23,'2026_05_24_150000_remove_approved_at_from_users_table',9);
+INSERT INTO migrations VALUES(24,'2026_05_25_195311_add_department_to_teams_table',10);
+INSERT INTO migrations VALUES(25,'2026_05_25_213951_add_privacy_policy_accepted_at_to_users_table',11);

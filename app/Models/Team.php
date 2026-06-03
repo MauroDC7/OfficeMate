@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @use HasFactory<TeamFactory>
  */
-#[Fillable(['organization_id', 'parent_id', 'name'])]
+#[Fillable(['organization_id', 'parent_id', 'name', 'department'])]
 class Team extends Model
 {
     /** @use HasFactory<TeamFactory> */
@@ -48,5 +49,13 @@ class Team extends Model
     public function memberships(): HasMany
     {
         return $this->hasMany(TeamMembership::class);
+    }
+
+    /**
+     * @return BelongsToMany<Project, $this>
+     */
+    public function projects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class)->withTimestamps();
     }
 }

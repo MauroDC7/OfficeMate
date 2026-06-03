@@ -6,12 +6,12 @@ use App\Models\Organization;
 use App\Models\Team;
 use App\Models\TeamMembership;
 use App\Models\User;
-use App\Services\OrganizationContext;
 
 it('shows teams page for employees with organization context', function () {
     $organization = Organization::factory()->create(['name' => 'Acme']);
     $employee = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
     $team = Team::factory()->for($organization)->create(['name' => 'Engineering']);
+    TeamMembership::factory()->for($team)->for($employee)->approved()->create();
 
     $this->actingAs($employee)
         ->get(route('teams'))
@@ -20,8 +20,34 @@ it('shows teams page for employees with organization context', function () {
             ->component('teams')
             ->where('organization.name', 'Acme')
             ->where('isAdmin', false)
-            ->has('teams', 1)
-            ->where('teams.0.name', 'Engineering'));
+            ->has('teamCards', 1)
+            ->where('teamCards.0.name', 'Engineering'));
+});
+
+it('hides teams from employees who are not members', function () {
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+    Team::factory()->for($organization)->create(['name' => 'Hidden Squad']);
+
+    $this->actingAs($employee)
+        ->get(route('teams'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('teamCards', 0));
+});
+
+it('shows all organization teams to admins', function () {
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->forOrganization($organization)->create(['role' => UserRole::Admin]);
+    Team::factory()->for($organization)->create(['name' => 'Alpha']);
+    Team::factory()->for($organization)->create(['name' => 'Beta']);
+
+    $this->actingAs($admin)
+        ->get(route('teams'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('isAdmin', true)
+            ->has('teamCards', 2));
 });
 
 it('prompts employees without organization to use settings', function () {
@@ -58,23 +84,93 @@ it('forbids employees from creating teams', function () {
         ->assertForbidden();
 });
 
-it('allows admins to create teams', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+it('allows admins to update teams with members', function () {
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
+    $team = Team::factory()->for($organization)->create([
+        'name' => 'Support',
+        'department' => 'Operations',
+    ]);
+    $kept = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+    $added = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+    $removed = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+
+    TeamMembership::factory()->for($team)->for($kept)->approved()->create();
+    TeamMembership::factory()->for($team)->for($removed)->approved()->create();
 
     $this->actingAs($admin)
-        ->post(route('teams.store'), ['name' => 'Sales'])
+        ->patch(route('teams.update', $team), [
+            'name' => 'Support & Care',
+            'department' => 'Customer success',
+            'member_ids' => [$kept->id, $added->id],
+        ])
+        ->assertRedirect(route('teams.show', $team));
+
+    $team->refresh();
+
+    expect($team->name)->toBe('Support & Care')
+        ->and($team->department)->toBe('Customer success');
+
+    $this->assertDatabaseHas('team_memberships', [
+        'team_id' => $team->id,
+        'user_id' => $kept->id,
+        'status' => TeamMembershipStatus::Approved->value,
+    ]);
+
+    $this->assertDatabaseHas('team_memberships', [
+        'team_id' => $team->id,
+        'user_id' => $added->id,
+        'status' => TeamMembershipStatus::Approved->value,
+    ]);
+
+    $this->assertDatabaseMissing('team_memberships', [
+        'team_id' => $team->id,
+        'user_id' => $removed->id,
+        'status' => TeamMembershipStatus::Approved->value,
+    ]);
+});
+
+it('includes member ids on team cards for admins', function () {
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
+    $team = Team::factory()->for($organization)->create();
+    $employee = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+    TeamMembership::factory()->for($team)->for($employee)->approved()->create();
+
+    $this->actingAs($admin)
+        ->get(route('teams'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('teamCards.0.member_ids', [$employee->id]));
+});
+
+it('allows admins to create teams with members', function () {
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
+    $colleague = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+
+    $this->actingAs($admin)
+        ->post(route('teams.store'), [
+            'name' => 'Sales',
+            'department' => 'Commercial',
+            'member_ids' => [$colleague->id],
+        ])
         ->assertRedirect(route('teams'));
 
-    $this->assertDatabaseHas('teams', [
-        'organization_id' => $organization->id,
-        'name' => 'Sales',
-        'parent_id' => null,
+    $team = Team::query()->where('name', 'Sales')->first();
+
+    expect($team)->not->toBeNull()
+        ->and($team->department)->toBe('Commercial');
+
+    $this->assertDatabaseHas('team_memberships', [
+        'team_id' => $team->id,
+        'user_id' => $colleague->id,
+        'status' => TeamMembershipStatus::Approved->value,
     ]);
 });
 
 it('allows admins to approve pending memberships', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $admin = User::factory()->admin()->create();
     $membership = TeamMembership::factory()->pending()->create();
 
     $this->actingAs($admin)
@@ -85,7 +181,7 @@ it('allows admins to approve pending memberships', function () {
 });
 
 it('allows admins to reject pending memberships', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $admin = User::factory()->admin()->create();
     $membership = TeamMembership::factory()->pending()->create();
 
     $this->actingAs($admin)
@@ -123,8 +219,8 @@ it('lets rejected employees request membership again', function () {
 });
 
 it('shows pending memberships for admins on the teams page', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
     $employee = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
     $team = Team::factory()->for($organization)->create(['name' => 'Support']);
     TeamMembership::factory()->for($team)->for($employee)->pending()->create();
@@ -140,26 +236,25 @@ it('shows pending memberships for admins on the teams page', function () {
             ->where('pendingMemberships.0.user.email', $employee->email));
 });
 
-it('allows admins to update organization name from settings', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
+it('allows admins to update organization name from teams', function () {
     $organization = Organization::factory()->create(['name' => 'Acme BV']);
-    $admin->forceFill(['organization_id' => $organization->id])->save();
+    $admin = User::factory()->admin($organization)->create();
 
     $this->actingAs($admin)
-        ->patch(route('settings.organization.update', $organization), [
+        ->patch(route('teams.organization.update'), [
             'name' => 'Acme International',
         ])
-        ->assertRedirect(route('settings'));
+        ->assertRedirect(route('teams'));
 
     expect($organization->fresh()->name)->toBe('Acme International');
 });
 
 it('forbids employees from updating organization settings', function () {
     $employee = User::factory()->create(['role' => UserRole::Employee]);
-    $organization = Organization::factory()->create();
+    Organization::factory()->create();
 
     $this->actingAs($employee)
-        ->patch(route('settings.organization.update', $organization), [
+        ->patch(route('teams.organization.update'), [
             'name' => 'Hacked Inc',
         ])
         ->assertForbidden();

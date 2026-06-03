@@ -66,6 +66,8 @@ export default function Dashboard() {
         openLeaveDays,
         pendingLeaveRequestCount,
         weekStart,
+        teamLeaveThisWeek,
+        hasOrganization,
         recentNotifications,
     } = usePage<EmployeeDashboardProps>().props;
 
@@ -113,7 +115,10 @@ export default function Dashboard() {
                         />
                     </div>
 
-                    <DashboardTeamAgendaSnippet />
+                    <DashboardTeamAgendaSnippet
+                        teamLeaveThisWeek={teamLeaveThisWeek}
+                        hasOrganization={hasOrganization}
+                    />
 
                     <DashboardNotificationsPanel
                         notifications={recentNotifications}

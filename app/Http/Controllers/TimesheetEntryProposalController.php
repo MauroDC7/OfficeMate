@@ -58,6 +58,7 @@ final class TimesheetEntryProposalController extends Controller
         $timesheetEntryProposal->update($request->safe()->only([
             'title',
             'description',
+            'project_id',
             'client_name',
             'worked_on',
             'start_minutes',
@@ -101,6 +102,7 @@ final class TimesheetEntryProposalController extends Controller
                 'worked_on' => $timesheetEntryProposal->worked_on->toDateString(),
                 'title' => $timesheetEntryProposal->title,
                 'description' => $timesheetEntryProposal->description,
+                'project_id' => $timesheetEntryProposal->project_id,
                 'client_name' => $timesheetEntryProposal->client_name,
                 'start_minutes' => $timesheetEntryProposal->start_minutes,
                 'end_minutes' => $timesheetEntryProposal->end_minutes,

@@ -5,21 +5,20 @@ use App\Models\Organization;
 use App\Models\OrganizationInvite;
 use App\Models\User;
 use App\Notifications\OrganizationInviteNotification;
-use App\Services\OrganizationContext;
 use App\Services\OrganizationInviteService;
 use Illuminate\Support\Facades\Notification;
 
 it('lets admins send an email invite', function () {
     Notification::fake();
 
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
-    $organization = app(OrganizationContext::class)->forUser($admin);
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
 
     $this->actingAs($admin)
-        ->post(route('settings.organization-invites.store'), [
+        ->post(route('teams.organization-invites.store'), [
             'email' => 'nieuw@example.com',
         ])
-        ->assertRedirect(route('settings'))
+        ->assertRedirect(route('teams'))
         ->assertSessionHas('status');
 
     $this->assertDatabaseHas('organization_invites', [
@@ -55,13 +54,41 @@ it('accepts an invite when a new user registers after opening the link', functio
         'email' => 'medewerker@example.com',
         'password' => 'Password123!',
         'password_confirmation' => 'Password123!',
-    ])->assertRedirect(route('dashboard'));
+        'privacy_policy_accepted' => '1',
+    ])->assertRedirect(route('verification.notice'));
 
     $user = User::query()->where('email', 'medewerker@example.com')->first();
 
     expect($user?->organization_id)->toBe($organization->id);
     expect($invite->fresh()->redeemed_at)->not->toBeNull();
     expect($invite->fresh()->redeemed_by_user_id)->toBe($user?->id);
+});
+
+it('applies organization employment defaults when an invite is accepted', function () {
+    Notification::fake();
+
+    $organization = Organization::factory()->create([
+        'default_weekly_work_hours' => 36,
+        'default_annual_leave_days' => 22,
+    ]);
+    $admin = User::factory()->forOrganization($organization)->create(['role' => UserRole::Admin]);
+    $employee = User::factory()->create([
+        'role' => UserRole::Employee,
+        'email' => 'nieuw@example.com',
+    ]);
+
+    app(OrganizationInviteService::class)->send($organization, $admin, 'nieuw@example.com');
+
+    $invite = OrganizationInvite::query()->where('email', 'nieuw@example.com')->firstOrFail();
+
+    app(OrganizationInviteService::class)->accept($employee, $invite->token);
+
+    expect($employee->fresh())
+        ->weekly_work_hours->toBe(36)
+        ->annual_leave_days->toBe(22)
+        ->employment_profile_id->toBeNull()
+        ->organization_joined_at->not->toBeNull()
+        ->employment_setup_completed_at->toBeNull();
 });
 
 it('accepts an invite when an existing user logs in after opening the link', function () {
@@ -119,7 +146,7 @@ it('forbids employees from sending invites', function () {
     $employee = User::factory()->create(['role' => UserRole::Employee]);
 
     $this->actingAs($employee)
-        ->post(route('settings.organization-invites.store'), [
+        ->post(route('teams.organization-invites.store'), [
             'email' => 'iemand@example.com',
         ])
         ->assertForbidden();
@@ -130,6 +157,12 @@ it('shows awaiting invite message for employees without an organization', functi
 
     $this->actingAs($employee)
         ->get(route('settings'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('awaitingOrganizationInvite', true));
+
+    $this->actingAs($employee)
+        ->get(route('teams'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('awaitingOrganizationInvite', true)

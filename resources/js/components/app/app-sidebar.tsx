@@ -7,20 +7,18 @@ import {
     leaveRequests,
     projects,
     settings,
-    shiftPlanning,
     teams,
     timesheets,
 } from '@/routes';
+import { leaveRequests as adminLeaveRequests } from '@/routes/admin';
 
 const row = 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition';
 
-const links = [
+const baseLinks = [
     { label: 'Dashboard', route: dashboard, src: '/img/Dashboard Icon 24.png' },
     { label: 'Timesheets', route: timesheets, src: '/img/Timesheet Icon Collection.png' },
     { label: 'Projects', route: projects, src: '/img/Folder Icon 24.png' },
     { label: 'Teams', route: teams, src: '/img/Work Icons Material Outlined.png' },
-    { label: 'Leave requests', route: leaveRequests, src: '/img/Calendar Icons Material Outlined.png' },
-    { label: 'Shift planning', route: shiftPlanning, src: '/img/Work Icons Material Outlined.png' },
     { label: 'Settings', route: settings, src: '/img/Settings Icon 24.png' },
 ] as const;
 
@@ -40,6 +38,16 @@ export function AppSidebar({ isMobileOpen, onCloseMobile }: AppSidebarProps) {
     const here = pathOnly(page.url);
     const role = page.props.auth.user?.role;
     const roleLabel = role === 'admin' ? 'Beheerder' : role === 'employee' ? 'Medewerker' : null;
+
+    const links = [
+        ...baseLinks.slice(0, 4),
+        {
+            label: role === 'admin' ? 'Verlofbeheer' : 'Leave requests',
+            route: role === 'admin' ? adminLeaveRequests : leaveRequests,
+            src: '/img/Calendar Icons Material Outlined.png',
+        },
+        ...baseLinks.slice(4),
+    ];
 
     useEffect(() => {
         if (!isMobileOpen) {

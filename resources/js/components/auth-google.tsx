@@ -1,4 +1,8 @@
+import { Form } from '@inertiajs/react';
 import type { ReactNode } from 'react';
+
+import { cn } from '@/lib/utils';
+import { redirect as googleRedirect } from '@/routes/auth/google';
 
 export function AuthOrDivider(): ReactNode {
     return (
@@ -56,15 +60,49 @@ export function AuthGoogleButton({
 
 type AuthGoogleSectionProps = {
     buttonLabel?: string;
+    requirePrivacyAcceptance?: boolean;
+    privacyAccepted?: boolean;
 };
 
 export function AuthGoogleSection({
     buttonLabel = 'Inloggen met Google',
+    requirePrivacyAcceptance = false,
+    privacyAccepted = false,
 }: AuthGoogleSectionProps): ReactNode {
+    const disabled = requirePrivacyAcceptance && !privacyAccepted;
+
     return (
         <>
             <AuthOrDivider />
-            <AuthGoogleButton label={buttonLabel} />
+            {requirePrivacyAcceptance ? (
+                <Form
+                    {...googleRedirect.form.post()}
+                    className={cn(disabled && 'pointer-events-none opacity-50')}
+                >
+                    {() => (
+                        <>
+                            <input
+                                type="hidden"
+                                name="privacy_policy_accepted"
+                                value={privacyAccepted ? '1' : '0'}
+                            />
+                            <button
+                                type="submit"
+                                disabled={disabled}
+                                className={cn(
+                                    googleButtonClassName,
+                                    'disabled:cursor-not-allowed disabled:opacity-60',
+                                )}
+                            >
+                                <GoogleIcon />
+                                {buttonLabel}
+                            </button>
+                        </>
+                    )}
+                </Form>
+            ) : (
+                <AuthGoogleButton label={buttonLabel} />
+            )}
         </>
     );
 }

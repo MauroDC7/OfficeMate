@@ -29,6 +29,11 @@ return [
     ],
 
     'slack' => [
+        'incoming_webhook_url' => env('SLACK_INCOMING_WEBHOOK_URL'),
+        'app_id' => env('SLACK_APP_ID'),
+        'client_id' => env('SLACK_CLIENT_ID'),
+        'client_secret' => env('SLACK_CLIENT_SECRET'),
+        'signing_secret' => env('SLACK_SIGNING_SECRET'),
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
@@ -46,6 +51,23 @@ return [
 
     'timesheets' => [
         'timezone' => env('TIMESHEETS_TIMEZONE', 'Europe/Brussels'),
+    ],
+
+    'weekly_debrief' => [
+        'reminder_weekday' => (int) env('WEEKLY_DEBRIEF_REMINDER_WEEKDAY', 5),
+        'reminder_time' => env('WEEKLY_DEBRIEF_REMINDER_TIME', '15:00'),
+    ],
+
+    'timetraq' => [
+        'tracker_download_url' => env('TIMETRAQ_TRACKER_DOWNLOAD_URL'),
+    ],
+
+    /*
+    | Combell HTTP cron (public/jobs/task.php?token=...). Genereer een lang geheim
+    | (bijv. php artisan str:random 64) en gebruik dezelfde waarde in de cron-URL.
+    */
+    'cron' => [
+        'secret' => env('CRON_SECRET'),
     ],
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),

@@ -11,6 +11,9 @@ export type DashboardNotification = {
     created_at: string;
 };
 
+import type { TeamLeaveItem } from '@/types/leave-requests';
+import type { AdminDashboardPresenceSummary } from '@/types/presence';
+
 export type EmployeeDashboardProps = {
     activeProjects: DashboardProject[];
     pendingTimesheetCount: number;
@@ -18,6 +21,8 @@ export type EmployeeDashboardProps = {
     openLeaveDays: number;
     pendingLeaveRequestCount: number;
     weekStart: string;
+    teamLeaveThisWeek: TeamLeaveItem[];
+    hasOrganization: boolean;
     recentNotifications: DashboardNotification[];
 };
 
@@ -38,11 +43,19 @@ export type AdminDashboardCurrentLeave = {
     id: number;
     starts_on: string;
     ends_on: string;
-    label: string | null;
+    type: string;
+    type_label: string;
     user: {
         id: number;
         name: string;
     };
+};
+
+export type AdminDashboardEmployeeNeedingEmploymentSetup = {
+    id: number;
+    name: string;
+    email: string;
+    joined_at: string;
 };
 
 export type AdminDashboardProps = {
@@ -57,4 +70,7 @@ export type AdminDashboardProps = {
     weekStart: string;
     pendingMemberships: AdminDashboardPendingMembership[];
     currentLeave: AdminDashboardCurrentLeave[];
+    employmentSetupCount: number;
+    employeesNeedingEmploymentSetup: AdminDashboardEmployeeNeedingEmploymentSetup[];
+    presenceSummary: AdminDashboardPresenceSummary;
 };

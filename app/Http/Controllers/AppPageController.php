@@ -7,10 +7,15 @@ use App\Models\TimesheetEntry;
 use App\Models\TimesheetEntryProposal;
 use App\Models\User;
 use App\Services\AdminDashboardStats;
+use App\Services\AdminLeaveRequestPageData;
 use App\Services\EmployeeDashboardStats;
+use App\Services\LeaveRequestPageData;
 use App\Services\OrganizationContext;
+use App\Services\SettingsPageData;
 use App\Services\TimesheetEntryWindowTitlesResolver;
+use App\Services\TimesheetProjectNormalizer;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -41,6 +46,7 @@ final class AppPageController extends Controller
     public function timesheets(
         Request $request,
         TimesheetEntryWindowTitlesResolver $windowTitlesResolver,
+        TimesheetProjectNormalizer $timesheetProjectNormalizer,
     ): Response {
         $user = $request->user();
 
@@ -55,6 +61,7 @@ final class AppPageController extends Controller
         $entries = TimesheetEntry::query()
             ->where('user_id', $user->id)
             ->whereBetween('worked_on', [$monday->toDateString(), $weekEnd->toDateString()])
+            ->with('project:id,name,client_name')
             ->orderBy('worked_on')
             ->orderBy('start_minutes')
             ->get();
@@ -69,6 +76,8 @@ final class AppPageController extends Controller
                         'id' => $e->id,
                         'title' => $e->title,
                         'description' => $e->description,
+                        'project_id' => $e->project_id,
+                        'project_name' => $e->project?->name,
                         'client_name' => $e->client_name,
                         'worked_on' => $e->worked_on->format('Y-m-d'),
                         'start_minutes' => $e->start_minutes,
@@ -102,6 +111,7 @@ final class AppPageController extends Controller
         $proposals = TimesheetEntryProposal::query()
             ->where('user_id', $user->id)
             ->whereBetween('worked_on', [$monday->toDateString(), $proposalWeekEnd->toDateString()])
+            ->with('project:id,name,client_name')
             ->orderBy('worked_on')
             ->orderBy('start_minutes')
             ->get()
@@ -109,6 +119,8 @@ final class AppPageController extends Controller
                 'id' => $p->id,
                 'title' => $p->title,
                 'description' => $p->description,
+                'project_id' => $p->project_id,
+                'project_name' => $p->project?->name,
                 'client_name' => $p->client_name,
                 'worked_on' => $p->worked_on->format('Y-m-d'),
                 'start_minutes' => $p->start_minutes,
@@ -124,6 +136,7 @@ final class AppPageController extends Controller
             'entriesByDay' => $entriesByDay,
             'recentActivity' => $recentActivity,
             'proposals' => $proposals,
+            'projectOptions' => $timesheetProjectNormalizer->optionsFor($user),
             'openEntryId' => $openEntryId,
         ]);
     }
@@ -143,33 +156,36 @@ final class AppPageController extends Controller
         }
     }
 
-    public function projects(): Response
-    {
-        return Inertia::render('projects');
-    }
-
-    public function leaveRequests(): Response
-    {
-        return Inertia::render('leaveRequests');
-    }
-
-    public function shiftPlanning(): Response
-    {
-        return Inertia::render('shiftPlanning');
-    }
-
-    public function settings(Request $request, OrganizationContext $organizationContext): Response
+    public function leaveRequests(Request $request, LeaveRequestPageData $leaveRequestPageData): Response|RedirectResponse
     {
         $user = $request->user();
         abort_unless($user instanceof User, 401);
 
-        $org = $organizationContext->forUser($user);
+        if ($user->role === UserRole::Admin) {
+            return redirect()->route('admin.leaveRequests');
+        }
 
-        return Inertia::render('settings', [
-            'organization' => $org !== null
-                ? ['id' => $org->id, 'name' => $org->name]
-                : null,
-            'awaitingOrganizationInvite' => $user->role !== UserRole::Admin && $user->organization_id === null,
-        ]);
+        return Inertia::render('leaveRequests', $leaveRequestPageData->forUser($user));
+    }
+
+    public function adminLeaveRequests(
+        Request $request,
+        AdminLeaveRequestPageData $adminLeaveRequestPageData,
+        OrganizationContext $organizationContext,
+    ): Response {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        $organization = $organizationContext->forUserOrFail($user);
+
+        return Inertia::render(
+            'admin/leaveRequests',
+            $adminLeaveRequestPageData->forOrganization($organization, $request),
+        );
+    }
+
+    public function settings(Request $request, SettingsPageData $settingsPageData): Response
+    {
+        return Inertia::render('settings', $settingsPageData->forRequest($request));
     }
 }

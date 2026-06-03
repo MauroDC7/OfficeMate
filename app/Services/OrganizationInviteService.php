@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\OrganizationInvite;
 use App\Models\User;
 use App\Notifications\OrganizationInviteNotification;
+use App\Services\Slack\SlackIncomingWebhook;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -14,6 +15,11 @@ use Illuminate\Validation\ValidationException;
 final class OrganizationInviteService
 {
     private const int EXPIRE_DAYS = 7;
+
+    public function __construct(
+        private readonly SlackIncomingWebhook $slackIncomingWebhook,
+        private readonly EmployeeEmploymentAssigner $employmentAssigner,
+    ) {}
 
     public function send(Organization $organization, User $createdBy, string $email): void
     {
@@ -53,6 +59,8 @@ final class OrganizationInviteService
 
         Notification::route('mail', $email)
             ->notify(new OrganizationInviteNotification($invite, $token));
+
+        $this->notifySlackInviteSent($invite->organization->name);
     }
 
     public function findValidInvite(string $rawToken): ?OrganizationInvite
@@ -93,16 +101,28 @@ final class OrganizationInviteService
             ]);
         }
 
-        return DB::transaction(function () use ($user, $invite): Organization {
-            $user->forceFill(['organization_id' => $invite->organization_id])->save();
+        $organization = DB::transaction(function () use ($user, $invite): Organization {
+            $organization = $invite->organization()->firstOrFail();
+
+            $user->forceFill([
+                'organization_id' => $invite->organization_id,
+                'organization_joined_at' => now(),
+                'employment_setup_completed_at' => null,
+            ])->save();
+
+            $this->employmentAssigner->applyOrganizationDefaults($user->fresh(), $organization);
 
             $invite->update([
                 'redeemed_at' => now(),
                 'redeemed_by_user_id' => $user->id,
             ]);
 
-            return $invite->organization()->firstOrFail();
+            return $organization;
         });
+
+        $this->notifySlackInviteAccepted($organization->name);
+
+        return $organization;
     }
 
     public function tryAcceptFromSession(User $user): bool
@@ -122,5 +142,26 @@ final class OrganizationInviteService
         session()->forget('organization_invite_token');
 
         return true;
+    }
+
+    private function notifySlackInviteSent(string $organizationName): void
+    {
+        $label = config('app.name', 'TimeTraq');
+
+        $this->slackIncomingWebhook->send(
+            sprintf('*%s* — nieuwe uitnodiging verstuurd voor organisatie *%s*.', $label, $organizationName),
+            username: $label,
+        );
+    }
+
+    private function notifySlackInviteAccepted(string $organizationName): void
+    {
+        $label = config('app.name', 'TimeTraq');
+
+        $this->slackIncomingWebhook->send(
+            sprintf('*%s* — uitnodiging geaccepteerd voor organisatie *%s*.', $label, $organizationName),
+            username: $label,
+            iconEmoji: ':white_check_mark:',
+        );
     }
 }

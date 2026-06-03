@@ -2,13 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { OneDayCalendarColumn } from '@/components/timesheets/one-day-calendar-column';
 import {
-    DISPLAY_DAY_END_MIN,
-    DISPLAY_DAY_START_MIN,
-    DISPLAY_HOUR_INDICES,
-    DISPLAY_SLOT_COUNT,
     gridTemplateColumnsForDayCount,
     SLOT_HEIGHT_PX,
 } from '@/components/timesheets/timesheet-grid-config';
+import type { TimesheetGridDisplay } from '@/components/timesheets/timesheet-grid-display';
 import {
     currentMinutesSinceMidnight,
     dayKey,
@@ -24,17 +21,24 @@ const NOW_LINE_REFRESH_MS = 30_000;
 type TimesheetWeekBodyProps = {
     visibleDays: Date[];
     entriesByDay: Record<string, TimesheetEntryPayload[]>;
+    gridDisplay: TimesheetGridDisplay;
     onSlotClick: (dayKey: string, startMin: number, endMin: number) => void;
     onEntryClick: (dayKey: string, entry: TimesheetEntryPayload) => void;
 };
 
-function HourLabelsColumn({ timelineHeightPx }: { timelineHeightPx: number }) {
+function HourLabelsColumn({
+    timelineHeightPx,
+    gridDisplay,
+}: {
+    timelineHeightPx: number;
+    gridDisplay: TimesheetGridDisplay;
+}) {
     return (
         <div className="relative shrink-0 border-e border-gray-200 bg-gray-50/80">
-            {DISPLAY_HOUR_INDICES.map((hour) => {
+            {gridDisplay.hourIndices.map((hour) => {
                 const startMin = hour * 60;
-                const top = minutesToTimelineY(startMin, timelineHeightPx);
-                const isFirstHour = hour === DISPLAY_HOUR_INDICES[0];
+                const top = minutesToTimelineY(startMin, timelineHeightPx, gridDisplay);
+                const isFirstHour = hour === gridDisplay.hourIndices[0];
 
                 return (
                     <span
@@ -72,23 +76,24 @@ function useNowMinutes(): number {
 export function TimesheetWeekBody({
     visibleDays,
     entriesByDay,
+    gridDisplay,
     onSlotClick,
     onEntryClick,
 }: TimesheetWeekBodyProps) {
-    const timelineHeightPx = DISPLAY_SLOT_COUNT * SLOT_HEIGHT_PX;
+    const timelineHeightPx = gridDisplay.slotCount * SLOT_HEIGHT_PX;
     const gridStyle = {
         gridTemplateColumns: gridTemplateColumnsForDayCount(visibleDays.length),
     };
 
     const slotIndices = useMemo(
-        () => Array.from({ length: DISPLAY_SLOT_COUNT }, (_, i) => i),
-        [],
+        () => Array.from({ length: gridDisplay.slotCount }, (_, i) => i),
+        [gridDisplay.slotCount],
     );
 
     const nowMinutes = useNowMinutes();
     const nowWithinDisplay =
-        nowMinutes >= DISPLAY_DAY_START_MIN && nowMinutes < DISPLAY_DAY_END_MIN;
-    const nowTopPx = minutesToTimelineY(nowMinutes, timelineHeightPx);
+        nowMinutes >= gridDisplay.dayStartMin && nowMinutes < gridDisplay.dayEndMin;
+    const nowTopPx = minutesToTimelineY(nowMinutes, timelineHeightPx, gridDisplay);
 
     return (
         <div className="max-h-[min(72svh,56rem)] overflow-y-auto overscroll-contain rounded-b-xl">
@@ -96,7 +101,10 @@ export function TimesheetWeekBody({
                 className="grid bg-white"
                 style={{ ...gridStyle, minHeight: timelineHeightPx }}
             >
-                <HourLabelsColumn timelineHeightPx={timelineHeightPx} />
+                <HourLabelsColumn
+                    timelineHeightPx={timelineHeightPx}
+                    gridDisplay={gridDisplay}
+                />
                 {visibleDays.map((day) => {
                     const key = dayKey(day);
                     const showNowLine = nowWithinDisplay && isToday(day);
@@ -108,6 +116,7 @@ export function TimesheetWeekBody({
                             entries={entriesByDay[key] ?? []}
                             timelineHeightPx={timelineHeightPx}
                             slotIndices={slotIndices}
+                            gridDisplay={gridDisplay}
                             showNowLine={showNowLine}
                             nowTopPx={nowTopPx}
                             onSlotClick={onSlotClick}

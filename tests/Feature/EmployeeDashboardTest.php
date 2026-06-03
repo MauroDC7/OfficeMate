@@ -53,7 +53,7 @@ it('shows employee dashboard stats', function () {
 });
 
 it('renders admin dashboard for administrators', function () {
-    $admin = User::factory()->create(['role' => UserRole::Admin]);
+    $admin = User::factory()->admin()->create();
 
     $this->actingAs($admin)
         ->get(route('dashboard'))
