@@ -1,11 +1,13 @@
 import { router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useAlert } from '@/components/alert';
 import {
-    type CalendarView,
-    parseCalendarQueryFromUrl,
+    
+    parseCalendarQueryFromUrl
 } from '@/components/timesheets/calendar-view';
-import { useIsMobileViewport } from '@/lib/use-media-query';
+import type {CalendarView} from '@/components/timesheets/calendar-view';
+import { fetchTrackerWindowTitles } from '@/components/timesheets/fetch-tracker-window-titles';
 import {
     addDaysToYmd,
     addWeeksToYmd,
@@ -20,15 +22,14 @@ import {
     parseYmdLocal,
     resolveFocusDayYmd,
 } from '@/components/timesheets/timesheet-helpers';
+import { TIMESHEET_LIST_PROPS } from '@/components/timesheets/timesheet-list-props';
 import type {
     TimesheetDraft,
     TimesheetModalState,
     TimesheetWeekCalendarProps,
 } from '@/components/timesheets/week-calendar-types';
 import { emptyDraft } from '@/components/timesheets/week-calendar-types';
-import { fetchTrackerWindowTitles } from '@/components/timesheets/fetch-tracker-window-titles';
-import { TIMESHEET_LIST_PROPS } from '@/components/timesheets/timesheet-list-props';
-import { useAlert } from '@/components/alert';
+import { useIsMobileViewport } from '@/lib/use-media-query';
 import { timesheets } from '@/routes';
 import { destroy, store, update } from '@/routes/timesheets/entries';
 import type {
@@ -126,10 +127,6 @@ export function useTimesheetWeekCalendar({
 
     const displayedEntriesByDay = optimisticEntriesByDay ?? entriesByDay;
 
-    useEffect(() => {
-        setOptimisticEntriesByDay(null);
-    }, [weekStart]);
-
     const [modal, setModal] = useState<TimesheetModalState | null>(null);
     const [draft, setDraft] = useState<TimesheetDraft>(() => emptyDraft());
     const [formError, setFormError] = useState<string | null>(null);
@@ -141,7 +138,11 @@ export function useTimesheetWeekCalendar({
     const openedEntryKeyRef = useRef<string | null>(null);
 
     useEffect(() => {
-        setViewState(readViewState(weekStart, pageUrl, isMobileViewport));
+        const next = readViewState(weekStart, pageUrl, isMobileViewport);
+
+        queueMicrotask(() => {
+            setViewState(next);
+        });
     }, [weekStart, pageUrl, isMobileViewport]);
 
     const visibleDays = useMemo(

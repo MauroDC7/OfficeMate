@@ -188,7 +188,6 @@ export default function AdminDashboard() {
                                         <Link
                                             href={`${settings.url({
                                                 query: { employee: employee.id },
-                                                mergeQuery: false,
                                             })}#employment-exception`}
                                             className="inline-flex shrink-0 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
                                         >

@@ -3,7 +3,6 @@ import {
     timesheetProjectLabel,
 } from '@/components/timesheets/timesheet-helpers';
 import type { EntryInteractionMode } from '@/components/timesheets/timesheet-entry-range';
-import type { TimesheetGridDisplay } from '@/components/timesheets/timesheet-grid-display';
 import { cn } from '@/lib/utils';
 import type { TimesheetEntryPayload } from '@/types/timesheets';
 

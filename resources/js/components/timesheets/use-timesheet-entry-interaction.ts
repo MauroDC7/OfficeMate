@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
     DRAG_CLICK_THRESHOLD_PX,
-    type EntryInteractionMode,
-    type EntryRange,
+    
+    
     rangeForMove,
     rangeForResizeEnd,
-    rangeForResizeStart,
+    rangeForResizeStart
 } from '@/components/timesheets/timesheet-entry-range';
+import type {EntryInteractionMode, EntryRange} from '@/components/timesheets/timesheet-entry-range';
 import type { TimesheetGridDisplay } from '@/components/timesheets/timesheet-grid-display';
 import type { TimesheetEntryPayload } from '@/types/timesheets';
 
@@ -97,8 +98,25 @@ export function useTimesheetEntryInteraction({
     );
     const activeRef = useRef<ActiveInteraction | null>(null);
     const didDragRef = useRef(false);
+    const pointerListenersRef = useRef<{
+        move: (event: PointerEvent) => void;
+        up: (event: PointerEvent) => void;
+    } | null>(null);
 
     const context = { dayKeys, timelineHeightPx, display: gridDisplay };
+
+    const detachPointerListeners = useCallback(() => {
+        const listeners = pointerListenersRef.current;
+
+        if (listeners === null) {
+            return;
+        }
+
+        window.removeEventListener('pointermove', listeners.move);
+        window.removeEventListener('pointerup', listeners.up);
+        window.removeEventListener('pointercancel', listeners.up);
+        pointerListenersRef.current = null;
+    }, []);
 
     const endInteraction = useCallback(() => {
         activeRef.current = null;
@@ -171,9 +189,7 @@ export function useTimesheetEntryInteraction({
                 return;
             }
 
-            window.removeEventListener('pointermove', onWindowPointerMove);
-            window.removeEventListener('pointerup', onWindowPointerUp);
-            window.removeEventListener('pointercancel', onWindowPointerUp);
+            detachPointerListeners();
 
             if (!didDragRef.current) {
                 endInteraction();
@@ -210,7 +226,7 @@ export function useTimesheetEntryInteraction({
             endInteraction();
         },
         [
-            onWindowPointerMove,
+            detachPointerListeners,
             endInteraction,
             onEntryClick,
             onEntryMove,
@@ -222,12 +238,10 @@ export function useTimesheetEntryInteraction({
 
     useEffect(() => {
         return () => {
-            window.removeEventListener('pointermove', onWindowPointerMove);
-            window.removeEventListener('pointerup', onWindowPointerUp);
-            window.removeEventListener('pointercancel', onWindowPointerUp);
+            detachPointerListeners();
             document.body.classList.remove('cursor-grabbing', 'select-none');
         };
-    }, [onWindowPointerMove, onWindowPointerUp]);
+    }, [detachPointerListeners]);
 
     const onPointerDown = useCallback(
         (
@@ -276,6 +290,10 @@ export function useTimesheetEntryInteraction({
             }
 
             document.body.classList.add('cursor-grabbing', 'select-none');
+            pointerListenersRef.current = {
+                move: onWindowPointerMove,
+                up: onWindowPointerUp,
+            };
             window.addEventListener('pointermove', onWindowPointerMove);
             window.addEventListener('pointerup', onWindowPointerUp);
             window.addEventListener('pointercancel', onWindowPointerUp);

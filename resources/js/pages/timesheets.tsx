@@ -1,8 +1,8 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef } from 'react';
 
-import { TimesheetSuggestionsPanel } from '@/components/timesheets/timesheet-suggestions-panel';
 import { TIMESHEET_LIST_PROPS } from '@/components/timesheets/timesheet-list-props';
+import { TimesheetSuggestionsPanel } from '@/components/timesheets/timesheet-suggestions-panel';
 import { TimesheetWeekCalendar } from '@/components/timesheets/timesheet-week-calendar';
 import { AppLayout } from '@/layouts/app-layout';
 import { usePrivateChannel } from '@/lib/use-private-channel';
@@ -45,10 +45,7 @@ export default function Timesheets() {
 
         reloadTimerRef.current = setTimeout(() => {
             reloadTimerRef.current = null;
-            router.reload({
-                only: [...TIMESHEET_LIST_PROPS],
-                preserveScroll: true,
-            });
+            router.reload({ only: [...TIMESHEET_LIST_PROPS] });
         }, 250);
     }, []);
 
@@ -110,6 +107,7 @@ export default function Timesheets() {
                         onNavigateToEntryEdit={onNavigateToEntryEdit}
                     />
                     <TimesheetWeekCalendar
+                        key={weekStart}
                         weekStart={weekStart}
                         entriesByDay={entriesByDay}
                         openEntryId={openEntryId}
