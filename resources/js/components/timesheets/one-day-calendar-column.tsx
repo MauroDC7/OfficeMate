@@ -1,14 +1,16 @@
 import { SLOT_MINUTES } from '@/components/timesheets/timesheet-grid-config';
 import type { TimesheetGridDisplay } from '@/components/timesheets/timesheet-grid-display';
+import { TimesheetEntryBlock } from '@/components/timesheets/timesheet-entry-block';
+import { entryBlockPosition } from '@/components/timesheets/timesheet-entry-range';
+import type { EntryInteractionMode } from '@/components/timesheets/timesheet-entry-range';
 import {
     dayKey,
-    formatMinutesRange,
     isToday,
     minutesToTimeLabel,
     minutesToTimelineY,
-    timesheetProjectLabel,
     visibleEntrySegment,
 } from '@/components/timesheets/timesheet-helpers';
+import type { TimesheetInteractionPreview } from '@/components/timesheets/use-timesheet-entry-interaction';
 import { cn } from '@/lib/utils';
 import type { TimesheetEntryPayload } from '@/types/timesheets';
 
@@ -20,8 +22,16 @@ type OneDayCalendarColumnProps = {
     gridDisplay: TimesheetGridDisplay;
     showNowLine: boolean;
     nowTopPx: number;
+    preview: TimesheetInteractionPreview | null;
     onSlotClick: (dayKey: string, startMin: number, endMin: number) => void;
     onEntryClick: (dayKey: string, entry: TimesheetEntryPayload) => void;
+    onEntryPointerDown: (
+        mode: EntryInteractionMode,
+        dayKey: string,
+        entry: TimesheetEntryPayload,
+        event: React.PointerEvent<HTMLElement>,
+    ) => void;
+    isInteractingEntry: (entryId: number) => boolean;
 };
 
 export function OneDayCalendarColumn({
@@ -32,17 +42,23 @@ export function OneDayCalendarColumn({
     gridDisplay,
     showNowLine,
     nowTopPx,
+    preview,
     onSlotClick,
     onEntryClick,
+    onEntryPointerDown,
+    isInteractingEntry,
 }: OneDayCalendarColumnProps) {
     const key = dayKey(day);
     const today = isToday(day);
+    const showPreview = preview !== null && preview.dayKey === key;
 
     return (
         <div
+            data-timesheet-day={key}
             className={cn(
                 'relative min-w-0 border-s border-gray-200',
                 today && 'bg-violet-50/15',
+                showPreview && 'bg-violet-50/40',
             )}
             style={{ height: timelineHeightPx }}
         >
@@ -95,6 +111,10 @@ export function OneDayCalendarColumn({
             })}
 
             {entries.map((entry) => {
+                if (isInteractingEntry(entry.id)) {
+                    return null;
+                }
+
                 const seg = visibleEntrySegment(
                     entry.start_minutes,
                     entry.end_minutes,
@@ -113,51 +133,35 @@ export function OneDayCalendarColumn({
                 );
 
                 return (
-                    <div
+                    <TimesheetEntryBlock
                         key={entry.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onEntryClick(key, entry);
-                        }}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                onEntryClick(key, entry);
-                            }
-                        }}
-                        className="pointer-events-auto absolute start-1 end-1 z-10 flex cursor-pointer flex-col gap-0.5 overflow-hidden rounded-md border border-violet-200 bg-violet-100/95 px-1.5 py-1 shadow-sm ring-violet-400/40 transition outline-none hover:border-violet-300 hover:shadow-md focus-visible:ring-2 sm:start-1.5 sm:end-1.5 sm:px-2 sm:py-1.5"
-                        style={{ top, height }}
-                    >
-                        <p className="shrink-0 truncate text-[0.65rem] leading-tight font-semibold text-violet-950 sm:text-xs">
-                            {entry.title}
-                        </p>
-                        {entry.description !== null &&
-                        entry.description.trim() !== '' ? (
-                            <p className="line-clamp-2 min-h-0 shrink text-[0.58rem] leading-snug text-violet-900/90 sm:text-[0.62rem]">
-                                {entry.description.trim()}
-                            </p>
-                        ) : null}
-                        {(() => {
-                            const label = timesheetProjectLabel(entry);
-
-                            return label !== null ? (
-                                <p className="shrink-0 truncate text-[0.6rem] text-violet-800 sm:text-[0.65rem]">
-                                    {label}
-                                </p>
-                            ) : null;
-                        })()}
-                        <p className="mt-auto shrink-0 text-[0.6rem] text-violet-700 tabular-nums sm:text-[0.65rem]">
-                            {formatMinutesRange(
-                                entry.start_minutes,
-                                entry.end_minutes,
-                            )}
-                        </p>
-                    </div>
+                        entry={entry}
+                        startMinutes={entry.start_minutes}
+                        endMinutes={entry.end_minutes}
+                        top={top}
+                        height={height}
+                        onOpen={() => onEntryClick(key, entry)}
+                        onPointerDown={(mode, event) =>
+                            onEntryPointerDown(mode, key, entry, event)
+                        }
+                    />
                 );
             })}
+
+            {showPreview && preview !== null ? (
+                <TimesheetEntryBlock
+                    entry={preview.entry}
+                    startMinutes={preview.startMinutes}
+                    endMinutes={preview.endMinutes}
+                    preview
+                    {...entryBlockPosition(
+                        preview.startMinutes,
+                        preview.endMinutes,
+                        timelineHeightPx,
+                        gridDisplay,
+                    )}
+                />
+            ) : null}
 
             {showNowLine ? (
                 <div

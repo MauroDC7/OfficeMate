@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { OneDayCalendarColumn } from '@/components/timesheets/one-day-calendar-column';
+import { useTimesheetEntryInteraction } from '@/components/timesheets/use-timesheet-entry-interaction';
 import {
     gridTemplateColumnsForDayCount,
     SLOT_HEIGHT_PX,
@@ -24,6 +25,12 @@ type TimesheetWeekBodyProps = {
     gridDisplay: TimesheetGridDisplay;
     onSlotClick: (dayKey: string, startMin: number, endMin: number) => void;
     onEntryClick: (dayKey: string, entry: TimesheetEntryPayload) => void;
+    onEntryMove: (
+        entry: TimesheetEntryPayload,
+        dayKey: string,
+        startMinutes: number,
+        endMinutes: number,
+    ) => void;
 };
 
 function HourLabelsColumn({
@@ -79,8 +86,22 @@ export function TimesheetWeekBody({
     gridDisplay,
     onSlotClick,
     onEntryClick,
+    onEntryMove,
 }: TimesheetWeekBodyProps) {
     const timelineHeightPx = gridDisplay.slotCount * SLOT_HEIGHT_PX;
+    const dayKeys = useMemo(
+        () => visibleDays.map((day) => dayKey(day)),
+        [visibleDays],
+    );
+
+    const interaction = useTimesheetEntryInteraction({
+        dayKeys,
+        timelineHeightPx,
+        gridDisplay,
+        onEntryClick,
+        onEntryMove,
+    });
+
     const gridStyle = {
         gridTemplateColumns: gridTemplateColumnsForDayCount(visibleDays.length),
     };
@@ -119,8 +140,11 @@ export function TimesheetWeekBody({
                             gridDisplay={gridDisplay}
                             showNowLine={showNowLine}
                             nowTopPx={nowTopPx}
+                            preview={interaction.preview}
                             onSlotClick={onSlotClick}
                             onEntryClick={onEntryClick}
+                            onEntryPointerDown={interaction.onPointerDown}
+                            isInteractingEntry={interaction.isInteractingEntry}
                         />
                     );
                 })}

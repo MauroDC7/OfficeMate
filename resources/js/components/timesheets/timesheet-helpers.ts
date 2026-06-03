@@ -261,6 +261,37 @@ export function formatShortRelativeNl(iso: string): string {
     return `${diffDay} dag${diffDay === 1 ? '' : 'en'} geleden`;
 }
 
+export function entriesByDayAfterMove(
+    entriesByDay: Record<string, TimesheetEntryPayload[]>,
+    entry: TimesheetEntryPayload,
+    targetDayKey: string,
+    startMinutes: number,
+    endMinutes: number,
+): Record<string, TimesheetEntryPayload[]> {
+    const next: Record<string, TimesheetEntryPayload[]> = {};
+
+    for (const [day, list] of Object.entries(entriesByDay)) {
+        const filtered = list.filter((item) => item.id !== entry.id);
+
+        if (filtered.length > 0) {
+            next[day] = filtered;
+        }
+    }
+
+    const moved: TimesheetEntryPayload = {
+        ...entry,
+        worked_on: targetDayKey,
+        start_minutes: startMinutes,
+        end_minutes: endMinutes,
+    };
+
+    next[targetDayKey] = [...(next[targetDayKey] ?? []), moved].sort(
+        (a, b) => a.start_minutes - b.start_minutes,
+    );
+
+    return next;
+}
+
 export function timesheetProjectLabel(entry: {
     project_name: string | null;
     client_name: string | null;

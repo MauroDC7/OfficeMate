@@ -12,6 +12,7 @@ import {
     calendarDaysForView,
     dayKey,
     dayTotalMinutes,
+    entriesByDayAfterMove,
     flattenFormErrors,
     minutesToTimeInput,
     mondayYmdForYmd,
@@ -26,6 +27,7 @@ import type {
 } from '@/components/timesheets/week-calendar-types';
 import { emptyDraft } from '@/components/timesheets/week-calendar-types';
 import { fetchTrackerWindowTitles } from '@/components/timesheets/fetch-tracker-window-titles';
+import { TIMESHEET_LIST_PROPS } from '@/components/timesheets/timesheet-list-props';
 import { useAlert } from '@/components/alert';
 import { timesheets } from '@/routes';
 import { destroy, store, update } from '@/routes/timesheets/entries';
@@ -108,7 +110,7 @@ export function useTimesheetWeekCalendar({
     const page = usePage<{ projectOptions: TimesheetProjectOption[] }>();
     const { projectOptions = [] } = page.props;
     const pageUrl = page.url;
-    const { success, confirm } = useAlert();
+    const { success, confirm, error: showError } = useAlert();
     const isMobileViewport = useIsMobileViewport();
 
     const [viewState, setViewState] = useState<CalendarViewState>(() =>
@@ -116,6 +118,17 @@ export function useTimesheetWeekCalendar({
     );
 
     const { calendarView, focusDayYmd } = viewState;
+
+    const [optimisticEntriesByDay, setOptimisticEntriesByDay] = useState<Record<
+        string,
+        TimesheetEntryPayload[]
+    > | null>(null);
+
+    const displayedEntriesByDay = optimisticEntriesByDay ?? entriesByDay;
+
+    useEffect(() => {
+        setOptimisticEntriesByDay(null);
+    }, [weekStart]);
 
     const [modal, setModal] = useState<TimesheetModalState | null>(null);
     const [draft, setDraft] = useState<TimesheetDraft>(() => emptyDraft());
@@ -166,11 +179,11 @@ export function useTimesheetWeekCalendar({
 
         for (const day of visibleDays) {
             const key = dayKey(day);
-            map[key] = dayTotalMinutes(entriesByDay[key] ?? []);
+            map[key] = dayTotalMinutes(displayedEntriesByDay[key] ?? []);
         }
 
         return map;
-    }, [entriesByDay, visibleDays]);
+    }, [displayedEntriesByDay, visibleDays]);
 
     const replaceCalendarInHistory = useCallback(
         (next: CalendarViewState) => {
@@ -408,7 +421,7 @@ export function useTimesheetWeekCalendar({
 
         let match: { dayKey: string; entry: TimesheetEntryPayload } | null = null;
 
-        for (const [dk, entries] of Object.entries(entriesByDay)) {
+        for (const [dk, entries] of Object.entries(displayedEntriesByDay)) {
             const entry = entries.find((e) => e.id === openEntryId);
 
             if (entry !== undefined) {
@@ -440,7 +453,7 @@ export function useTimesheetWeekCalendar({
         weekStart,
         calendarView,
         focusDayYmd,
-        entriesByDay,
+        displayedEntriesByDay,
         openModalForEntry,
     ]);
 
@@ -553,6 +566,56 @@ export function useTimesheetWeekCalendar({
         });
     }, [modal, closeModal, success, confirm]);
 
+    const moveEntry = useCallback(
+        (
+            entry: TimesheetEntryPayload,
+            workedOn: string,
+            startMinutes: number,
+            endMinutes: number,
+        ) => {
+            setOptimisticEntriesByDay(
+                entriesByDayAfterMove(
+                    entriesByDay,
+                    entry,
+                    workedOn,
+                    startMinutes,
+                    endMinutes,
+                ),
+            );
+
+            const payload = {
+                title: entry.title,
+                description: entry.description,
+                project_id: entry.project_id,
+                worked_on: workedOn,
+                start_minutes: startMinutes,
+                end_minutes: endMinutes,
+            };
+
+            router.patch(update.url({ timesheet_entry: entry.id }), payload, {
+                preserveScroll: true,
+                only: [...TIMESHEET_LIST_PROPS],
+                onSuccess: () => {
+                    setOptimisticEntriesByDay(null);
+                    success('Timesheetregistratie bijgewerkt.');
+                },
+                onError: (errors: ServerErrors) => {
+                    setOptimisticEntriesByDay(null);
+                    const flat = flattenFormErrors(errors);
+                    const message =
+                        flat.start_minutes ??
+                        flat.end_minutes ??
+                        flat.worked_on ??
+                        Object.values(flat)[0] ??
+                        'Verplaatsen mislukt.';
+
+                    showError(message);
+                },
+            });
+        },
+        [entriesByDay, success, showError],
+    );
+
     return {
         calendarView,
         focusDayYmd,
@@ -574,6 +637,8 @@ export function useTimesheetWeekCalendar({
         deleteEntry,
         openModalForSlot,
         openModalForEntry,
+        moveEntry,
+        displayedEntriesByDay,
         projectOptions,
     };
 }

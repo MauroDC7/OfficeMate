@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 import { TimesheetSuggestionsPanel } from '@/components/timesheets/timesheet-suggestions-panel';
 import { TIMESHEET_LIST_PROPS } from '@/components/timesheets/timesheet-list-props';
@@ -36,8 +36,28 @@ export default function Timesheets() {
     } = page.props;
     const userId = page.props.auth.user?.id ?? null;
 
+    const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     const onTimesheetChanged = useCallback(() => {
-        router.reload({ only: [...TIMESHEET_LIST_PROPS] });
+        if (reloadTimerRef.current !== null) {
+            clearTimeout(reloadTimerRef.current);
+        }
+
+        reloadTimerRef.current = setTimeout(() => {
+            reloadTimerRef.current = null;
+            router.reload({
+                only: [...TIMESHEET_LIST_PROPS],
+                preserveScroll: true,
+            });
+        }, 250);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (reloadTimerRef.current !== null) {
+                clearTimeout(reloadTimerRef.current);
+            }
+        };
     }, []);
 
     const onNavigateToEntryEdit = useCallback(

@@ -31,10 +31,11 @@ export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
                 />
                 <TimesheetWeekBody
                     visibleDays={calendar.visibleDays}
-                    entriesByDay={props.entriesByDay}
+                    entriesByDay={calendar.displayedEntriesByDay}
                     gridDisplay={displayRange.gridDisplay}
                     onSlotClick={calendar.openModalForSlot}
                     onEntryClick={calendar.openModalForEntry}
+                    onEntryMove={calendar.moveEntry}
                 />
             </div>
 
