@@ -38,9 +38,6 @@ export function EmployeeDashboardWeekHours({
                     </h2>
                     <p className="mt-0.5 text-xs text-gray-500">
                         Week vanaf {weekStart}
-                        {pendingTimesheetCount > 0
-                            ? ` · ${pendingTimesheetCount} voorstel${pendingTimesheetCount === 1 ? '' : 'len'} te bevestigen`
-                            : ''}
                     </p>
                 </div>
                 <Link
@@ -51,6 +48,26 @@ export function EmployeeDashboardWeekHours({
                 </Link>
             </div>
             <div className="px-4 py-5 sm:px-5">
+                {pendingTimesheetCount > 0 ? (
+                    <div className="mb-4 flex flex-col gap-3 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-gray-900">
+                                {pendingTimesheetCount === 1
+                                    ? '1 timesheetvoorstel wacht op goedkeuring'
+                                    : `${pendingTimesheetCount} timesheetvoorstellen wachten op goedkeuring`}
+                            </p>
+                            <p className="mt-0.5 text-xs text-gray-500">
+                                Bevestig AI-voorstellen in je timesheet voor deze week.
+                            </p>
+                        </div>
+                        <Link
+                            href={timesheets.url({ query: { week: weekStart } })}
+                            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
+                        >
+                            Bevestigen
+                        </Link>
+                    </div>
+                ) : null}
                 {myLeaveSummary !== null ? (
                     <p className="mb-4 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm text-gray-700">
                         Je bent deze week afwezig: {myLeaveSummary}

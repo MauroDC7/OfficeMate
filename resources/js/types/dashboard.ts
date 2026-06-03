@@ -14,6 +14,14 @@ export type DashboardNotification = {
 import type { TeamLeaveItem } from '@/types/leave-requests';
 import type { AdminDashboardPresenceSummary } from '@/types/presence';
 
+export type EmployeeDashboardWeeklyStatus = {
+    week_start: string;
+    difficult_this_week: string | null;
+    plans_next_week: string | null;
+    reminder_due: boolean;
+    ai_draft_available: boolean;
+};
+
 export type EmployeeDashboardProps = {
     activeProjects: DashboardProject[];
     actionCount: number;
@@ -21,10 +29,14 @@ export type EmployeeDashboardProps = {
     hoursThisWeekMinutes: number;
     openLeaveDays: number;
     pendingLeaveRequestCount: number;
+    weeklyStatus: EmployeeDashboardWeeklyStatus | null;
     weeklyStatusReminderDue: boolean;
     weekStart: string;
     myLeaveThisWeek: TeamLeaveItem[];
-    teamLeaveThisWeek: TeamLeaveItem[];
+    teamLeaveToday: TeamLeaveItem[];
+    taskAvailability: string | null;
+    taskAvailabilityLabel: string | null;
+    trackerIsConnected: boolean;
     hasOrganization: boolean;
     recentNotifications: DashboardNotification[];
 };

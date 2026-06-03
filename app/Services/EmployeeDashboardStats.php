@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\LeaveRequestStatus;
+use App\Enums\UserRole;
 use App\Models\LeaveRequest;
 use App\Models\TimesheetEntry;
 use App\Models\TimesheetEntryProposal;
@@ -11,12 +12,11 @@ use Carbon\CarbonImmutable;
 
 final class EmployeeDashboardStats
 {
-    private const TEAM_LEAVE_PREVIEW = 8;
-
     public function __construct(
         private readonly OrganizationLeaveOverview $organizationLeaveOverview,
         private readonly TimesheetProjectNormalizer $timesheetProjectNormalizer,
         private readonly ProjectsEmployeeContext $projectsEmployeeContext,
+        private readonly TrackerConnectionStatus $trackerConnectionStatus,
     ) {}
 
     /**
@@ -27,6 +27,13 @@ final class EmployeeDashboardStats
      *     hoursThisWeekMinutes: int,
      *     openLeaveDays: int,
      *     pendingLeaveRequestCount: int,
+     *     weeklyStatus: array{
+     *         week_start: string,
+     *         difficult_this_week: string|null,
+     *         plans_next_week: string|null,
+     *         reminder_due: bool,
+     *         ai_draft_available: bool,
+     *     }|null,
      *     weeklyStatusReminderDue: bool,
      *     weekStart: string,
      *     myLeaveThisWeek: list<array{
@@ -36,13 +43,16 @@ final class EmployeeDashboardStats
      *         type_label: string,
      *         user: array{id: int, name: string}
      *     }>,
-     *     teamLeaveThisWeek: list<array{
+     *     teamLeaveToday: list<array{
      *         id: int,
      *         starts_on: string,
      *         ends_on: string,
      *         type_label: string,
      *         user: array{id: int, name: string}
      *     }>,
+     *     taskAvailability: string|null,
+     *     taskAvailabilityLabel: string|null,
+     *     trackerIsConnected: bool,
      *     hasOrganization: bool,
      *     recentNotifications: list<array{id: string, title: string, message: string, created_at: string}>,
      * }
@@ -93,7 +103,8 @@ final class EmployeeDashboardStats
                 $openLeaveDays += $this->remainingLeaveDays($request, $today);
             });
 
-        $weeklyStatus = $this->projectsEmployeeContext->forUser($user)['weeklyStatus'];
+        $projectsContext = $this->projectsEmployeeContext->forUser($user);
+        $weeklyStatus = $projectsContext['weeklyStatus'];
         $weeklyStatusReminderDue = is_array($weeklyStatus) && $weeklyStatus['reminder_due'];
 
         $actionCount = $pendingTimesheetCount + ($weeklyStatusReminderDue ? 1 : 0);
@@ -109,15 +120,28 @@ final class EmployeeDashboardStats
             )
             : [];
 
-        $teamLeaveThisWeek = $user->organization_id !== null
+        $teamLeaveToday = $user->organization_id !== null
             ? $this->organizationLeaveOverview->approvedLeaveBetween(
                 $user->organization_id,
-                $monday,
-                $weekEnd,
+                $today,
+                $today,
                 $user->id,
-                self::TEAM_LEAVE_PREVIEW,
+                8,
             )
             : [];
+
+        $taskAvailability = $user->organization_id !== null && $user->role !== UserRole::Admin
+            ? $projectsContext['taskAvailability']
+            : null;
+
+        $matchingAvailabilityOption = $taskAvailability === null
+            ? null
+            : collect($projectsContext['taskAvailabilityOptions'])
+                ->firstWhere('value', $taskAvailability);
+
+        $taskAvailabilityLabel = is_array($matchingAvailabilityOption)
+            ? $matchingAvailabilityOption['label']
+            : null;
 
         return [
             'activeProjects' => $activeProjects,
@@ -126,10 +150,14 @@ final class EmployeeDashboardStats
             'hoursThisWeekMinutes' => $hoursThisWeekMinutes,
             'openLeaveDays' => $openLeaveDays,
             'pendingLeaveRequestCount' => $pendingLeaveRequestCount,
+            'weeklyStatus' => $weeklyStatus,
             'weeklyStatusReminderDue' => $weeklyStatusReminderDue,
             'weekStart' => $monday->toDateString(),
             'myLeaveThisWeek' => $myLeaveThisWeek,
-            'teamLeaveThisWeek' => $teamLeaveThisWeek,
+            'teamLeaveToday' => $teamLeaveToday,
+            'taskAvailability' => $taskAvailability,
+            'taskAvailabilityLabel' => $taskAvailabilityLabel,
+            'trackerIsConnected' => $this->trackerConnectionStatus->forUser($user)['is_connected'],
             'hasOrganization' => $user->organization_id !== null,
             'recentNotifications' => $user->notifications()
                 ->latest()

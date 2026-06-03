@@ -22,8 +22,15 @@ afterEach(function () {
 
 it('shows employee dashboard stats scoped to the user and current week', function () {
     $organization = Organization::factory()->create();
-    $user = User::factory()->forOrganization($organization)->create(['role' => UserRole::Employee]);
+    $user = User::factory()->forOrganization($organization)->create([
+        'role' => UserRole::Employee,
+    ]);
+    $colleague = User::factory()->forOrganization($organization)->create([
+        'first_name' => 'Noor',
+        'last_name' => 'Peeters',
+    ]);
     $monday = CarbonImmutable::now()->startOfWeek(CarbonImmutable::MONDAY);
+    $today = CarbonImmutable::now('Europe/Brussels')->startOfDay();
 
     $team = Team::factory()->for($organization)->create();
     TeamMembership::factory()
@@ -56,6 +63,11 @@ it('shows employee dashboard stats scoped to the user and current week', functio
 
     LeaveRequest::factory()->for($user)->pending()->create();
 
+    LeaveRequest::factory()->for($colleague)->approved()->vacation()->create([
+        'starts_on' => $today->toDateString(),
+        'ends_on' => $today->toDateString(),
+    ]);
+
     $this->actingAs($user)
         ->get(route('dashboard'))
         ->assertOk()
@@ -70,6 +82,10 @@ it('shows employee dashboard stats scoped to the user and current week', functio
             ->where('pendingLeaveRequestCount', 1)
             ->where('weeklyStatusReminderDue', false)
             ->where('weekStart', $monday->toDateString())
+            ->where('taskAvailability', 'open_for_tasks')
+            ->where('trackerIsConnected', false)
+            ->has('teamLeaveToday', 1)
+            ->where('teamLeaveToday.0.user.name', 'Noor Peeters')
             ->has('recentNotifications', 0));
 });
 
@@ -83,7 +99,9 @@ it('counts only actionable timesheet proposals in action count', function () {
             ->component('dashboard')
             ->where('actionCount', 0)
             ->where('pendingTimesheetCount', 0)
-            ->where('pendingLeaveRequestCount', 0));
+            ->where('pendingLeaveRequestCount', 0)
+            ->where('weeklyStatus', null)
+            ->where('taskAvailability', null));
 });
 
 it('renders admin dashboard for administrators', function () {

@@ -112,8 +112,8 @@ export function EmployeeDashboardActionInbox({
                             </p>
                             <p className="mt-0.5 text-xs text-gray-500">
                                 {pendingTimesheetCount === 1
-                                    ? '1 voorstel voor deze week wacht op je goedkeuring.'
-                                    : `${pendingTimesheetCount} voorstellen voor deze week wachten op je goedkeuring.`}
+                                    ? 'Je hebt nog 1 timesheetvoorstel dat wacht op goedkeuring.'
+                                    : `Je hebt nog ${pendingTimesheetCount} timesheetvoorstellen die wachten op goedkeuring.`}
                             </p>
                         </div>
                         <Link

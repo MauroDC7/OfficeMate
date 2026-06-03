@@ -2,15 +2,15 @@ import { Link } from '@inertiajs/react';
 
 import { dashboardSnapshotCardClassName } from '@/components/dashboard/dashboard-styles';
 import { formatDayTotal } from '@/components/timesheets/timesheet-helpers';
-import { leaveRequests, projects, timesheets } from '@/routes';
+import { leaveRequests, timesheets } from '@/routes';
 
 type EmployeeDashboardSnapshotProps = {
     actionCount: number;
+    pendingTimesheetCount: number;
     hoursThisWeekMinutes: number;
     weekStart: string;
     pendingLeaveRequestCount: number;
     openLeaveDays: number;
-    activeProjectCount: number;
 };
 
 type SnapshotCardProps = {
@@ -36,11 +36,11 @@ function SnapshotCard({ label, value, detail, href }: SnapshotCardProps) {
 
 export function EmployeeDashboardSnapshot({
     actionCount,
+    pendingTimesheetCount,
     hoursThisWeekMinutes,
     weekStart,
     pendingLeaveRequestCount,
     openLeaveDays,
-    activeProjectCount,
 }: EmployeeDashboardSnapshotProps) {
     const actionDetail =
         actionCount === 0
@@ -48,6 +48,13 @@ export function EmployeeDashboardSnapshot({
             : actionCount === 1
               ? '1 openstaande taak'
               : `${actionCount} openstaande taken`;
+
+    const timesheetDetail =
+        pendingTimesheetCount === 0
+            ? 'Geen voorstellen te bevestigen'
+            : pendingTimesheetCount === 1
+              ? '1 voorstel wacht op goedkeuring'
+              : `${pendingTimesheetCount} voorstellen wachten op goedkeuring`;
 
     const leaveValue =
         pendingLeaveRequestCount > 0
@@ -65,13 +72,6 @@ export function EmployeeDashboardSnapshot({
                 ? '1 verlofdag gepland'
                 : `${openLeaveDays} verlofdagen gepland`;
 
-    const projectDetail =
-        activeProjectCount === 0
-            ? 'Geen projecten beschikbaar'
-            : activeProjectCount === 1
-              ? '1 project om op te boeken'
-              : `${activeProjectCount} projecten om op te boeken`;
-
     return (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
             <SnapshotCard
@@ -79,6 +79,12 @@ export function EmployeeDashboardSnapshot({
                 value={String(actionCount)}
                 detail={actionDetail}
                 href="#acties"
+            />
+            <SnapshotCard
+                label="Te bevestigen"
+                value={String(pendingTimesheetCount)}
+                detail={timesheetDetail}
+                href={timesheets.url({ query: { week: weekStart } })}
             />
             <SnapshotCard
                 label="Uren deze week"
@@ -91,12 +97,6 @@ export function EmployeeDashboardSnapshot({
                 value={leaveValue}
                 detail={leaveDetail}
                 href={leaveRequests.url()}
-            />
-            <SnapshotCard
-                label="Projecten"
-                value={String(activeProjectCount)}
-                detail={projectDetail}
-                href={projects.url()}
             />
         </div>
     );

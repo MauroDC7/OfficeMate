@@ -3,23 +3,27 @@ import { Head, usePage } from '@inertiajs/react';
 import { DashboardNotificationsPanel } from '@/components/dashboard/dashboard-notifications-panel';
 import { EmployeeDashboardActionInbox } from '@/components/dashboard/employee-dashboard-action-inbox';
 import { EmployeeDashboardSnapshot } from '@/components/dashboard/employee-dashboard-snapshot';
-import { EmployeeDashboardTeam } from '@/components/dashboard/employee-dashboard-team';
+import { EmployeeDashboardToday } from '@/components/dashboard/employee-dashboard-today';
+import { EmployeeDashboardTrackerBanner } from '@/components/dashboard/employee-dashboard-tracker-banner';
 import { EmployeeDashboardWeekHours } from '@/components/dashboard/employee-dashboard-week-hours';
+import { EmployeeDashboardWeekStatus } from '@/components/dashboard/employee-dashboard-week-status';
 import { AppLayout } from '@/layouts/app-layout';
 import type { EmployeeDashboardProps } from '@/types/dashboard';
 
 export default function Dashboard() {
     const {
-        activeProjects,
         actionCount,
         pendingTimesheetCount,
         hoursThisWeekMinutes,
         pendingLeaveRequestCount,
         openLeaveDays,
+        weeklyStatus,
         weeklyStatusReminderDue,
         weekStart,
         myLeaveThisWeek,
-        teamLeaveThisWeek,
+        teamLeaveToday,
+        taskAvailability,
+        trackerIsConnected,
         hasOrganization,
         recentNotifications,
     } = usePage<EmployeeDashboardProps>().props;
@@ -38,11 +42,11 @@ export default function Dashboard() {
                 <div className="mt-5 space-y-6">
                     <EmployeeDashboardSnapshot
                         actionCount={actionCount}
+                        pendingTimesheetCount={pendingTimesheetCount}
                         hoursThisWeekMinutes={hoursThisWeekMinutes}
                         weekStart={weekStart}
                         pendingLeaveRequestCount={pendingLeaveRequestCount}
                         openLeaveDays={openLeaveDays}
-                        activeProjectCount={activeProjects.length}
                     />
 
                     <EmployeeDashboardActionInbox
@@ -64,9 +68,13 @@ export default function Dashboard() {
                                 myLeaveThisWeek={myLeaveThisWeek}
                                 weekStart={weekStart}
                             />
-                            <EmployeeDashboardTeam
-                                teamLeaveThisWeek={teamLeaveThisWeek}
-                                hasOrganization={hasOrganization}
+                            <EmployeeDashboardWeekStatus weeklyStatus={weeklyStatus} />
+                            <EmployeeDashboardToday
+                                taskAvailability={taskAvailability}
+                                teamLeaveToday={teamLeaveToday}
+                            />
+                            <EmployeeDashboardTrackerBanner
+                                show={hasOrganization && !trackerIsConnected}
                             />
                         </div>
                     </div>

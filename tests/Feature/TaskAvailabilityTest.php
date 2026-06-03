@@ -32,10 +32,11 @@ it('lets employees update their task availability', function () {
     ]);
 
     $this->actingAs($employee)
+        ->from(route('dashboard'))
         ->patch(route('dashboard.task-availability.update'), [
             'task_availability' => TaskAvailability::OnTask->value,
         ])
-        ->assertRedirect(route('projects'));
+        ->assertRedirect(route('dashboard'));
 
     expect($employee->fresh()->task_availability)->toBe(TaskAvailability::OnTask);
 });
