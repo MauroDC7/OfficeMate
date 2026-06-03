@@ -15,7 +15,6 @@ return new class extends Migration
                     ->after('id')
                     ->constrained()
                     ->cascadeOnDelete();
-                $table->index(['organization_id', 'status']);
             }
 
             if (! Schema::hasColumn('projects', 'type')) {
@@ -46,6 +45,15 @@ return new class extends Migration
         if (Schema::hasColumn('projects', 'budget_minutes')) {
             Schema::table('projects', function (Blueprint $table) {
                 $table->dropColumn('budget_minutes');
+            });
+        }
+
+        if (
+            Schema::hasColumn('projects', 'organization_id')
+            && Schema::hasColumn('projects', 'status')
+        ) {
+            Schema::table('projects', function (Blueprint $table) {
+                $table->index(['organization_id', 'status']);
             });
         }
     }
