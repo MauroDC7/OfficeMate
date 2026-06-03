@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\TaskAvailability;
+use App\Enums\UserRole;
 use App\Models\User;
 use App\Models\WeeklyStatusUpdate;
 use Carbon\CarbonImmutable;
@@ -29,11 +30,21 @@ final class ProjectsEmployeeContext
      */
     public function forUser(User $user): array
     {
-        if ($user->organization_id === null) {
+        if ($user->organization_id === null || $user->role === UserRole::Admin) {
             return [
                 'weeklyStatus' => null,
-                'taskAvailability' => null,
-                'taskAvailabilityOptions' => [],
+                'taskAvailability' => $user->role === UserRole::Admin
+                    ? null
+                    : ($user->task_availability ?? TaskAvailability::OpenForTasks)->value,
+                'taskAvailabilityOptions' => $user->role === UserRole::Admin
+                    ? []
+                    : array_map(
+                        fn (TaskAvailability $option): array => [
+                            'value' => $option->value,
+                            'label' => $option->label(),
+                        ],
+                        TaskAvailability::cases(),
+                    ),
             ];
         }
 

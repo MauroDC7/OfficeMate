@@ -113,6 +113,15 @@ final class TeamController extends Controller
         return redirect()->route('teams');
     }
 
+    public function show(Request $request, Team $team): Response
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+        $this->authorize('view', $team);
+
+        return Inertia::render('teams/show', $this->teamOverviewBuilder->showPageFor($team, $user));
+    }
+
     public function update(UpdateTeamRequest $request, Team $team): RedirectResponse
     {
         $user = $request->user();
@@ -122,7 +131,9 @@ final class TeamController extends Controller
         abort_unless($team->organization_id === $organization->id, 404);
 
         $validated = $request->validated();
-        $parentId = $validated['parent_id'] ?? null;
+        $parentId = array_key_exists('parent_id', $validated)
+            ? $validated['parent_id']
+            : $team->parent_id;
 
         if ($parentId !== null && $this->isDescendant($team, (int) $parentId)) {
             return redirect()
@@ -130,12 +141,36 @@ final class TeamController extends Controller
                 ->withErrors(['parent_id' => 'Een team kan niet onder zichzelf hangen.']);
         }
 
-        $team->update([
-            'name' => $validated['name'],
-            'parent_id' => $parentId,
-        ]);
+        $memberIds = collect($validated['member_ids'] ?? [])
+            ->map(fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values();
 
-        return redirect()->route('teams');
+        DB::transaction(function () use ($team, $validated, $parentId, $memberIds): void {
+            $team->update([
+                'name' => $validated['name'],
+                'department' => $validated['department'] ?? null,
+                'parent_id' => $parentId,
+            ]);
+
+            TeamMembership::query()
+                ->where('team_id', $team->id)
+                ->where('status', TeamMembershipStatus::Approved)
+                ->whereNotIn('user_id', $memberIds)
+                ->delete();
+
+            foreach ($memberIds as $memberId) {
+                TeamMembership::query()->updateOrCreate(
+                    [
+                        'team_id' => $team->id,
+                        'user_id' => $memberId,
+                    ],
+                    ['status' => TeamMembershipStatus::Approved],
+                );
+            }
+        });
+
+        return redirect()->route('teams.show', $team);
     }
 
     public function destroy(Request $request, Team $team): RedirectResponse

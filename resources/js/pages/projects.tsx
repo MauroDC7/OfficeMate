@@ -10,6 +10,7 @@ import { TaskAvailabilityToggle } from '@/components/projects/task-availability-
 import { WeeklyStatusFormPanel } from '@/components/projects/weekly-status-form-panel';
 import { AppLayout } from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
+import { weeklyDebrief as adminWeeklyDebrief } from '@/routes/admin';
 import { settings } from '@/routes';
 import type { ProjectCard as ProjectCardType, ProjectsPageProps, ProjectType } from '@/types/projects';
 
@@ -174,13 +175,20 @@ export default function Projects() {
 
                         {(taskAvailability !== null ||
                             weeklyStatus !== null ||
-                            isAdmin ||
+                            (isAdmin && organization !== null) ||
                             canCreate) && (
                             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                                 {taskAvailability !== null ? (
                                     <TaskAvailabilityToggle value={taskAvailability} />
                                 ) : null}
-                                {weeklyStatus !== null ? (
+                                {isAdmin ? (
+                                    <Link
+                                        href={adminWeeklyDebrief.url()}
+                                        className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 sm:w-auto"
+                                    >
+                                        Weekly debrief
+                                    </Link>
+                                ) : weeklyStatus !== null ? (
                                     <button
                                         type="button"
                                         onClick={() => setShowWeeklyStatus(true)}

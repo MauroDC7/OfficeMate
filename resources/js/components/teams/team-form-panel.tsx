@@ -3,10 +3,12 @@ import { useEffect, useId, useRef } from 'react';
 
 import { UserPicker } from '@/components/teams/user-picker';
 import { cn } from '@/lib/utils';
-import { store } from '@/routes/teams';
-import type { OrganizationUserOption } from '@/types/teams';
+import { store, update } from '@/routes/teams';
+import type { OrganizationUserOption, TeamCard } from '@/types/teams';
 
-type CreateTeamFormPanelProps = {
+type TeamFormPanelProps = {
+    mode: 'create' | 'edit';
+    team?: TeamCard;
     open: boolean;
     onClose: () => void;
     organizationUsers: OrganizationUserOption[];
@@ -28,6 +30,20 @@ function IconPlus({ className }: { className?: string }) {
     );
 }
 
+function IconPencil({ className }: { className?: string }) {
+    return (
+        <svg className={className} width={18} height={18} viewBox="0 0 24 24" aria-hidden fill="none">
+            <path
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"
+            />
+        </svg>
+    );
+}
+
 function IconClose({ className }: { className?: string }) {
     return (
         <svg className={className} width={20} height={20} viewBox="0 0 24 24" aria-hidden fill="none">
@@ -44,14 +60,17 @@ function IconClose({ className }: { className?: string }) {
 const inputClass =
     'mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10';
 
-export function CreateTeamFormPanel({
+export function TeamFormPanel({
+    mode,
+    team,
     open,
     onClose,
     organizationUsers,
     selectedMemberIds,
     onMemberIdsChange,
     onSuccess,
-}: CreateTeamFormPanelProps) {
+}: TeamFormPanelProps) {
+    const isEdit = mode === 'edit';
     const titleId = useId();
     const panelRef = useRef<HTMLElement>(null);
     const nameInputRef = useRef<HTMLInputElement>(null);
@@ -83,9 +102,13 @@ export function CreateTeamFormPanel({
         };
     }, [open, onClose]);
 
-    if (!open) {
+    if (!open || (isEdit && team === undefined)) {
         return null;
     }
+
+    const formConfig = isEdit
+        ? update.form.patch({ team: team.id })
+        : store.form.post();
 
     return (
         <div
@@ -106,14 +129,20 @@ export function CreateTeamFormPanel({
                 <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4 sm:px-6">
                     <div className="flex items-center gap-2.5">
                         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-700">
-                            <IconPlus className="size-[18px]" />
+                            {isEdit ? (
+                                <IconPencil className="size-[18px]" />
+                            ) : (
+                                <IconPlus className="size-[18px]" />
+                            )}
                         </span>
                         <div>
                             <h2 id={titleId} className="text-base font-semibold text-gray-900">
-                                Team toevoegen
+                                {isEdit ? 'Team bewerken' : 'Team toevoegen'}
                             </h2>
                             <p className="mt-0.5 text-sm text-gray-500">
-                                Maak een team aan en voeg collega&apos;s toe.
+                                {isEdit
+                                    ? 'Pas naam, afdeling of leden aan.'
+                                    : 'Maak een team aan en voeg collega’s toe.'}
                             </p>
                         </div>
                     </div>
@@ -128,10 +157,13 @@ export function CreateTeamFormPanel({
                 </div>
 
                 <Form
-                    {...store.form.post()}
+                    key={isEdit ? team.id : 'create'}
+                    {...formConfig}
                     options={{
                         onSuccess: () => {
-                            onMemberIdsChange([]);
+                            if (!isEdit) {
+                                onMemberIdsChange([]);
+                            }
                             onSuccess();
                             onClose();
                         },
@@ -150,6 +182,7 @@ export function CreateTeamFormPanel({
                                         id="team-name"
                                         name="name"
                                         required
+                                        defaultValue={isEdit ? team.name : undefined}
                                         placeholder="bijv. Logistiek A"
                                         className={inputClass}
                                     />
@@ -168,6 +201,7 @@ export function CreateTeamFormPanel({
                                     <input
                                         id="team-department"
                                         name="department"
+                                        defaultValue={isEdit ? (team.department ?? '') : undefined}
                                         placeholder="bijv. Operationeel"
                                         className={inputClass}
                                     />
@@ -183,6 +217,14 @@ export function CreateTeamFormPanel({
                                 onChange={onMemberIdsChange}
                                 disabled={processing}
                             />
+                            {selectedMemberIds.map((memberId) => (
+                                <input
+                                    key={memberId}
+                                    type="hidden"
+                                    name="member_ids[]"
+                                    value={memberId}
+                                />
+                            ))}
                             {errors['member_ids.0'] ?? errors.member_ids ? (
                                 <p className="-mt-3 text-xs text-red-600">
                                     {errors['member_ids.0'] ?? errors.member_ids}
@@ -203,7 +245,7 @@ export function CreateTeamFormPanel({
                                     disabled={processing}
                                     className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                    Team opslaan
+                                    {isEdit ? 'Wijzigingen opslaan' : 'Team opslaan'}
                                 </button>
                             </div>
                         </>

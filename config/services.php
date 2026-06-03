@@ -61,6 +61,14 @@ return [
     'timetraq' => [
         'tracker_download_url' => env('TIMETRAQ_TRACKER_DOWNLOAD_URL'),
     ],
+
+    /*
+    | Combell HTTP cron (public/jobs/task.php?token=...). Genereer een lang geheim
+    | (bijv. php artisan str:random 64) en gebruik dezelfde waarde in de cron-URL.
+    */
+    'cron' => [
+        'secret' => env('CRON_SECRET'),
+    ],
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

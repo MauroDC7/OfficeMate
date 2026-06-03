@@ -2,13 +2,16 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class DraftWeeklyStatusUpdateRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        $user = $this->user();
+
+        return $user !== null && $user->role === UserRole::Employee;
     }
 
     /**

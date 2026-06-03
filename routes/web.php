@@ -23,12 +23,16 @@ use App\Http\Controllers\Settings\OrganizationInviteController;
 use App\Http\Controllers\Settings\OrganizationOfficeIpsController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
 use App\Http\Controllers\Settings\RemoveOrganizationMemberController;
+use App\Http\Controllers\Settings\StartNewOrganizationController;
 use App\Http\Controllers\Settings\StoreOrganizationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
 use App\Http\Controllers\TimesheetEntryProposalController;
 use App\Http\Controllers\TimesheetTrackerWindowTitlesController;
+use App\Http\Controllers\TimyActionController;
+use App\Http\Controllers\TimyContextController;
+use App\Http\Controllers\TimyConversationController;
 use App\Http\Controllers\UpdateTaskAvailabilityController;
 use App\Http\Controllers\WeeklyStatusController;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +60,21 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('weekly-status.store');
     Route::patch('/dashboard/task-availability', UpdateTaskAvailabilityController::class)
         ->name('dashboard.task-availability.update');
+    Route::get('/timy/context', TimyContextController::class)
+        ->name('timy.context');
+    Route::post('/timy/actions', [TimyActionController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('timy.actions.store');
+    Route::get('/timy/conversations', [TimyConversationController::class, 'index'])
+        ->name('timy.conversations.index');
+    Route::post('/timy/conversations', [TimyConversationController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('timy.conversations.store');
+    Route::get('/timy/conversations/{timy_conversation}', [TimyConversationController::class, 'show'])
+        ->name('timy.conversations.show');
+    Route::post('/timy/conversations/{timy_conversation}/messages', [TimyConversationController::class, 'storeMessage'])
+        ->middleware('throttle:30,1')
+        ->name('timy.conversations.messages.store');
     Route::get('/timesheets', [AppPageController::class, 'timesheets'])->name('timesheets');
     Route::get('/timesheets/tracker-window-titles', TimesheetTrackerWindowTitlesController::class)
         ->name('timesheets.tracker-window-titles');
@@ -141,13 +160,17 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->middleware('admin')
         ->name('settings.employees.destroy');
     Route::get('/teams', [TeamController::class, 'index'])->name('teams');
-    Route::patch('/teams/organization/{organization}', OrganizationSettingsController::class)
+    Route::patch('/teams/organization', OrganizationSettingsController::class)
         ->middleware('admin')
         ->name('teams.organization.update');
+    Route::post('/teams/organization/new', StartNewOrganizationController::class)
+        ->middleware('admin')
+        ->name('teams.organization.start-new');
     Route::post('/teams/organization-invites', [OrganizationInviteController::class, 'store'])
         ->middleware(['admin', 'throttle:10,1'])
         ->name('teams.organization-invites.store');
     Route::post('/teams', [TeamController::class, 'store'])->middleware('admin')->name('teams.store');
+    Route::get('/teams/{team}', [TeamController::class, 'show'])->name('teams.show');
     Route::patch('/teams/{team}', [TeamController::class, 'update'])->middleware('admin')->name('teams.update');
     Route::delete('/teams/{team}', [TeamController::class, 'destroy'])->middleware('admin')->name('teams.destroy');
     Route::post('/teams/{team}/join', [TeamMembershipController::class, 'store'])->name('teams.join');
