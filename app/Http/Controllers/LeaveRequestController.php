@@ -12,6 +12,7 @@ use App\Http\Requests\UpdateLeaveRequest;
 use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Services\LeaveRequestMedicalCertificateStorage;
+use App\Services\LeaveRequestNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -20,6 +21,7 @@ final class LeaveRequestController extends Controller
 {
     public function __construct(
         private readonly LeaveRequestMedicalCertificateStorage $medicalCertificateStorage,
+        private readonly LeaveRequestNotifier $leaveRequestNotifier,
     ) {}
 
     public function store(StoreLeaveRequest $request): RedirectResponse
@@ -41,6 +43,8 @@ final class LeaveRequestController extends Controller
         if ($type === LeaveType::Sick && $request->hasFile('medical_certificate')) {
             $this->medicalCertificateStorage->store($leaveRequest, $request->file('medical_certificate'));
         }
+
+        $this->leaveRequestNotifier->notifyAdminsOfSubmission($leaveRequest);
 
         return redirect()->route('leaveRequests');
     }
@@ -95,6 +99,8 @@ final class LeaveRequestController extends Controller
 
         $this->markApproved($leaveRequest);
 
+        $this->leaveRequestNotifier->notifyEmployeeOfApproval($leaveRequest);
+
         $user = auth()->user();
 
         return $this->redirectAfterAdminLeaveAction($user instanceof User ? $user : null);
@@ -125,6 +131,13 @@ final class LeaveRequestController extends Controller
                 'rejection_reason' => null,
             ]);
 
+        foreach ($leaveRequests as $leaveRequest) {
+            $leaveRequest->status = LeaveRequestStatus::Approved;
+            $leaveRequest->rejection_reason = null;
+        }
+
+        $this->leaveRequestNotifier->notifyEmployeesOfBulkApproval($leaveRequests);
+
         return $this->redirectAfterAdminLeaveAction($request->user());
     }
 
@@ -144,6 +157,8 @@ final class LeaveRequestController extends Controller
             'status' => LeaveRequestStatus::Rejected,
             'rejection_reason' => $validated['rejection_reason'] ?? null,
         ]);
+
+        $this->leaveRequestNotifier->notifyEmployeeOfRejection($leaveRequest);
 
         return $this->redirectAfterAdminLeaveAction($request->user());
     }
