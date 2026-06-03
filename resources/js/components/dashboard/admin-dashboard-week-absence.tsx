@@ -1,6 +1,9 @@
 import { Link } from '@inertiajs/react';
 
-import { adminDashboardSectionLinkClassName } from '@/components/dashboard/admin-dashboard-section-link';
+import {
+    dashboardSectionClassName,
+    dashboardSectionLinkClassName,
+} from '@/components/dashboard/dashboard-styles';
 import { formatLeavePeriod } from '@/components/leave-requests/leave-request-helpers';
 import { leaveRequests as adminLeaveRequests } from '@/routes/admin';
 import type { AdminDashboardCurrentLeave } from '@/types/dashboard';
@@ -13,7 +16,7 @@ export function AdminDashboardWeekAbsence({
     currentLeave,
 }: AdminDashboardWeekAbsenceProps) {
     return (
-        <section className="rounded-xl border border-gray-200 border-s-4 border-s-red-600 bg-white shadow-sm">
+        <section className={dashboardSectionClassName}>
             <div className="flex flex-col gap-2 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div>
                     <h2 className="text-sm font-semibold text-gray-900">
@@ -30,7 +33,7 @@ export function AdminDashboardWeekAbsence({
                 </div>
                 <Link
                     href={adminLeaveRequests.url({ query: { status: 'approved' } })}
-                    className={adminDashboardSectionLinkClassName}
+                    className={dashboardSectionLinkClassName}
                 >
                     Verlofbeheer
                 </Link>

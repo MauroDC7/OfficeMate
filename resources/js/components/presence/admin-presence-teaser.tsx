@@ -1,6 +1,9 @@
 import { Link } from '@inertiajs/react';
 
-import { adminDashboardSectionLinkClassName } from '@/components/dashboard/admin-dashboard-section-link';
+import {
+    dashboardSectionClassName,
+    dashboardSectionLinkClassName,
+} from '@/components/dashboard/dashboard-styles';
 import { teams } from '@/routes';
 import type { PresenceSummary } from '@/types/presence';
 
@@ -30,7 +33,7 @@ export function AdminPresenceTeaser({ summary }: AdminPresenceTeaserProps) {
     const total = totalEmployees(summary);
 
     return (
-        <section className="rounded-xl border border-gray-200 border-s-4 border-s-red-600 bg-white shadow-sm">
+        <section className={dashboardSectionClassName}>
             <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div>
                     <h2 className="text-sm font-semibold text-gray-900">
@@ -44,7 +47,7 @@ export function AdminPresenceTeaser({ summary }: AdminPresenceTeaserProps) {
                 </div>
                 <Link
                     href={teams.url({ query: { tab: 'people' } })}
-                    className={adminDashboardSectionLinkClassName}
+                    className={dashboardSectionLinkClassName}
                 >
                     Alle medewerkers
                 </Link>

@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 
+import { dashboardSnapshotCardClassName } from '@/components/dashboard/dashboard-styles';
 import { formatDayTotal } from '@/components/timesheets/timesheet-helpers';
 import { leaveRequests as adminLeaveRequests } from '@/routes/admin';
 import { settings, teams, timesheets } from '@/routes';
@@ -21,12 +22,9 @@ type SnapshotCardProps = {
     href: string;
 };
 
-const snapshotCardClassName =
-    'block rounded-xl border border-gray-200 border-s-4 border-s-red-600 bg-white p-4 shadow-sm transition hover:border-gray-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900';
-
 function SnapshotCard({ label, value, detail, href }: SnapshotCardProps) {
     return (
-        <Link href={href} className={snapshotCardClassName}>
+        <Link href={href} className={dashboardSnapshotCardClassName}>
             <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
                 {label}
             </p>

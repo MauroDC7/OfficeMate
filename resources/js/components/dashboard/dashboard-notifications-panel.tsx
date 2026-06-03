@@ -1,3 +1,4 @@
+import { dashboardSectionClassName } from '@/components/dashboard/dashboard-styles';
 import { formatShortRelativeNl } from '@/components/timesheets/timesheet-helpers';
 import type { DashboardNotification } from '@/types/dashboard';
 
@@ -9,7 +10,7 @@ export function DashboardNotificationsPanel({
     notifications,
 }: DashboardNotificationsPanelProps) {
     return (
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <section className={dashboardSectionClassName}>
             <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div className="min-w-0">
                     <h2 className="text-sm font-semibold text-gray-900">

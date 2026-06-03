@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\LeaveRequestStatus;
 use App\Models\LeaveRequest;
-use App\Models\Project;
 use App\Models\TimesheetEntry;
 use App\Models\TimesheetEntryProposal;
 use App\Models\User;
@@ -16,16 +15,27 @@ final class EmployeeDashboardStats
 
     public function __construct(
         private readonly OrganizationLeaveOverview $organizationLeaveOverview,
+        private readonly TimesheetProjectNormalizer $timesheetProjectNormalizer,
+        private readonly ProjectsEmployeeContext $projectsEmployeeContext,
     ) {}
 
     /**
      * @return array{
      *     activeProjects: list<array{id: int, name: string, client_name: string|null}>,
+     *     actionCount: int,
      *     pendingTimesheetCount: int,
      *     hoursThisWeekMinutes: int,
      *     openLeaveDays: int,
      *     pendingLeaveRequestCount: int,
+     *     weeklyStatusReminderDue: bool,
      *     weekStart: string,
+     *     myLeaveThisWeek: list<array{
+     *         id: int,
+     *         starts_on: string,
+     *         ends_on: string,
+     *         type_label: string,
+     *         user: array{id: int, name: string}
+     *     }>,
      *     teamLeaveThisWeek: list<array{
      *         id: int,
      *         starts_on: string,
@@ -44,17 +54,14 @@ final class EmployeeDashboardStats
         $monday = $today->startOfWeek(CarbonImmutable::MONDAY);
         $weekEnd = $monday->addDays(6);
 
-        $activeProjects = Project::query()
-            ->active()
-            ->orderBy('name')
-            ->get(['id', 'name', 'client_name'])
-            ->map(fn (Project $project): array => [
-                'id' => $project->id,
-                'name' => $project->name,
-                'client_name' => $project->client_name,
-            ])
-            ->values()
-            ->all();
+        $activeProjects = array_map(
+            fn (array $project): array => [
+                'id' => $project['id'],
+                'name' => $project['name'],
+                'client_name' => $project['client_name'],
+            ],
+            $this->timesheetProjectNormalizer->optionsFor($user),
+        );
 
         $hoursThisWeekMinutes = (int) TimesheetEntry::query()
             ->where('user_id', $user->id)
@@ -67,6 +74,7 @@ final class EmployeeDashboardStats
 
         $pendingTimesheetCount = TimesheetEntryProposal::query()
             ->where('user_id', $user->id)
+            ->whereBetween('worked_on', [$monday->toDateString(), $weekEnd->toDateString()])
             ->count();
 
         $pendingLeaveRequestCount = LeaveRequest::query()
@@ -74,12 +82,32 @@ final class EmployeeDashboardStats
             ->where('status', LeaveRequestStatus::Pending)
             ->count();
 
-        $openLeaveDays = (int) LeaveRequest::query()
+        $openLeaveDays = 0;
+
+        LeaveRequest::query()
             ->where('user_id', $user->id)
             ->where('status', LeaveRequestStatus::Approved)
             ->where('ends_on', '>=', $today->toDateString())
             ->get()
-            ->sum(fn (LeaveRequest $request): int => $this->remainingLeaveDays($request, $today));
+            ->each(function (LeaveRequest $request) use ($today, &$openLeaveDays): void {
+                $openLeaveDays += $this->remainingLeaveDays($request, $today);
+            });
+
+        $weeklyStatus = $this->projectsEmployeeContext->forUser($user)['weeklyStatus'];
+        $weeklyStatusReminderDue = is_array($weeklyStatus) && $weeklyStatus['reminder_due'];
+
+        $actionCount = $pendingTimesheetCount + ($weeklyStatusReminderDue ? 1 : 0);
+
+        $myLeaveThisWeek = $user->organization_id !== null
+            ? $this->organizationLeaveOverview->approvedLeaveBetween(
+                $user->organization_id,
+                $monday,
+                $weekEnd,
+                excludeUserId: null,
+                limit: 3,
+                onlyUserIds: [$user->id],
+            )
+            : [];
 
         $teamLeaveThisWeek = $user->organization_id !== null
             ? $this->organizationLeaveOverview->approvedLeaveBetween(
@@ -93,11 +121,14 @@ final class EmployeeDashboardStats
 
         return [
             'activeProjects' => $activeProjects,
+            'actionCount' => $actionCount,
             'pendingTimesheetCount' => $pendingTimesheetCount,
             'hoursThisWeekMinutes' => $hoursThisWeekMinutes,
             'openLeaveDays' => $openLeaveDays,
             'pendingLeaveRequestCount' => $pendingLeaveRequestCount,
+            'weeklyStatusReminderDue' => $weeklyStatusReminderDue,
             'weekStart' => $monday->toDateString(),
+            'myLeaveThisWeek' => $myLeaveThisWeek,
             'teamLeaveThisWeek' => $teamLeaveThisWeek,
             'hasOrganization' => $user->organization_id !== null,
             'recentNotifications' => $user->notifications()

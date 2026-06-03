@@ -2,7 +2,10 @@ import { Link, router } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
 import { useAlert } from '@/components/alert';
-import { adminDashboardSectionLinkClassName } from '@/components/dashboard/admin-dashboard-section-link';
+import {
+    dashboardSectionClassName,
+    dashboardSectionLinkClassName,
+} from '@/components/dashboard/dashboard-styles';
 import { formatLeavePeriod } from '@/components/leave-requests/leave-request-helpers';
 import { leaveRequests as adminLeaveRequests } from '@/routes/admin';
 import { settings, teams } from '@/routes';
@@ -78,7 +81,7 @@ function InboxSection({
                     {title}
                     <span className="ms-1.5 font-normal text-gray-500">({count})</span>
                 </h3>
-                <Link href={href} className={adminDashboardSectionLinkClassName}>
+                <Link href={href} className={dashboardSectionLinkClassName}>
                     {hrefLabel}
                 </Link>
             </div>
@@ -138,7 +141,7 @@ export function AdminDashboardActionInbox({
     return (
         <section
             id="acties"
-            className="scroll-mt-4 rounded-xl border border-gray-200 border-s-4 border-s-red-600 bg-white shadow-sm"
+            className={`scroll-mt-4 ${dashboardSectionClassName}`}
         >
             <div className="border-b border-gray-100 px-4 py-4 sm:px-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">

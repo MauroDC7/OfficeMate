@@ -16,11 +16,14 @@ import type { AdminDashboardPresenceSummary } from '@/types/presence';
 
 export type EmployeeDashboardProps = {
     activeProjects: DashboardProject[];
+    actionCount: number;
     pendingTimesheetCount: number;
     hoursThisWeekMinutes: number;
     openLeaveDays: number;
     pendingLeaveRequestCount: number;
+    weeklyStatusReminderDue: boolean;
     weekStart: string;
+    myLeaveThisWeek: TeamLeaveItem[];
     teamLeaveThisWeek: TeamLeaveItem[];
     hasOrganization: boolean;
     recentNotifications: DashboardNotification[];
