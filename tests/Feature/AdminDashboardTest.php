@@ -80,6 +80,7 @@ it('shows admin dashboard stats for the organization', function () {
             ->where('hoursThisWeekMinutes', 240)
             ->where('weekStart', $monday->toDateString())
             ->has('pendingMemberships', 2)
+            ->has('pendingLeaveRequests', 1)
             ->has('currentLeave')
             ->where('employmentSetupCount', 0)
             ->where('presenceSummary.in_office', 0)

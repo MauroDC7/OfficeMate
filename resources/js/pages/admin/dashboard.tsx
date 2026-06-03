@@ -1,85 +1,11 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 
-import { useAlert } from '@/components/alert';
-import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
-import { formatDayTotal } from '@/components/timesheets/timesheet-helpers';
-import { AppLayout } from '@/layouts/app-layout';
-import { leaveRequests as adminLeaveRequests } from '@/routes/admin';
-import { settings, teams, timesheets } from '@/routes';
-import { AdminLeaveManagementTeaser } from '@/components/leave-requests/admin-leave-management-teaser';
+import { AdminDashboardActionInbox } from '@/components/dashboard/admin-dashboard-action-inbox';
+import { AdminDashboardSnapshot } from '@/components/dashboard/admin-dashboard-snapshot';
+import { AdminDashboardWeekAbsence } from '@/components/dashboard/admin-dashboard-week-absence';
 import { AdminPresenceTeaser } from '@/components/presence/admin-presence-teaser';
-import { approve, reject } from '@/routes/team-memberships';
-import type {
-    AdminDashboardCurrentLeave,
-    AdminDashboardProps,
-} from '@/types/dashboard';
-
-function membersDetail(memberCount: number, teamCount: number): string {
-    if (memberCount === 0) {
-        return 'Nog geen leden in je organisatie';
-    }
-
-    const teamLabel = teamCount === 1 ? '1 team' : `${teamCount} teams`;
-
-    return `Verdeeld over ${teamLabel}`;
-}
-
-function pendingMembershipsDetail(count: number): string {
-    if (count === 0) {
-        return 'Geen open teamaanvragen';
-    }
-
-    return count === 1
-        ? '1 aanvraag wacht op goedkeuring'
-        : `${count} aanvragen wachten op goedkeuring`;
-}
-
-function pendingLeaveDetail(count: number): string {
-    if (count === 0) {
-        return 'Geen open verlofaanvragen';
-    }
-
-    return count === 1
-        ? '1 verlofaanvraag in behandeling'
-        : `${count} verlofaanvragen in behandeling`;
-}
-
-function openInvitesDetail(count: number): string {
-    if (count === 0) {
-        return 'Geen openstaande uitnodigingen';
-    }
-
-    return count === 1
-        ? '1 uitnodiging wacht op acceptatie'
-        : `${count} uitnodigingen wachten op acceptatie`;
-}
-
-function pendingProposalsDetail(count: number): string {
-    if (count === 0) {
-        return 'Geen AI-voorstellen wachtend op medewerkers';
-    }
-
-    return count === 1
-        ? '1 AI-voorstel wacht op bevestiging'
-        : `${count} AI-voorstellen wachten op bevestiging`;
-}
-
-const DATE_FORMATTER = new Intl.DateTimeFormat('nl-BE', {
-    day: 'numeric',
-    month: 'short',
-});
-
-function formatLeavePeriod(leave: AdminDashboardCurrentLeave): string {
-    const start = DATE_FORMATTER.format(new Date(`${leave.starts_on}T12:00:00`));
-
-    if (leave.ends_on === leave.starts_on) {
-        return start;
-    }
-
-    const end = DATE_FORMATTER.format(new Date(`${leave.ends_on}T12:00:00`));
-
-    return `${start} – ${end}`;
-}
+import { AppLayout } from '@/layouts/app-layout';
+import type { AdminDashboardProps } from '@/types/dashboard';
 
 export default function AdminDashboard() {
     const {
@@ -88,19 +14,24 @@ export default function AdminDashboard() {
         teamCount,
         pendingMembershipCount,
         pendingLeaveRequestCount,
-        pendingProposalCount,
         openInviteCount,
         hoursThisWeekMinutes,
         weekStart,
         pendingMemberships,
+        pendingLeaveRequests,
         currentLeave,
         employmentSetupCount,
         employeesNeedingEmploymentSetup,
         presenceSummary,
     } = usePage<AdminDashboardProps>().props;
-    const { success } = useAlert();
 
     const trimmedOrganizationName = organizationName.trim();
+
+    const actionCount =
+        pendingLeaveRequestCount +
+        pendingMembershipCount +
+        employmentSetupCount +
+        openInviteCount;
 
     return (
         <AppLayout>
@@ -115,225 +46,36 @@ export default function AdminDashboard() {
                         : 'Overzicht van je organisatie.'}
                 </p>
 
-                <div className="mt-5 space-y-5">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <DashboardStatCard
-                            label="Teamleden"
-                            value={memberCount}
-                            detail={membersDetail(memberCount, teamCount)}
-                            href={teams.url()}
-                        />
-                        <DashboardStatCard
-                            label="Open teamaanvragen"
-                            value={pendingMembershipCount}
-                            detail={pendingMembershipsDetail(
-                                pendingMembershipCount,
-                            )}
-                            href={teams.url()}
-                        />
-                        <DashboardStatCard
-                            label="Verlof in behandeling"
-                            value={pendingLeaveRequestCount}
-                            detail={pendingLeaveDetail(pendingLeaveRequestCount)}
-                            href={adminLeaveRequests.url()}
-                        />
-                        <DashboardStatCard
-                            label="Open uitnodigingen"
-                            value={openInviteCount}
-                            detail={openInvitesDetail(openInviteCount)}
-                            href={settings.url()}
-                        />
-                        <DashboardStatCard
-                            label="AI-voorstellen"
-                            value={pendingProposalCount}
-                            detail={pendingProposalsDetail(pendingProposalCount)}
-                            href={timesheets.url()}
-                        />
-                        <DashboardStatCard
-                            label="Uren deze week"
-                            value={formatDayTotal(hoursThisWeekMinutes)}
-                            detail={`Week vanaf ${weekStart}`}
-                            href={timesheets.url({
-                                query: { week: weekStart },
-                            })}
-                        />
+                <div className="mt-5 space-y-6">
+                    <AdminDashboardSnapshot
+                        memberCount={memberCount}
+                        teamCount={teamCount}
+                        actionCount={actionCount}
+                        pendingLeaveRequestCount={pendingLeaveRequestCount}
+                        hoursThisWeekMinutes={hoursThisWeekMinutes}
+                        weekStart={weekStart}
+                        openInviteCount={openInviteCount}
+                    />
+
+                    <AdminDashboardActionInbox
+                        pendingLeaveRequestCount={pendingLeaveRequestCount}
+                        pendingLeaveRequests={pendingLeaveRequests}
+                        pendingMembershipCount={pendingMembershipCount}
+                        pendingMemberships={pendingMemberships}
+                        employmentSetupCount={employmentSetupCount}
+                        employeesNeedingEmploymentSetup={employeesNeedingEmploymentSetup}
+                        openInviteCount={openInviteCount}
+                    />
+
+                    <div>
+                        <h2 className="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                            Vandaag en deze week
+                        </h2>
+                        <div className="space-y-5">
+                            <AdminPresenceTeaser summary={presenceSummary} />
+                            <AdminDashboardWeekAbsence currentLeave={currentLeave} />
+                        </div>
                     </div>
-
-                    <AdminPresenceTeaser summary={presenceSummary} />
-
-                    {employmentSetupCount > 0 ? (
-                        <section className="rounded-xl border border-amber-200 bg-amber-50/50 shadow-sm">
-                            <div className="border-b border-amber-200/80 px-4 py-3 sm:px-5">
-                                <h2 className="text-sm font-semibold text-gray-900">
-                                    Contract instellen
-                                </h2>
-                                <p className="mt-0.5 text-xs text-gray-600">
-                                    {employmentSetupCount === 1
-                                        ? '1 nieuwe medewerker wacht op een contracttype of uitzondering.'
-                                        : `${employmentSetupCount} nieuwe medewerkers wachten op een contracttype of uitzondering.`}
-                                </p>
-                            </div>
-                            <ul className="divide-y divide-amber-200/60">
-                                {employeesNeedingEmploymentSetup.map((employee) => (
-                                    <li
-                                        key={employee.id}
-                                        className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5"
-                                    >
-                                        <div className="min-w-0">
-                                            <p className="truncate text-sm font-medium text-gray-900">
-                                                {employee.name}
-                                            </p>
-                                            <p className="truncate text-xs text-gray-500">{employee.email}</p>
-                                        </div>
-                                        <Link
-                                            href={`${settings.url({
-                                                query: { employee: employee.id },
-                                            })}#employment-exception`}
-                                            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
-                                        >
-                                            Contract instellen
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                            {employmentSetupCount > employeesNeedingEmploymentSetup.length ? (
-                                <p className="border-t border-amber-200/80 px-4 py-2 text-center text-xs text-gray-500 sm:px-5">
-                                    Toon {employeesNeedingEmploymentSetup.length} van {employmentSetupCount}.{' '}
-                                    <Link
-                                        href={`${settings.url()}#employment-exception`}
-                                        className="font-medium text-gray-700 underline underline-offset-2 hover:text-gray-900"
-                                    >
-                                        Naar instellingen
-                                    </Link>
-                                </p>
-                            ) : null}
-                        </section>
-                    ) : null}
-
-                    <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                        <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                            <div>
-                                <h2 className="text-sm font-semibold text-gray-900">
-                                    Open teamaanvragen
-                                </h2>
-                                <p className="mt-0.5 text-xs text-gray-500">
-                                    Medewerkers die wachten om bij een team te
-                                    horen.
-                                </p>
-                            </div>
-                        </div>
-
-                        {pendingMemberships.length === 0 ? (
-                            <p className="px-4 py-8 text-center text-sm text-gray-500 sm:px-5">
-                                Geen open aanvragen op dit moment.
-                            </p>
-                        ) : (
-                            <ul className="divide-y divide-gray-100">
-                                {pendingMemberships.map((membership) => (
-                                    <li
-                                        key={membership.id}
-                                        className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5"
-                                    >
-                                        <div className="min-w-0">
-                                            <p className="truncate text-sm font-medium text-gray-900">
-                                                {membership.user.name}
-                                            </p>
-                                            <p className="truncate text-xs text-gray-500">
-                                                {membership.user.email} ·{' '}
-                                                {membership.team.name}
-                                            </p>
-                                        </div>
-                                        <div className="flex shrink-0 gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    router.post(
-                                                        approve.url({
-                                                            team_membership:
-                                                                membership.id,
-                                                        }),
-                                                        {},
-                                                        {
-                                                            preserveScroll: true,
-                                                            onSuccess: () =>
-                                                                success(
-                                                                    'Lidmaatschap goedgekeurd.',
-                                                                ),
-                                                        },
-                                                    )
-                                                }
-                                                className="flex-1 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 sm:flex-none sm:py-1.5 sm:text-xs"
-                                            >
-                                                Goedkeuren
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    router.post(
-                                                        reject.url({
-                                                            team_membership:
-                                                                membership.id,
-                                                        }),
-                                                        {},
-                                                        {
-                                                            preserveScroll: true,
-                                                            onSuccess: () =>
-                                                                success(
-                                                                    'Lidmaatschap afgewezen.',
-                                                                ),
-                                                        },
-                                                    )
-                                                }
-                                                className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:flex-none sm:py-1.5 sm:text-xs"
-                                            >
-                                                Afwijzen
-                                            </button>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </section>
-
-                    <AdminLeaveManagementTeaser pendingCount={pendingLeaveRequestCount} />
-
-                    <section className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                        <div className="border-b border-gray-100 px-4 py-3 sm:px-5">
-                            <h2 className="text-sm font-semibold text-gray-900">
-                                Afwezig deze week
-                            </h2>
-                            <p className="mt-0.5 text-xs text-gray-500">
-                                Goedgekeurd verlof dat loopt of deze week start.
-                            </p>
-                        </div>
-
-                        {currentLeave.length === 0 ? (
-                            <p className="px-4 py-8 text-center text-sm text-gray-500 sm:px-5">
-                                Iedereen is deze week beschikbaar.
-                            </p>
-                        ) : (
-                            <ul className="divide-y divide-gray-100">
-                                {currentLeave.map((leave) => (
-                                    <li
-                                        key={leave.id}
-                                        className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5"
-                                    >
-                                        <div className="min-w-0">
-                                            <p className="truncate text-sm font-medium text-gray-900">
-                                                {leave.user.name}
-                                            </p>
-                                            <p className="truncate text-xs text-gray-500">
-                                                {leave.type_label}
-                                            </p>
-                                        </div>
-                                        <p className="shrink-0 text-xs font-medium text-gray-600">
-                                            {formatLeavePeriod(leave)}
-                                        </p>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </section>
                 </div>
             </main>
         </AppLayout>

@@ -26,6 +26,17 @@ export type EmployeeDashboardProps = {
     recentNotifications: DashboardNotification[];
 };
 
+export type AdminDashboardPendingLeave = {
+    id: number;
+    starts_on: string;
+    ends_on: string;
+    type_label: string;
+    user: {
+        id: number;
+        name: string;
+    };
+};
+
 export type AdminDashboardPendingMembership = {
     id: number;
     team: {
@@ -69,6 +80,7 @@ export type AdminDashboardProps = {
     hoursThisWeekMinutes: number;
     weekStart: string;
     pendingMemberships: AdminDashboardPendingMembership[];
+    pendingLeaveRequests: AdminDashboardPendingLeave[];
     currentLeave: AdminDashboardCurrentLeave[];
     employmentSetupCount: number;
     employeesNeedingEmploymentSetup: AdminDashboardEmployeeNeedingEmploymentSetup[];
