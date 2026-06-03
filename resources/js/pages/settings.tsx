@@ -117,7 +117,7 @@ export default function Settings() {
                 {canCreateOrganization ? <OrganizationSetupSection /> : null}
 
                 <section
-                    className="mt-5 w-full min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6 sm:rounded-2xl lg:mt-7"
+                    className="mt-5 w-full min-w-0 rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6 sm:rounded-2xl lg:mt-7"
                     aria-labelledby="account-card-title"
                 >
                     <div className="flex items-center gap-2.5 border-b border-gray-200 px-5 py-4 sm:px-6 sm:py-5">

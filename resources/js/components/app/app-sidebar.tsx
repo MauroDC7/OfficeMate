@@ -85,9 +85,9 @@ export function AppSidebar({ isMobileOpen, onCloseMobile }: AppSidebarProps) {
                 aria-label="Hoofdnavigatie"
                 aria-hidden={!isMobileOpen ? undefined : false}
                 className={cn(
-                    'fixed inset-y-0 start-0 z-50 flex w-72 max-w-[85vw] flex-col overflow-hidden border-e border-gray-200 bg-gray-100/95 shadow-xl transition-transform duration-200 ease-out',
-                    'md:static md:z-auto md:w-64 md:max-w-none md:shrink-0 md:translate-x-0 md:bg-gray-100/90 md:shadow-none',
-                    isMobileOpen ? 'translate-x-0' : '-translate-x-full',
+                    'fixed inset-y-0 start-0 z-50 flex w-72 max-w-[85vw] flex-col border-e border-gray-200 bg-gray-100/95 shadow-xl transition-transform duration-200 ease-out md:w-64',
+                    'md:translate-x-0 md:bg-gray-100/90 md:shadow-none',
+                    isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
                 )}
             >
                 <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-200/80 px-5 py-5 sm:py-6">
@@ -131,10 +131,7 @@ export function AppSidebar({ isMobileOpen, onCloseMobile }: AppSidebarProps) {
                     </button>
                 </div>
 
-                <nav
-                    className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
-                    aria-label="Navigatie"
-                >
+                <nav className="flex flex-col gap-1 px-3 py-4" aria-label="Navigatie">
                     {links.map(({ label, route, src }) => {
                         const href = route.url();
                         const active = here === pathOnly(href);

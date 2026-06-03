@@ -322,14 +322,13 @@ export function ChatbotWidget() {
 
             <motion.button
                 type="button"
-                layout
                 onClick={() => setIsOpen((open) => !open)}
                 aria-expanded={isOpen}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.94 }}
                 transition={fabSpring}
                 className={cn(
-                    'fixed end-4 bottom-4 z-[60] inline-flex items-center justify-center gap-2 overflow-hidden rounded-full border shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:end-6 sm:bottom-6',
+                    'fixed end-4 bottom-[max(1rem,env(safe-area-inset-bottom,0px))] z-[100] inline-flex items-center justify-center gap-2 overflow-hidden rounded-full border shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:end-6',
                     isOpen
                         ? 'size-12 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-gray-900'
                         : 'border-gray-200 bg-white px-4 py-3 text-gray-900 shadow-md hover:border-gray-300 hover:bg-gray-50 focus-visible:outline-gray-900 sm:pe-5',

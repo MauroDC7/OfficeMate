@@ -28,16 +28,14 @@ export function AppLayout({ children }: PropsWithChildren) {
     }, [isSidebarOpen]);
 
     return (
-        <div className="flex h-svh min-h-0 overflow-hidden bg-white">
+        <div className="min-h-dvh bg-gray-50/40">
             <AppSidebar
                 isMobileOpen={isSidebarOpen}
                 onCloseMobile={() => setSidebarOpen(false)}
             />
-            <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-dvh min-w-0 flex-col md:ps-64">
                 <AppHeader onOpenMobileSidebar={() => setSidebarOpen(true)} />
-                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-gray-50/40">
-                    {children}
-                </div>
+                <div className="pb-24">{children}</div>
             </div>
             <FlashAlerts />
             <ChatbotWidget />
