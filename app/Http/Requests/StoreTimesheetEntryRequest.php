@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\NormalizesTimesheetProject;
+use App\Http\Requests\Concerns\TimesheetEntryValidationMessages;
 use App\Http\Requests\Concerns\ValidatesTimesheetEntryColor;
 use App\Models\TimesheetEntry;
 use Carbon\CarbonImmutable;
@@ -13,6 +14,7 @@ use Illuminate\Validation\Validator;
 class StoreTimesheetEntryRequest extends FormRequest
 {
     use NormalizesTimesheetProject;
+    use TimesheetEntryValidationMessages;
     use ValidatesTimesheetEntryColor;
 
     /**
