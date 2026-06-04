@@ -90,7 +90,7 @@ export function WeeklyStatusFormPanel({ weeklyStatus, onClose, onSuccess }: Week
                 <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4 sm:px-6">
                     <div>
                         <h2 id={titleId} className="text-base font-semibold text-gray-900">
-                            Weekly debrief
+                            Weekstatus
                         </h2>
                         <p className="mt-0.5 text-sm text-gray-500">
                             Wat was moeilijk deze week en wat staat er volgende week op de planning?

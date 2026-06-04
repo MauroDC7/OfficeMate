@@ -126,7 +126,7 @@ it('generates a weekly debrief draft when asked', function () {
 
     $response = $this->actingAs($user)
         ->postJson(route('timy.conversations.messages.store', $conversation), [
-            'content' => 'Genereer een weekly debrief concept',
+            'content' => 'Genereer een weekstatus-concept',
             'page_path' => '/projects',
         ]);
 

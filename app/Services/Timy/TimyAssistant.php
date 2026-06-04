@@ -208,7 +208,7 @@ PROMPT;
     {
         if (! $this->weeklyDebriefDraftGenerator->isConfigured()) {
             return [
-                'content' => 'Een AI-concept voor je weekly debrief is nu niet beschikbaar. Vraag je beheerder om OPENAI_API_KEY in te stellen, of vul je debrief handmatig in op Projecten.',
+                'content' => 'Een AI-concept voor je weekstatus is nu niet beschikbaar. Vraag je beheerder om OPENAI_API_KEY in te stellen, of vul je weekstatus handmatig in op Projecten.',
                 'actions' => [
                     ['label' => 'Naar projecten', 'href' => route('projects')],
                 ],
@@ -221,7 +221,7 @@ PROMPT;
 
             $draft = $this->weeklyDebriefDraftGenerator->generate($user, $weekStart);
 
-            $content = "Hier is een concept voor je weekly debrief deze week:\n\n"
+            $content = "Hier is een concept voor je weekstatus deze week:\n\n"
                 ."Wat ging lastig:\n{$draft['difficult_this_week']}\n\n"
                 ."Plannen volgende week:\n{$draft['plans_next_week']}\n\n"
                 .'Kopieer dit naar het formulier op Projecten en pas het gerust aan.';
@@ -229,7 +229,7 @@ PROMPT;
             return [
                 'content' => $content,
                 'actions' => [
-                    ['label' => 'Weekly debrief invullen', 'href' => route('projects')],
+                    ['label' => 'Weekstatus invullen', 'href' => route('projects')],
                 ],
             ];
         } catch (RuntimeException $exception) {

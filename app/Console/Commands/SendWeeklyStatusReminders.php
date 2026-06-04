@@ -20,7 +20,7 @@ final class SendWeeklyStatusReminders extends Command
     /**
      * @var string
      */
-    protected $description = 'Stuur e-mailherinneringen voor de weekly debrief';
+    protected $description = 'Stuur e-mailherinneringen voor de weekstatus';
 
     public function __construct(
         private readonly WeeklyDebriefSchedule $weeklyDebriefSchedule,
