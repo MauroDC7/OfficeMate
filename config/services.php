@@ -59,7 +59,10 @@ return [
     ],
 
     'timetraq' => [
-        'tracker_download_url' => env('TIMETRAQ_TRACKER_DOWNLOAD_URL'),
+        'tracker_download_url' => env(
+            'TIMETRAQ_TRACKER_DOWNLOAD_URL',
+            'https://github.com/MauroDC7/tracker/releases/tag/v1.0.0',
+        ),
     ],
 
     /*

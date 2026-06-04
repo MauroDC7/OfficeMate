@@ -22,7 +22,11 @@ it('shows tracker preferences on settings', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('tracker.use_ai_for_proposals', false)
-            ->where('tracker.blocklist', ['spotify']));
+            ->where('tracker.blocklist', ['spotify'])
+            ->where(
+                'tracker.download_url',
+                'https://github.com/MauroDC7/tracker/releases/tag/v1.0.0',
+            ));
 });
 
 it('updates tracker preferences', function () {

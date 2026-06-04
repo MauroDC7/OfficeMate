@@ -248,18 +248,20 @@ export function TrackerSettingsSection({ tracker }: TrackerSettingsSectionProps)
                                     <p>
                                         <strong className="font-medium text-gray-800">Installatie:</strong>{' '}
                                         {tracker.download_url !== null ? (
-                                            <a
-                                                href={tracker.download_url}
-                                                className="text-red-600 underline underline-offset-2 hover:text-red-700"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                Download de tracker
-                                            </a>
+                                            <>
+                                                <a
+                                                    href={tracker.download_url}
+                                                    className="text-red-600 underline underline-offset-2 hover:text-red-700"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    TimeTraq Tracker v1.0.0 downloaden
+                                                </a>
+                                                , log in met dit account en laat de app draaien.
+                                            </>
                                         ) : (
-                                            'Vraag de downloadlink aan je beheerder.'
+                                            'Vraag de downloadlink aan je beheerder, log in met dit account en laat de app draaien.'
                                         )}
-                                        , log in met dit account en laat de app draaien.
                                     </p>
                                     <p>
                                         <strong className="font-medium text-gray-800">Timesheets:</strong> ga naar{' '}
