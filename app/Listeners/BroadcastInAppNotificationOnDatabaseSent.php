@@ -3,7 +3,6 @@
 namespace App\Listeners;
 
 use App\Events\InAppNotificationChanged;
-use App\Jobs\EnhanceDatabaseInAppNotification;
 use App\Models\User;
 use App\Notifications\Contracts\ProvidesSmartInAppNotificationEnhancement;
 use App\Services\SmartInAppNotificationCopy;
@@ -30,24 +29,28 @@ final class BroadcastInAppNotificationOnDatabaseSent
 
         $notification = $event->notification;
 
-        if (! $notification instanceof ProvidesSmartInAppNotificationEnhancement) {
+        if (
+            ! $notification instanceof ProvidesSmartInAppNotificationEnhancement
+            || ! $this->smartInAppNotificationCopy->isConfigured()
+            || ! $event->response instanceof DatabaseNotification
+        ) {
             return;
         }
 
-        if (! $this->smartInAppNotificationCopy->isConfigured()) {
-            return;
-        }
-
-        if (! $event->response instanceof DatabaseNotification) {
-            return;
-        }
-
-        EnhanceDatabaseInAppNotification::dispatch(
-            databaseNotificationId: $event->response->id,
-            recipientId: $event->notifiable->id,
-            kind: $notification->smartInAppNotificationKind(),
-            context: $notification->smartInAppNotificationContext($event->notifiable),
-            fallback: $notification->defaultInAppNotificationPayload(),
+        $fallback = $notification->defaultInAppNotificationPayload();
+        $payload = $this->smartInAppNotificationCopy->generate(
+            $notification->smartInAppNotificationKind(),
+            $event->notifiable,
+            $notification->smartInAppNotificationContext($event->notifiable),
+            $fallback,
         );
+
+        if ($payload === $fallback) {
+            return;
+        }
+
+        $event->response->forceFill(['data' => $payload])->save();
+
+        InAppNotificationChanged::dispatch($event->notifiable->id);
     }
 }

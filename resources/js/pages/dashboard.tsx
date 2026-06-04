@@ -1,5 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
-import { useCallback, useEffect, useRef } from 'react';
+import { Head, usePage } from '@inertiajs/react';
 
 import { DashboardNotificationsPanel } from '@/components/dashboard/dashboard-notifications-panel';
 import { EmployeeDashboardActionInbox } from '@/components/dashboard/employee-dashboard-action-inbox';
@@ -9,12 +8,10 @@ import { EmployeeDashboardTrackerBanner } from '@/components/dashboard/employee-
 import { EmployeeDashboardWeekHours } from '@/components/dashboard/employee-dashboard-week-hours';
 import { EmployeeDashboardWeekStatus } from '@/components/dashboard/employee-dashboard-week-status';
 import { AppLayout } from '@/layouts/app-layout';
-import { usePrivateChannel } from '@/lib/use-private-channel';
-import type { EmployeeDashboardProps } from '@/types/dashboard';
+import type { DashboardNotification, EmployeeDashboardProps } from '@/types/dashboard';
 
 export default function Dashboard() {
     const page = usePage<EmployeeDashboardProps>();
-    const userId = page.props.auth.user?.id ?? null;
     const {
         actionCount,
         pendingTimesheetCount,
@@ -29,35 +26,11 @@ export default function Dashboard() {
         taskAvailability,
         trackerIsConnected,
         hasOrganization,
-        recentNotifications,
     } = page.props;
 
-    const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    const onNotificationChanged = useCallback(() => {
-        if (reloadTimerRef.current !== null) {
-            clearTimeout(reloadTimerRef.current);
-        }
-
-        reloadTimerRef.current = setTimeout(() => {
-            reloadTimerRef.current = null;
-            router.reload({ only: ['recentNotifications'] });
-        }, 250);
-    }, []);
-
-    useEffect(() => {
-        return () => {
-            if (reloadTimerRef.current !== null) {
-                clearTimeout(reloadTimerRef.current);
-            }
-        };
-    }, []);
-
-    usePrivateChannel(
-        userId !== null ? `user.${userId}` : null,
-        'notification.changed',
-        onNotificationChanged,
-    );
+    const recentNotifications =
+        (page.props.recentNotifications as DashboardNotification[] | undefined) ??
+        [];
 
     return (
         <AppLayout>

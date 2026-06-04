@@ -38,7 +38,6 @@ export type EmployeeDashboardProps = {
     taskAvailabilityLabel: string | null;
     trackerIsConnected: boolean;
     hasOrganization: boolean;
-    recentNotifications: DashboardNotification[];
 };
 
 export type AdminDashboardPendingLeave = {

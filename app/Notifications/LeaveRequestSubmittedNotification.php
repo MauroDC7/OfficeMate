@@ -25,7 +25,7 @@ final class LeaveRequestSubmittedNotification extends Notification implements Pr
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database', WebPushChannel::class];
+        return ['database', 'mail', WebPushChannel::class];
     }
 
     public function smartInAppNotificationKind(): InAppNotificationKind

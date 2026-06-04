@@ -8,14 +8,17 @@ use App\Enums\UserRole;
 use App\Models\LeaveRequest;
 use App\Models\Organization;
 use App\Models\User;
+use App\Events\InAppNotificationChanged;
 use App\Notifications\LeaveRequestApprovedNotification;
 use App\Notifications\LeaveRequestRejectedNotification;
 use App\Notifications\LeaveRequestSubmittedNotification;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
     CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-05-19 10:00:00', 'UTC'));
+    Event::fake([InAppNotificationChanged::class]);
     Notification::fake();
 });
 

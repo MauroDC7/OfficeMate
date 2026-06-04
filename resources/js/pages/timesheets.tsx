@@ -85,7 +85,10 @@ export default function Timesheets() {
         [weekStart, entriesByDay],
     );
 
+    const broadcasting = page.props.broadcasting ?? null;
+
     usePrivateChannel(
+        broadcasting,
         userId !== null ? `user.${userId}` : null,
         'timesheet.changed',
         onTimesheetChanged,

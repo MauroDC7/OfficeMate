@@ -1,16 +1,20 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
-type EchoBroadcaster = 'reverb' | 'pusher';
+export type BroadcastingConfig = {
+    key: string;
+    cluster: string;
+};
 
 declare global {
     interface Window {
         Pusher: typeof Pusher;
-        Echo?: Echo<EchoBroadcaster>;
+        Echo?: Echo<'pusher'>;
     }
 }
 
-let echoInstance: Echo<EchoBroadcaster> | null = null;
+let echoInstance: Echo<'pusher'> | null = null;
+let echoSignature: string | null = null;
 
 function readCsrfToken(): string {
     const tag = document.querySelector<HTMLMetaElement>(
@@ -20,98 +24,81 @@ function readCsrfToken(): string {
     return tag?.content ?? '';
 }
 
-function resolveBroadcastDriver(): EchoBroadcaster | null {
-    const driver = import.meta.env.VITE_BROADCAST_DRIVER;
+function authorizeChannel(
+    channelName: string,
+    socketId: string,
+): Promise<Record<string, unknown>> {
+    const body = new URLSearchParams({
+        socket_id: socketId,
+        channel_name: channelName,
+    });
 
-    if (driver === 'pusher' || driver === 'reverb') {
-        return driver;
-    }
-
-    const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY;
-
-    if (typeof pusherKey === 'string' && pusherKey !== '') {
-        return 'pusher';
-    }
-
-    const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
-
-    if (typeof reverbKey === 'string' && reverbKey !== '') {
-        return 'reverb';
-    }
-
-    return null;
-}
-
-function createEcho(driver: EchoBroadcaster): Echo<EchoBroadcaster> | null {
-    window.Pusher = Pusher;
-
-    const auth = {
+    return fetch('/broadcasting/auth', {
+        method: 'POST',
+        credentials: 'same-origin',
         headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Accept: 'application/json',
             'X-CSRF-TOKEN': readCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
         },
-    };
-
-    if (driver === 'pusher') {
-        const key = import.meta.env.VITE_PUSHER_APP_KEY;
-        const cluster = import.meta.env.VITE_PUSHER_APP_CLUSTER;
-
-        if (typeof key !== 'string' || key === '') {
-            return null;
+        body: body.toString(),
+    }).then(async (response) => {
+        if (!response.ok) {
+            throw new Error(
+                `Broadcast auth failed (${response.status}) for ${channelName}`,
+            );
         }
 
-        if (typeof cluster !== 'string' || cluster === '') {
-            return null;
-        }
-
-        return new Echo({
-            broadcaster: 'pusher',
-            key,
-            cluster,
-            forceTLS: true,
-            auth,
-        });
-    }
-
-    const key = import.meta.env.VITE_REVERB_APP_KEY;
-
-    if (typeof key !== 'string' || key === '') {
-        return null;
-    }
-
-    return new Echo({
-        broadcaster: 'reverb',
-        key,
-        wsHost: import.meta.env.VITE_REVERB_HOST,
-        wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 80),
-        wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 443),
-        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
-        enabledTransports: ['ws', 'wss'],
-        auth,
+        return (await response.json()) as Record<string, unknown>;
     });
 }
 
 /**
- * Returns a singleton Echo client (Pusher for shared hosting, Reverb for local).
- *
- * Returns null when the required VITE_* env vars are missing.
+ * Pusher via server-side config (Inertia shared prop).
  */
-export function getEcho(): Echo<EchoBroadcaster> | null {
-    if (echoInstance !== null) {
+export function getEcho(
+    config: BroadcastingConfig | null | undefined,
+): Echo<'pusher'> | null {
+    if (config === null || config === undefined) {
+        return null;
+    }
+
+    const key = config.key.trim();
+    const cluster = config.cluster.trim();
+
+    if (key === '' || cluster === '') {
+        return null;
+    }
+
+    const signature = `${key}:${cluster}`;
+
+    if (echoInstance !== null && echoSignature === signature) {
         return echoInstance;
     }
 
-    const driver = resolveBroadcastDriver();
-
-    if (driver === null) {
-        return null;
+    if (echoInstance !== null) {
+        echoInstance.disconnect();
+        echoInstance = null;
     }
 
-    echoInstance = createEcho(driver);
+    window.Pusher = Pusher;
 
-    if (echoInstance === null) {
-        return null;
-    }
+    echoInstance = new Echo({
+        broadcaster: 'pusher',
+        key,
+        cluster,
+        forceTLS: true,
+        authorizer: (channel) => ({
+            authorize: (socketId, callback) => {
+                authorizeChannel(channel.name, socketId)
+                    .then((data) => callback(null, data))
+                    .catch((error: Error) => callback(error, null));
+            },
+        }),
+    });
 
+    echoSignature = signature;
     window.Echo = echoInstance;
 
     return echoInstance;

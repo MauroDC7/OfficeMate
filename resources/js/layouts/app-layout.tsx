@@ -5,6 +5,7 @@ import { AppHeader } from '@/components/app/app-header';
 import { AppSidebar } from '@/components/app/app-sidebar';
 import { ChatbotWidget } from '@/components/chatbot/chatbot-widget';
 import { FlashAlerts } from '@/components/flash-alerts';
+import { useInAppNotificationRealtime } from '@/hooks/use-in-app-notification-realtime';
 import { registerWebPushServiceWorker } from '@/lib/web-push';
 
 type AppLayoutSharedProps = {
@@ -15,6 +16,8 @@ export function AppLayout({ children }: PropsWithChildren) {
     const pageUrl = usePage().url;
     const webPush = (usePage().props as AppLayoutSharedProps).webPush;
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+    useInAppNotificationRealtime();
 
     useEffect(() => {
         setSidebarOpen(false);
