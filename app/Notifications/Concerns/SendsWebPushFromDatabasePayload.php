@@ -9,10 +9,14 @@ trait SendsWebPushFromDatabasePayload
 {
     abstract protected function webPushUrl(object $notifiable): string;
 
+    /**
+     * @return array{title: string, message: string}
+     */
+    abstract protected function webPushNotificationPayload(object $notifiable): array;
+
     public function toWebPush(object $notifiable, Notification $notification): WebPushMessage
     {
-        /** @var array{title: string, message: string} $payload */
-        $payload = $this->toArray($notifiable);
+        $payload = $this->webPushNotificationPayload($notifiable);
 
         return (new WebPushMessage)
             ->title($payload['title'])
