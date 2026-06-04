@@ -14,6 +14,7 @@ import {
     TrackerSettingsSection,
     type TrackerSettingsPayload,
 } from '@/components/settings/tracker-settings-section';
+import { WebPushSettingsSection } from '@/components/settings/web-push-settings-section';
 import { UserAvatar } from '@/components/user-avatar';
 import { AppLayout } from '@/layouts/app-layout';
 import { getUserDisplayFullName, getUserInitials } from '@/lib/user-display';
@@ -29,6 +30,7 @@ type SettingsPageProps = {
     isAdmin: boolean;
     employment: EmploymentSettingsPayload | null;
     officePresence: OfficePresenceSettingsPayload | null;
+    webPush: { publicKey: string; subscribed: boolean } | null;
 };
 
 function IconUserOutline({ className }: { className?: string }) {
@@ -83,6 +85,7 @@ export default function Settings() {
         isAdmin,
         employment,
         officePresence,
+        webPush,
     } = usePage<SettingsPageProps>().props;
     const { success } = useAlert();
     const user = auth.user;
@@ -251,6 +254,13 @@ export default function Settings() {
                         </div>
                     </div>
                 </section>
+
+                {webPush !== null ? (
+                    <WebPushSettingsSection
+                        publicKey={webPush.publicKey}
+                        subscribed={webPush.subscribed}
+                    />
+                ) : null}
 
                 {tracker !== null ? <TrackerSettingsSection tracker={tracker} /> : null}
 

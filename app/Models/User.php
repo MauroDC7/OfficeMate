@@ -21,6 +21,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 #[Fillable([
     'first_name',
@@ -47,7 +48,7 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable implements CanResetPasswordContract, MustVerifyEmailContract
 {
     /** @use HasFactory<UserFactory> */
-    use CanResetPassword, HasApiTokens, HasFactory, MustVerifyEmail, Notifiable;
+    use CanResetPassword, HasApiTokens, HasFactory, HasPushSubscriptions, MustVerifyEmail, Notifiable;
 
     /**
      * @var list<string>

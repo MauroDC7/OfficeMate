@@ -22,6 +22,7 @@ use App\Http\Controllers\Settings\OrganizationEmploymentDefaultsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
 use App\Http\Controllers\Settings\OrganizationOfficeIpsController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
+use App\Http\Controllers\Settings\PushSubscriptionController;
 use App\Http\Controllers\Settings\RemoveOrganizationMemberController;
 use App\Http\Controllers\Settings\StartNewOrganizationController;
 use App\Http\Controllers\Settings\StoreOrganizationController;
@@ -132,6 +133,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('leaveRequests.revertRejection');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
+    Route::post('/settings/push-subscription', [PushSubscriptionController::class, 'store'])
+        ->name('settings.push-subscription.store');
+    Route::delete('/settings/push-subscription', [PushSubscriptionController::class, 'destroy'])
+        ->name('settings.push-subscription.destroy');
     Route::patch('/settings/tracker', TrackerSettingsController::class)
         ->name('settings.tracker.update');
     Route::post('/settings/organization', StoreOrganizationController::class)->name('settings.organization.store');

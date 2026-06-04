@@ -4,14 +4,17 @@ namespace App\Notifications;
 
 use App\Models\LeaveRequest;
 use App\Notifications\Concerns\FormatsLeaveRequestDetails;
+use App\Notifications\Concerns\SendsWebPushFromDatabasePayload;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
 
 final class LeaveRequestSubmittedNotification extends Notification
 {
     use FormatsLeaveRequestDetails;
     use Queueable;
+    use SendsWebPushFromDatabasePayload;
 
     public function __construct(public LeaveRequest $leaveRequest) {}
 
@@ -20,7 +23,12 @@ final class LeaveRequestSubmittedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail', 'database', WebPushChannel::class];
+    }
+
+    protected function webPushUrl(object $notifiable): string
+    {
+        return route('admin.leaveRequests');
     }
 
     public function toMail(object $notifiable): MailMessage

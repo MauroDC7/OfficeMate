@@ -51,6 +51,19 @@ class HandleInertiaRequests extends Middleware
                 'proposalsStatus' => fn () => $request->session()->get('proposalsStatus'),
                 'proposalsMessage' => fn () => $request->session()->get('proposalsMessage'),
             ],
+            'webPush' => function () use ($request): ?array {
+                $publicKey = config('webpush.vapid.public_key');
+                $user = $request->user();
+
+                if (! is_string($publicKey) || $publicKey === '' || ! $user instanceof User) {
+                    return null;
+                }
+
+                return [
+                    'publicKey' => $publicKey,
+                    'subscribed' => $user->pushSubscriptions()->exists(),
+                ];
+            },
         ];
     }
 }
