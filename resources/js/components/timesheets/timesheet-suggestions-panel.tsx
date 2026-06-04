@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { useAlert } from '@/components/alert';
+import { TimesheetDurationControls } from '@/components/timesheets/timesheet-duration-controls';
 import { TimesheetProjectSelect } from '@/components/timesheets/timesheet-project-select';
 import {
     formatActivityDayLabel,
@@ -116,6 +117,12 @@ export function TimesheetSuggestionsPanel({
     function handleDraftChange(field: keyof DraftState, value: string): void {
         setDraft((current) =>
             current === null ? current : { ...current, [field]: value },
+        );
+    }
+
+    function handleDraftTimeRangeChange(start: string, end: string): void {
+        setDraft((current) =>
+            current === null ? current : { ...current, start, end },
         );
     }
 
@@ -282,6 +289,7 @@ export function TimesheetSuggestionsPanel({
                                         projectOptions={projectOptions}
                                         submitting={busyId === proposal.id}
                                         onChange={handleDraftChange}
+                                        onTimeRangeChange={handleDraftTimeRangeChange}
                                         onSave={() =>
                                             handleSaveEdit(proposal.id)
                                         }
@@ -470,6 +478,7 @@ type ProposalEditFormProps = {
     projectOptions: TimesheetProjectOption[];
     submitting: boolean;
     onChange: (field: keyof DraftState, value: string) => void;
+    onTimeRangeChange: (start: string, end: string) => void;
     onSave: () => void;
     onCancel: () => void;
 };
@@ -480,6 +489,7 @@ function ProposalEditForm({
     projectOptions,
     submitting,
     onChange,
+    onTimeRangeChange,
     onSave,
     onCancel,
 }: ProposalEditFormProps) {
@@ -518,38 +528,24 @@ function ProposalEditForm({
                 error={errors.project_id}
                 className="w-full rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
             />
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <Field label="Datum" error={errors.worked_on}>
-                    <input
-                        type="date"
-                        value={draft.worked_on}
-                        onChange={(event) =>
-                            onChange('worked_on', event.target.value)
-                        }
-                        className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
-                    />
-                </Field>
-                <Field label="Van" error={errors.start_minutes}>
-                    <input
-                        type="time"
-                        value={draft.start}
-                        onChange={(event) =>
-                            onChange('start', event.target.value)
-                        }
-                        className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
-                    />
-                </Field>
-                <Field label="Tot" error={errors.end_minutes}>
-                    <input
-                        type="time"
-                        value={draft.end}
-                        onChange={(event) =>
-                            onChange('end', event.target.value)
-                        }
-                        className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
-                    />
-                </Field>
-            </div>
+            <Field label="Datum" error={errors.worked_on}>
+                <input
+                    type="date"
+                    value={draft.worked_on}
+                    onChange={(event) =>
+                        onChange('worked_on', event.target.value)
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm text-gray-900 shadow-sm focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
+                />
+            </Field>
+            <TimesheetDurationControls
+                start={draft.start}
+                end={draft.end}
+                disabled={submitting}
+                errorStart={errors.start_minutes}
+                errorEnd={errors.end_minutes}
+                onChange={onTimeRangeChange}
+            />
 
             <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1">
                 <SecondaryButton

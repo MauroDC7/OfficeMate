@@ -65,6 +65,7 @@ export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
                     serverErrors={calendar.serverErrors}
                     submitting={calendar.submitting}
                     onDraftChange={calendar.setDraftField}
+                    onDraftTimeRangeChange={calendar.setDraftTimeRange}
                     onClose={calendar.closeModal}
                     onSave={calendar.saveModal}
                     onDelete={calendar.deleteEntry}

@@ -591,6 +591,10 @@ export function useTimesheetWeekCalendar({
         [],
     );
 
+    const setDraftTimeRange = useCallback((start: string, end: string) => {
+        setDraft((current) => ({ ...current, start, end }));
+    }, []);
+
     const saveModal = useCallback(() => {
         if (modal === null) {
             return;
@@ -826,6 +830,7 @@ export function useTimesheetWeekCalendar({
         modal,
         draft,
         setDraftField,
+        setDraftTimeRange,
         formError,
         serverErrors,
         submitting,

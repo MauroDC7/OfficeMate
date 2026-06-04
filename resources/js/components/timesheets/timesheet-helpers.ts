@@ -1,4 +1,5 @@
 import type { CalendarView } from '@/components/timesheets/calendar-view';
+import { SNAP_MINUTES } from '@/components/timesheets/timesheet-entry-range';
 import {
     DEFAULT_GRID_DISPLAY,
     type TimesheetGridDisplay,
@@ -182,6 +183,77 @@ export function formatDurationMinutes(startMin: number, endMin: number): string 
     const m = total % 60;
 
     return `${h}:${String(m).padStart(2, '0')}:00`;
+}
+
+export const MIN_TIMESHEET_DURATION_MINUTES = SNAP_MINUTES;
+
+const TIMESHEET_DAY_START_MIN = 0;
+const TIMESHEET_DAY_END_MIN = 1440;
+
+export type TimesheetTimeRange = {
+    start: string;
+    end: string;
+};
+
+export function snapMinutesToQuarterHour(minutes: number): number {
+    return Math.round(minutes / SNAP_MINUTES) * SNAP_MINUTES;
+}
+
+function clampTimeRange(startMin: number, endMin: number): TimesheetTimeRange | null {
+    let start = snapMinutesToQuarterHour(startMin);
+    let end = snapMinutesToQuarterHour(endMin);
+
+    start = Math.max(
+        TIMESHEET_DAY_START_MIN,
+        Math.min(start, TIMESHEET_DAY_END_MIN - MIN_TIMESHEET_DURATION_MINUTES),
+    );
+    end = Math.max(
+        start + MIN_TIMESHEET_DURATION_MINUTES,
+        Math.min(end, TIMESHEET_DAY_END_MIN),
+    );
+
+    if (end <= start) {
+        return null;
+    }
+
+    return {
+        start: minutesToTimeInput(start),
+        end: minutesToTimeInput(end),
+    };
+}
+
+export function applyDurationFromStart(
+    start: string,
+    durationMinutes: number,
+): TimesheetTimeRange | null {
+    const startMin = parseTimeInputToMinutes(start);
+
+    if (startMin === null || durationMinutes < MIN_TIMESHEET_DURATION_MINUTES) {
+        return null;
+    }
+
+    return clampTimeRange(startMin, startMin + durationMinutes);
+}
+
+export function adjustDurationMinutes(
+    start: string,
+    end: string,
+    deltaMinutes: number,
+): TimesheetTimeRange | null {
+    const startMin = parseTimeInputToMinutes(start);
+    const endMin = parseTimeInputToMinutes(end);
+
+    if (startMin === null || endMin === null || endMin <= startMin) {
+        return null;
+    }
+
+    const duration = endMin - startMin;
+    const nextDuration = Math.max(
+        MIN_TIMESHEET_DURATION_MINUTES,
+        duration + deltaMinutes,
+    );
+
+    return clampTimeRange(startMin, startMin + nextDuration);
 }
 
 export function durationMinutesFromTimeInputs(

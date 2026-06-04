@@ -8,10 +8,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
-import {
-    durationMinutesFromTimeInputs,
-    formatDurationMinutes,
-} from '@/components/timesheets/timesheet-helpers';
+import { TimesheetDurationControls } from '@/components/timesheets/timesheet-duration-controls';
 import { TimesheetEntryColorPicker } from '@/components/timesheets/timesheet-entry-color-picker';
 import {
     formatTimesheetProjectLabel,
@@ -33,6 +30,7 @@ type TimesheetFormPopupProps = {
     serverErrors: Record<string, string>;
     submitting: boolean;
     onDraftChange: (field: keyof TimesheetDraft, value: string) => void;
+    onDraftTimeRangeChange: (start: string, end: string) => void;
     onClose: () => void;
     onSave: () => void;
     onDelete: () => void | Promise<void>;
@@ -127,27 +125,6 @@ function IconFolder({ className }: { className?: string }) {
                 d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"
                 stroke="currentColor"
                 strokeWidth="1.75"
-                strokeLinejoin="round"
-            />
-        </svg>
-    );
-}
-
-function IconArrowRight({ className }: { className?: string }) {
-    return (
-        <svg
-            className={className}
-            width={14}
-            height={14}
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden
-        >
-            <path
-                d="M5 12h14M13 6l6 6-6 6"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
                 strokeLinejoin="round"
             />
         </svg>
@@ -250,6 +227,7 @@ export function TimesheetFormPopup({
     serverErrors,
     submitting,
     onDraftChange,
+    onDraftTimeRangeChange,
     onClose,
     onSave,
     onDelete,
@@ -265,12 +243,6 @@ export function TimesheetFormPopup({
     const showWindowTitles =
         descriptionFocused && trackerWindowTitles.length > 0;
     const isEdit = modal.mode === 'edit';
-
-    const durationMinutes = durationMinutesFromTimeInputs(draft.start, draft.end);
-    const durationLabel =
-        durationMinutes !== null
-            ? formatDurationMinutes(0, durationMinutes)
-            : '–';
 
     const selectedProject = projectOptions.find(
         (option) => String(option.id) === draft.projectId,
@@ -551,61 +523,36 @@ export function TimesheetFormPopup({
                     ) : null}
                 </div>
 
-                <div className="flex items-center gap-2.5 border-t border-gray-100 px-4 py-3">
-                    <input
-                        id="ts-start"
-                        type="time"
-                        value={draft.start}
-                        onChange={(event) =>
-                            onDraftChange('start', event.target.value)
-                        }
-                        className="w-24 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 tabular-nums focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
+                <div className="space-y-3 border-t border-gray-100 px-4 py-3">
+                    <TimesheetDurationControls
+                        start={draft.start}
+                        end={draft.end}
+                        disabled={submitting}
+                        errorStart={serverErrors.start_minutes}
+                        errorEnd={serverErrors.end_minutes}
+                        onChange={onDraftTimeRangeChange}
                     />
-                    <IconArrowRight className="shrink-0 text-gray-400" />
-                    <input
-                        id="ts-end"
-                        type="time"
-                        value={draft.end}
-                        onChange={(event) =>
-                            onDraftChange('end', event.target.value)
-                        }
-                        className="w-24 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900 tabular-nums focus:border-violet-500 focus:ring-1 focus:ring-violet-500 focus:outline-none"
-                    />
-                    <span className="ms-auto shrink-0 text-sm font-medium text-gray-600 tabular-nums">
-                        {durationLabel}
-                    </span>
                     <button
                         type="button"
                         onClick={onSave}
                         disabled={submitting}
-                        className="shrink-0 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="w-full rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        {submitting ? '…' : 'Opslaan'}
+                        {submitting ? 'Bezig…' : 'Opslaan'}
                     </button>
+                    {serverErrors.worked_on !== undefined || formError !== null ? (
+                        <div className="space-y-1">
+                            {serverErrors.worked_on !== undefined ? (
+                                <p className="text-xs text-red-600">
+                                    {serverErrors.worked_on}
+                                </p>
+                            ) : null}
+                            {formError !== null ? (
+                                <p className="text-xs text-red-600">{formError}</p>
+                            ) : null}
+                        </div>
+                    ) : null}
                 </div>
-
-                {(serverErrors.start_minutes !== undefined ||
-                    serverErrors.end_minutes !== undefined ||
-                    serverErrors.worked_on !== undefined ||
-                    formError !== null) && (
-                    <div className="border-t border-gray-100 px-4 py-2">
-                        {serverErrors.start_minutes !== undefined ||
-                        serverErrors.end_minutes !== undefined ? (
-                            <p className="text-xs text-red-600">
-                                {serverErrors.start_minutes ??
-                                    serverErrors.end_minutes}
-                            </p>
-                        ) : null}
-                        {serverErrors.worked_on !== undefined ? (
-                            <p className="text-xs text-red-600">
-                                {serverErrors.worked_on}
-                            </p>
-                        ) : null}
-                        {formError !== null ? (
-                            <p className="text-xs text-red-600">{formError}</p>
-                        ) : null}
-                    </div>
-                )}
             </div>
         </>,
         document.body,
