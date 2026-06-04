@@ -55,12 +55,14 @@ final class AppPageController extends Controller
         }
 
         $monday = $this->resolveTimesheetWeekMonday($request);
-        $weekEnd = $monday->addDays(6);
-        $proposalWeekEnd = $weekEnd;
+        $month = $this->resolveTimesheetMonth($request, $monday);
+        $isMonthView = $request->query('view') === 'month';
+        $rangeStart = $isMonthView ? $month->startOfMonth() : $monday;
+        $rangeEnd = $isMonthView ? $month->endOfMonth() : $monday->addDays(6);
 
         $entries = TimesheetEntry::query()
             ->where('user_id', $user->id)
-            ->whereBetween('worked_on', [$monday->toDateString(), $weekEnd->toDateString()])
+            ->whereBetween('worked_on', [$rangeStart->toDateString(), $rangeEnd->toDateString()])
             ->with('project:id,name,client_name')
             ->orderBy('worked_on')
             ->orderBy('start_minutes')
@@ -111,7 +113,7 @@ final class AppPageController extends Controller
 
         $proposals = TimesheetEntryProposal::query()
             ->where('user_id', $user->id)
-            ->whereBetween('worked_on', [$monday->toDateString(), $proposalWeekEnd->toDateString()])
+            ->whereBetween('worked_on', [$rangeStart->toDateString(), $rangeEnd->toDateString()])
             ->with('project:id,name,client_name')
             ->orderBy('worked_on')
             ->orderBy('start_minutes')
@@ -134,6 +136,7 @@ final class AppPageController extends Controller
 
         return Inertia::render('timesheets', [
             'weekStart' => $monday->toDateString(),
+            'month' => $month->format('Y-m'),
             'entriesByDay' => $entriesByDay,
             'recentActivity' => $recentActivity,
             'proposals' => $proposals,
@@ -155,6 +158,21 @@ final class AppPageController extends Controller
         } catch (\Throwable) {
             return CarbonImmutable::now()->startOfWeek(CarbonImmutable::MONDAY);
         }
+    }
+
+    private function resolveTimesheetMonth(Request $request, CarbonImmutable $weekMonday): CarbonImmutable
+    {
+        $month = $request->query('month');
+
+        if (is_string($month) && preg_match('/^\d{4}-\d{2}$/', $month) === 1) {
+            try {
+                return CarbonImmutable::parse($month.'-01');
+            } catch (\Throwable) {
+                // fall through
+            }
+        }
+
+        return $weekMonday->startOfMonth();
     }
 
     public function leaveRequests(Request $request, LeaveRequestPageData $leaveRequestPageData): Response|RedirectResponse

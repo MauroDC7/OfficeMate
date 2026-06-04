@@ -16,6 +16,7 @@ import type {
 
 type TimesheetsPageProps = {
     weekStart: string;
+    month: string;
     entriesByDay: Record<string, TimesheetEntryPayload[]>;
     recentActivity: TimesheetActivityItem[];
     proposals: TimesheetProposalPayload[];
@@ -28,6 +29,7 @@ export default function Timesheets() {
     const page = usePage<TimesheetsPageProps>();
     const {
         weekStart,
+        month,
         entriesByDay,
         recentActivity,
         proposals,
@@ -110,8 +112,9 @@ export default function Timesheets() {
                         onNavigateToEntryEdit={onNavigateToEntryEdit}
                     />
                     <TimesheetWeekCalendar
-                        key={weekStart}
+                        key={`${weekStart}-${month}`}
                         weekStart={weekStart}
+                        month={month}
                         entriesByDay={entriesByDay}
                         openEntryId={openEntryId}
                     />

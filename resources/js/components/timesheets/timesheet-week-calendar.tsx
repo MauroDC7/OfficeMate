@@ -1,4 +1,5 @@
 import { TimesheetFormPopup } from '@/components/timesheets/timesheet-form-popup';
+import { TimesheetMonthBody } from '@/components/timesheets/timesheet-month-body';
 import { TimesheetWeekBody } from '@/components/timesheets/timesheet-week-body';
 import { TimesheetWeekHeader } from '@/components/timesheets/timesheet-week-header';
 import { useTimesheetDisplayRange } from '@/components/timesheets/use-timesheet-display-range';
@@ -18,6 +19,8 @@ export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
                     rangeLabel={calendar.rangeLabel}
                     calendarView={calendar.calendarView}
                     focusDayYmd={calendar.focusDayYmd}
+                    monthYmd={calendar.monthYmd}
+                    onMonthChange={calendar.setMonthYmd}
                     startHour={displayRange.startHour}
                     endHour={displayRange.endHour}
                     onStartHourChange={displayRange.setStartHour}
@@ -29,14 +32,23 @@ export function TimesheetWeekCalendar(props: TimesheetWeekCalendarProps) {
                     visibleDays={calendar.visibleDays}
                     minutesPerDay={calendar.minutesPerDay}
                 />
-                <TimesheetWeekBody
-                    visibleDays={calendar.visibleDays}
-                    entriesByDay={calendar.displayedEntriesByDay}
-                    gridDisplay={displayRange.gridDisplay}
-                    onSlotClick={calendar.openModalForSlot}
-                    onEntryClick={calendar.openModalForEntry}
-                    onEntryMove={calendar.moveEntry}
-                />
+                {calendar.calendarView === 'month' ? (
+                    <TimesheetMonthBody
+                        monthYmd={calendar.monthYmd}
+                        gridDays={calendar.visibleDays}
+                        minutesPerDay={calendar.minutesPerDay}
+                        onDaySelect={calendar.selectDay}
+                    />
+                ) : (
+                    <TimesheetWeekBody
+                        visibleDays={calendar.visibleDays}
+                        entriesByDay={calendar.displayedEntriesByDay}
+                        gridDisplay={displayRange.gridDisplay}
+                        onSlotClick={calendar.openModalForSlot}
+                        onEntryClick={calendar.openModalForEntry}
+                        onEntryMove={calendar.moveEntry}
+                    />
+                )}
             </div>
 
             {calendar.modal !== null ? (

@@ -3,15 +3,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAlert } from '@/components/alert';
 import {
-    
-    parseCalendarQueryFromUrl
+    parseCalendarQueryFromUrl,
+    type CalendarView,
 } from '@/components/timesheets/calendar-view';
-import type {CalendarView} from '@/components/timesheets/calendar-view';
 import { fetchTrackerWindowTitles } from '@/components/timesheets/fetch-tracker-window-titles';
 import {
     addDaysToYmd,
+    addMonthsToMonthYmd,
     addWeeksToYmd,
     calendarDaysForView,
+    monthYmdFromYmd,
     dayKey,
     dayTotalMinutes,
     entriesByDayAfterMove,
@@ -62,6 +63,7 @@ function buildTimesheetsQuery(options: {
     weekStart: string;
     calendarView: CalendarView;
     focusDayYmd: string;
+    monthYmd: string;
     entryId?: number | null;
 }): Record<string, string | number> {
     const query: Record<string, string | number> = {
@@ -71,6 +73,10 @@ function buildTimesheetsQuery(options: {
 
     if (options.calendarView === 'day') {
         query.day = options.focusDayYmd;
+    }
+
+    if (options.calendarView === 'month') {
+        query.month = options.monthYmd;
     }
 
     if (options.entryId != null) {
@@ -83,14 +89,16 @@ function buildTimesheetsQuery(options: {
 type CalendarViewState = {
     calendarView: CalendarView;
     focusDayYmd: string;
+    monthYmd: string;
 };
 
 function readViewState(
     weekStart: string,
+    monthFromServer: string,
     pageUrl: string,
     isMobileViewport: boolean,
 ): CalendarViewState {
-    const { calendarView, focusDay } = parseCalendarQueryFromUrl(pageUrl);
+    const { calendarView, focusDay, month } = parseCalendarQueryFromUrl(pageUrl);
 
     // Multi-day views aren't readable on phone-sized screens; always show
     // a single day there regardless of what the URL says.
@@ -98,14 +106,18 @@ function readViewState(
         ? 'day'
         : (calendarView ?? 'workweek');
 
+    const focusDayYmd = resolveFocusDayYmd(weekStart, focusDay);
+
     return {
         calendarView: resolved,
-        focusDayYmd: resolveFocusDayYmd(weekStart, focusDay),
+        focusDayYmd,
+        monthYmd: month ?? monthFromServer,
     };
 }
 
 export function useTimesheetWeekCalendar({
     weekStart,
+    month,
     entriesByDay,
     openEntryId = null,
 }: TimesheetWeekCalendarProps) {
@@ -116,10 +128,10 @@ export function useTimesheetWeekCalendar({
     const isMobileViewport = useIsMobileViewport();
 
     const [viewState, setViewState] = useState<CalendarViewState>(() =>
-        readViewState(weekStart, pageUrl, isMobileViewport),
+        readViewState(weekStart, month, pageUrl, isMobileViewport),
     );
 
-    const { calendarView, focusDayYmd } = viewState;
+    const { calendarView, focusDayYmd, monthYmd } = viewState;
 
     const [optimisticEntriesByDay, setOptimisticEntriesByDay] = useState<Record<
         string,
@@ -139,19 +151,37 @@ export function useTimesheetWeekCalendar({
     const openedEntryKeyRef = useRef<string | null>(null);
 
     useEffect(() => {
-        const next = readViewState(weekStart, pageUrl, isMobileViewport);
+        const next = readViewState(weekStart, month, pageUrl, isMobileViewport);
 
         queueMicrotask(() => {
             setViewState(next);
         });
-    }, [weekStart, pageUrl, isMobileViewport]);
+    }, [weekStart, month, pageUrl, isMobileViewport]);
 
     const visibleDays = useMemo(
-        () => calendarDaysForView(weekStart, calendarView, focusDayYmd),
-        [weekStart, calendarView, focusDayYmd],
+        () =>
+            calendarDaysForView(
+                weekStart,
+                calendarView,
+                focusDayYmd,
+                monthYmd,
+            ),
+        [weekStart, calendarView, focusDayYmd, monthYmd],
     );
 
     const rangeLabel = useMemo(() => {
+        if (calendarView === 'month') {
+            const [year, monthIndex] = monthYmd.split('-').map(Number);
+
+            return new Date(year, monthIndex - 1, 1).toLocaleDateString(
+                'nl-BE',
+                {
+                    month: 'long',
+                    year: 'numeric',
+                },
+            );
+        }
+
         if (calendarView === 'day') {
             const day = parseYmdLocal(focusDayYmd);
 
@@ -174,7 +204,7 @@ export function useTimesheetWeekCalendar({
                 year: 'numeric',
             },
         )}`;
-    }, [calendarView, focusDayYmd, visibleDays]);
+    }, [calendarView, focusDayYmd, monthYmd, visibleDays]);
 
     const minutesPerDay = useMemo(() => {
         const map: Record<string, number> = {};
@@ -194,6 +224,7 @@ export function useTimesheetWeekCalendar({
                     weekStart,
                     calendarView: next.calendarView,
                     focusDayYmd: next.focusDayYmd,
+                    monthYmd: next.monthYmd,
                 }),
             });
 
@@ -215,6 +246,7 @@ export function useTimesheetWeekCalendar({
             weekStart: string;
             calendarView: CalendarView;
             focusDayYmd: string;
+            monthYmd: string;
         }) => {
             const scrollY = window.scrollY;
 
@@ -224,6 +256,7 @@ export function useTimesheetWeekCalendar({
                         weekStart: options.weekStart,
                         calendarView: options.calendarView,
                         focusDayYmd: options.focusDayYmd,
+                        monthYmd: options.monthYmd,
                     }),
                 }),
                 {},
@@ -240,15 +273,42 @@ export function useTimesheetWeekCalendar({
 
     const setCalendarView = useCallback(
         (view: CalendarView) => {
+            const nextFocusDayYmd =
+                view === 'day'
+                    ? resolveFocusDayYmd(weekStart, focusDayYmd)
+                    : focusDayYmd;
+            const nextMonthYmd = monthYmdFromYmd(nextFocusDayYmd);
+
+            if (view === 'month' || calendarView === 'month') {
+                visitWeek({
+                    weekStart,
+                    calendarView: view,
+                    focusDayYmd: nextFocusDayYmd,
+                    monthYmd: nextMonthYmd,
+                });
+
+                return;
+            }
+
             applyViewState({
                 calendarView: view,
-                focusDayYmd:
-                    view === 'day'
-                        ? resolveFocusDayYmd(weekStart, focusDayYmd)
-                        : focusDayYmd,
+                focusDayYmd: nextFocusDayYmd,
+                monthYmd: nextMonthYmd,
             });
         },
-        [weekStart, focusDayYmd, applyViewState],
+        [weekStart, focusDayYmd, calendarView, applyViewState, visitWeek],
+    );
+
+    const setMonthYmd = useCallback(
+        (nextMonthYmd: string) => {
+            visitWeek({
+                weekStart: mondayYmdForYmd(`${nextMonthYmd}-01`),
+                calendarView: 'month',
+                focusDayYmd: `${nextMonthYmd}-01`,
+                monthYmd: nextMonthYmd,
+            });
+        },
+        [visitWeek],
     );
 
     const selectDay = useCallback(
@@ -256,6 +316,7 @@ export function useTimesheetWeekCalendar({
             const next: CalendarViewState = {
                 calendarView: 'day',
                 focusDayYmd: ymd,
+                monthYmd: monthYmdFromYmd(ymd),
             };
 
             if (mondayYmdForYmd(ymd) === weekStart) {
@@ -264,18 +325,35 @@ export function useTimesheetWeekCalendar({
                 return;
             }
 
-            visitWeek({ weekStart: mondayYmdForYmd(ymd), ...next });
+            visitWeek({
+                weekStart: mondayYmdForYmd(ymd),
+                ...next,
+            });
         },
         [weekStart, applyViewState, visitWeek],
     );
 
     const navigatePrevious = useCallback(() => {
+        if (calendarView === 'month') {
+            const previousMonth = addMonthsToMonthYmd(monthYmd, -1);
+
+            visitWeek({
+                weekStart: mondayYmdForYmd(`${previousMonth}-01`),
+                calendarView: 'month',
+                focusDayYmd: `${previousMonth}-01`,
+                monthYmd: previousMonth,
+            });
+
+            return;
+        }
+
         if (calendarView === 'day') {
             const previousDay = addDaysToYmd(focusDayYmd, -1);
             const previousWeekStart = mondayYmdForYmd(previousDay);
             const next: CalendarViewState = {
                 calendarView: 'day',
                 focusDayYmd: previousDay,
+                monthYmd: monthYmdFromYmd(previousDay),
             };
 
             if (previousWeekStart === weekStart) {
@@ -284,7 +362,10 @@ export function useTimesheetWeekCalendar({
                 return;
             }
 
-            visitWeek({ weekStart: previousWeekStart, ...next });
+            visitWeek({
+                weekStart: previousWeekStart,
+                ...next,
+            });
 
             return;
         }
@@ -295,22 +376,40 @@ export function useTimesheetWeekCalendar({
             weekStart: previousWeek,
             calendarView,
             focusDayYmd: resolveFocusDayYmd(previousWeek, focusDayYmd),
+            monthYmd: monthYmdFromYmd(
+                resolveFocusDayYmd(previousWeek, focusDayYmd),
+            ),
         });
     }, [
         calendarView,
         focusDayYmd,
         weekStart,
+        monthYmd,
         applyViewState,
         visitWeek,
     ]);
 
     const navigateNext = useCallback(() => {
+        if (calendarView === 'month') {
+            const nextMonth = addMonthsToMonthYmd(monthYmd, 1);
+
+            visitWeek({
+                weekStart: mondayYmdForYmd(`${nextMonth}-01`),
+                calendarView: 'month',
+                focusDayYmd: `${nextMonth}-01`,
+                monthYmd: nextMonth,
+            });
+
+            return;
+        }
+
         if (calendarView === 'day') {
             const nextDay = addDaysToYmd(focusDayYmd, 1);
             const nextWeekStart = mondayYmdForYmd(nextDay);
             const next: CalendarViewState = {
                 calendarView: 'day',
                 focusDayYmd: nextDay,
+                monthYmd: monthYmdFromYmd(nextDay),
             };
 
             if (nextWeekStart === weekStart) {
@@ -319,7 +418,10 @@ export function useTimesheetWeekCalendar({
                 return;
             }
 
-            visitWeek({ weekStart: nextWeekStart, ...next });
+            visitWeek({
+                weekStart: nextWeekStart,
+                ...next,
+            });
 
             return;
         }
@@ -330,8 +432,11 @@ export function useTimesheetWeekCalendar({
             weekStart: nextWeek,
             calendarView,
             focusDayYmd: resolveFocusDayYmd(nextWeek, focusDayYmd),
+            monthYmd: monthYmdFromYmd(
+                resolveFocusDayYmd(nextWeek, focusDayYmd),
+            ),
         });
-    }, [calendarView, focusDayYmd, weekStart, applyViewState, visitWeek]);
+    }, [calendarView, focusDayYmd, weekStart, monthYmd, applyViewState, visitWeek]);
 
     const clearErrors = useCallback(() => {
         setFormError(null);
@@ -460,6 +565,7 @@ export function useTimesheetWeekCalendar({
                     weekStart,
                     calendarView,
                     focusDayYmd,
+                    monthYmd,
                 }),
             });
             window.history.replaceState(
@@ -473,6 +579,7 @@ export function useTimesheetWeekCalendar({
         weekStart,
         calendarView,
         focusDayYmd,
+        monthYmd,
         displayedEntriesByDay,
         openModalForEntry,
     ]);
@@ -707,6 +814,8 @@ export function useTimesheetWeekCalendar({
     return {
         calendarView,
         focusDayYmd,
+        monthYmd,
+        setMonthYmd,
         visibleDays,
         rangeLabel,
         minutesPerDay,

@@ -19,6 +19,8 @@ type TimesheetWeekHeaderProps = {
     rangeLabel: string;
     calendarView: CalendarView;
     focusDayYmd: string;
+    monthYmd: string;
+    onMonthChange: (monthYmd: string) => void;
     startHour: string;
     endHour: string;
     onStartHourChange: (value: string) => void;
@@ -127,6 +129,8 @@ export function TimesheetWeekHeader({
     rangeLabel,
     calendarView,
     focusDayYmd,
+    monthYmd,
+    onMonthChange,
     startHour,
     endHour,
     onStartHourChange,
@@ -138,8 +142,18 @@ export function TimesheetWeekHeader({
     visibleDays,
     minutesPerDay,
 }: TimesheetWeekHeaderProps) {
-    const prevLabel = calendarView === 'day' ? 'Vorige dag' : 'Vorige week';
-    const nextLabel = calendarView === 'day' ? 'Volgende dag' : 'Volgende week';
+    const prevLabel =
+        calendarView === 'day'
+            ? 'Vorige dag'
+            : calendarView === 'month'
+              ? 'Vorige maand'
+              : 'Vorige week';
+    const nextLabel =
+        calendarView === 'day'
+            ? 'Volgende dag'
+            : calendarView === 'month'
+              ? 'Volgende maand'
+              : 'Volgende week';
     const gridStyle = {
         gridTemplateColumns: gridTemplateColumnsForDayCount(visibleDays.length),
     };
@@ -156,12 +170,28 @@ export function TimesheetWeekHeader({
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <TimesheetDisplayHourSelects
-                        startHour={startHour}
-                        endHour={endHour}
-                        onStartHourChange={onStartHourChange}
-                        onEndHourChange={onEndHourChange}
-                    />
+                    {calendarView === 'month' ? (
+                        <label className="flex items-center gap-2 text-sm text-gray-600">
+                            <span className="sr-only">Maand kiezen</span>
+                            <input
+                                type="month"
+                                value={monthYmd}
+                                onChange={(event) => {
+                                    if (event.target.value !== '') {
+                                        onMonthChange(event.target.value);
+                                    }
+                                }}
+                                className="rounded-lg border border-gray-200 bg-white px-2 py-2 text-sm text-gray-900 shadow-sm"
+                            />
+                        </label>
+                    ) : (
+                        <TimesheetDisplayHourSelects
+                            startHour={startHour}
+                            endHour={endHour}
+                            onStartHourChange={onStartHourChange}
+                            onEndHourChange={onEndHourChange}
+                        />
+                    )}
                     <CalendarViewToggle
                         calendarView={calendarView}
                         onViewChange={onViewChange}
@@ -183,27 +213,30 @@ export function TimesheetWeekHeader({
                 </div>
             </div>
 
-            <div
-                className="grid border-b border-gray-200 bg-white"
-                style={gridStyle}
-            >
-                <div className="border-e border-gray-100" aria-hidden />
-                {visibleDays.map((day) => {
-                    const key = dayKey(day);
+            {calendarView !== 'month' ? (
+                <div
+                    className="grid border-b border-gray-200 bg-white"
+                    style={gridStyle}
+                >
+                    <div className="border-e border-gray-100" aria-hidden />
+                    {visibleDays.map((day) => {
+                        const key = dayKey(day);
 
-                    return (
-                        <DayHeaderCell
-                            key={key}
-                            day={day}
-                            totalMinutes={minutesPerDay[key] ?? 0}
-                            isSelected={
-                                calendarView === 'day' && key === focusDayYmd
-                            }
-                            onSelect={() => onDaySelect(key)}
-                        />
-                    );
-                })}
-            </div>
+                        return (
+                            <DayHeaderCell
+                                key={key}
+                                day={day}
+                                totalMinutes={minutesPerDay[key] ?? 0}
+                                isSelected={
+                                    calendarView === 'day' &&
+                                    key === focusDayYmd
+                                }
+                                onSelect={() => onDaySelect(key)}
+                            />
+                        );
+                    })}
+                </div>
+            ) : null}
         </>
     );
 }

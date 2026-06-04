@@ -35,6 +35,7 @@ export type TimesheetModalState =
 
 export type TimesheetWeekCalendarProps = {
     weekStart: string;
+    month: string;
     entriesByDay: Record<string, TimesheetEntryPayload[]>;
     openEntryId?: number | null;
 };

@@ -89,11 +89,56 @@ export function resolveFocusDayYmd(
     return weekStartYmd;
 }
 
+export function monthYmdFromDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+
+    return `${y}-${m}`;
+}
+
+export function monthYmdFromYmd(ymd: string): string {
+    const d = parseYmdLocal(ymd);
+
+    return monthYmdFromDate(d);
+}
+
+export function addMonthsToMonthYmd(monthYmd: string, deltaMonths: number): string {
+    const [y, m] = monthYmd.split('-').map(Number);
+    const d = new Date(y, m - 1 + deltaMonths, 1);
+
+    return monthYmdFromDate(d);
+}
+
+export function monthGridDays(monthYmd: string): Date[] {
+    const [year, month] = monthYmd.split('-').map(Number);
+    const firstOfMonth = new Date(year, month - 1, 1);
+    const lastOfMonth = new Date(year, month, 0);
+    let current = startOfMonday(firstOfMonth);
+    const gridEnd = addDays(startOfMonday(lastOfMonth), 6);
+    const days: Date[] = [];
+
+    while (current.getTime() <= gridEnd.getTime()) {
+        days.push(new Date(current));
+        current = addDays(current, 1);
+    }
+
+    return days;
+}
+
+export function isSameMonth(date: Date, monthYmd: string): boolean {
+    return monthYmdFromDate(date) === monthYmd;
+}
+
 export function calendarDaysForView(
     weekStartYmd: string,
     view: CalendarView,
     focusDayYmd: string,
+    monthYmd?: string,
 ): Date[] {
+    if (view === 'month' && monthYmd !== undefined) {
+        return monthGridDays(monthYmd);
+    }
+
     const monday = parseYmdLocal(weekStartYmd);
 
     if (view === 'day') {
