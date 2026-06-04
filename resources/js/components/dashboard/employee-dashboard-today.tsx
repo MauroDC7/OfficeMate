@@ -22,8 +22,8 @@ export function EmployeeDashboardToday({
                     <div className="border-b border-gray-100 px-4 py-3 sm:px-5">
                         <h2 className="text-sm font-semibold text-gray-900">Status</h2>
                         <p className="mt-0.5 text-xs text-gray-500">
-                            Geef aan of je open staat voor nieuwe taken (open for tasks) of
-                            bezig bent met een lopende taak (on task).
+                            Geef aan of je open staat voor nieuwe taken of bezig bent met een
+                            lopende taak.
                         </p>
                     </div>
                     <div className="px-4 py-4 sm:px-5">

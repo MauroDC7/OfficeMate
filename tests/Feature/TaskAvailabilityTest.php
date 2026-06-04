@@ -66,5 +66,5 @@ it('exposes task availability on the people tab for admins', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('people.employees.1.task_availability', 'open_for_tasks')
-            ->where('people.employees.1.task_availability_label', 'Open for tasks'));
+            ->where('people.employees.1.task_availability_label', 'Open voor taken'));
 });

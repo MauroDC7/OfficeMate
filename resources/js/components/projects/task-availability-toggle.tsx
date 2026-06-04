@@ -6,8 +6,8 @@ import { update as updateTaskAvailability } from '@/routes/dashboard/task-availa
 type TaskAvailability = 'on_task' | 'open_for_tasks';
 
 const TASK_AVAILABILITY_LABELS: Record<TaskAvailability, string> = {
-    open_for_tasks: 'Open for tasks',
-    on_task: 'On task',
+    open_for_tasks: 'Open voor taken',
+    on_task: 'Bezig met taak',
 };
 
 type TaskAvailabilityToggleProps = {
