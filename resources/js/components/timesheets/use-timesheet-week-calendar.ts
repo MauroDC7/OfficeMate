@@ -121,8 +121,17 @@ export function useTimesheetWeekCalendar({
     entriesByDay,
     openEntryId = null,
 }: TimesheetWeekCalendarProps) {
-    const page = usePage<{ projectOptions: TimesheetProjectOption[] }>();
-    const { projectOptions = [] } = page.props;
+    const page = usePage<{
+        projectOptions: TimesheetProjectOption[];
+        prefillProjectId?: number | null;
+    }>();
+    const { projectOptions = [], prefillProjectId = null } = page.props;
+
+    const defaultProjectId =
+        prefillProjectId !== null &&
+        projectOptions.some((option) => option.id === prefillProjectId)
+            ? String(prefillProjectId)
+            : '';
     const pageUrl = page.url;
     const { success, confirm, error: showError } = useAlert();
     const isMobileViewport = useIsMobileViewport();
@@ -141,7 +150,10 @@ export function useTimesheetWeekCalendar({
     const displayedEntriesByDay = optimisticEntriesByDay ?? entriesByDay;
 
     const [modal, setModal] = useState<TimesheetModalState | null>(null);
-    const [draft, setDraft] = useState<TimesheetDraft>(() => emptyDraft());
+    const [draft, setDraft] = useState<TimesheetDraft>(() => ({
+        ...emptyDraft(),
+        projectId: defaultProjectId,
+    }));
     const [formError, setFormError] = useState<string | null>(null);
     const [serverErrors, setServerErrors] = useState<Record<string, string>>(
         {},
@@ -504,6 +516,7 @@ export function useTimesheetWeekCalendar({
             clearErrors();
             setDraft({
                 ...emptyDraft(),
+                projectId: defaultProjectId,
                 start: minutesToTimeInput(startMin),
                 end: minutesToTimeInput(endMin),
             });

@@ -6,7 +6,8 @@ import { TeamLeaveOverview } from '@/components/leave-requests/team-leave-overvi
 import { MemberAvatarStack } from '@/components/teams/user-picker';
 import { TeamFormPanel } from '@/components/teams/team-form-panel';
 import { AppLayout } from '@/layouts/app-layout';
-import { projects, teams as teamsRoute } from '@/routes';
+import { show as showProject } from '@/routes/projects';
+import { teams as teamsRoute } from '@/routes';
 import { approve, reject, destroy as leaveTeam } from '@/routes/team-memberships';
 import type { TeamCard } from '@/types/teams';
 import type { TeamShowPageProps } from '@/types/teams';
@@ -221,18 +222,12 @@ export default function TeamShow() {
                             <ul className="divide-y divide-gray-100">
                                 {teamProjects.map((project) => (
                                     <li key={project.id} className="px-4 py-3 sm:px-5">
-                                        {isAdmin ? (
-                                            <Link
-                                                href={projects.url()}
-                                                className="text-sm font-medium text-gray-900 underline decoration-gray-300 underline-offset-2 hover:text-gray-700"
-                                            >
-                                                {project.name}
-                                            </Link>
-                                        ) : (
-                                            <span className="text-sm font-medium text-gray-900">
-                                                {project.name}
-                                            </span>
-                                        )}
+                                        <Link
+                                            href={showProject.url({ project: project.id })}
+                                            className="text-sm font-medium text-gray-900 underline decoration-gray-300 underline-offset-2 hover:text-gray-700"
+                                        >
+                                            {project.name}
+                                        </Link>
                                     </li>
                                 ))}
                             </ul>

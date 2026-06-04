@@ -30,6 +30,7 @@ return [
 
     'slack' => [
         'incoming_webhook_url' => env('SLACK_INCOMING_WEBHOOK_URL'),
+        'weekly_debrief_reminders' => env('SLACK_WEEKLY_DEBRIEF_REMINDERS', true),
         'app_id' => env('SLACK_APP_ID'),
         'client_id' => env('SLACK_CLIENT_ID'),
         'client_secret' => env('SLACK_CLIENT_SECRET'),

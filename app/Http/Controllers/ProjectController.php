@@ -68,6 +68,39 @@ final class ProjectController extends Controller
         ]);
     }
 
+    public function show(Request $request, Project $project): Response
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        $organization = $this->organizationContext->forUserOrFail($user);
+        abort_unless($project->organization_id === $organization->id, 404);
+
+        $isAdmin = $user->role === UserRole::Admin;
+
+        $accessible = $this->projectOverviewBuilder->findAccessible(
+            $organization,
+            $user,
+            $isAdmin,
+            $project->id,
+        );
+
+        abort_unless($accessible !== null, 403);
+        $this->authorize('view', $project);
+
+        $canUpdate = $user->can('update', $project);
+
+        return Inertia::render('projects/show', [
+            ...$this->projectOverviewBuilder->showPageFor($accessible, $user, $isAdmin),
+            'organizationTeams' => $canUpdate
+                ? $this->projectOverviewBuilder->organizationTeams($organization)
+                : [],
+            'projectCard' => $canUpdate
+                ? $this->projectOverviewBuilder->cardFor($accessible)
+                : null,
+        ]);
+    }
+
     public function store(StoreProjectRequest $request): RedirectResponse
     {
         $this->authorize('create', Project::class);
@@ -134,7 +167,7 @@ final class ProjectController extends Controller
 
         $project->teams()->sync($this->teamIds($validated));
 
-        return redirect()->route('projects');
+        return redirect()->route('projects.show', $project);
     }
 
     public function destroy(Request $request, Project $project): RedirectResponse

@@ -22,6 +22,7 @@ type TimesheetsPageProps = {
     proposals: TimesheetProposalPayload[];
     projectOptions: TimesheetProjectOption[];
     openEntryId: number | null;
+    prefillProjectId: number | null;
     auth: { user: { id: number } | null };
 };
 

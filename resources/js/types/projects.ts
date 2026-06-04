@@ -48,6 +48,63 @@ export type OrganizationSummary = {
     name: string;
 };
 
+export type ProjectShowDetail = {
+    id: number;
+    name: string;
+    type: ProjectType;
+    status: ProjectStatus;
+    client_name: string | null;
+    logo: string | null;
+    hours_budget: number | null;
+    is_active: boolean;
+    created_at: string | null;
+    creator: { id: number; name: string } | null;
+};
+
+export type ProjectHoursSummary = {
+    tracked_minutes_total: number;
+    tracked_minutes_week: number;
+    tracked_minutes_month: number;
+};
+
+export type ProjectHoursByMember = {
+    user: { id: number; name: string; avatar: string | null };
+    tracked_minutes: number;
+};
+
+export type ProjectRecentEntry = {
+    id: number;
+    title: string;
+    worked_on: string;
+    start_minutes: number;
+    end_minutes: number;
+    duration_minutes: number;
+    user: { id: number; name: string } | null;
+};
+
+export type ProjectPendingProposal = {
+    id: number;
+    title: string;
+    worked_on: string;
+    start_minutes: number;
+    end_minutes: number;
+    user: { id: number; name: string };
+};
+
+export type ProjectShowPageProps = {
+    project: ProjectShowDetail;
+    teams: ProjectTeam[];
+    members: ProjectMemberPreview[];
+    hours: ProjectHoursSummary;
+    hours_by_member: ProjectHoursByMember[];
+    recent_entries: ProjectRecentEntry[];
+    pending_proposals: ProjectPendingProposal[];
+    isAdmin: boolean;
+    canUpdate: boolean;
+    organizationTeams: OrganizationTeamOption[];
+    projectCard: ProjectCard | null;
+};
+
 export type ProjectsPageProps = {
     organization: OrganizationSummary | null;
     projectCards: ProjectCard[];

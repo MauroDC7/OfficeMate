@@ -11,6 +11,7 @@ use App\Services\AdminLeaveRequestPageData;
 use App\Services\EmployeeDashboardStats;
 use App\Services\LeaveRequestPageData;
 use App\Services\OrganizationContext;
+use App\Services\ProjectOverviewBuilder;
 use App\Services\SettingsPageData;
 use App\Services\TimesheetEntryWindowTitlesResolver;
 use App\Services\TimesheetProjectNormalizer;
@@ -22,6 +23,11 @@ use Inertia\Response;
 
 final class AppPageController extends Controller
 {
+    public function __construct(
+        private readonly OrganizationContext $organizationContext,
+        private readonly ProjectOverviewBuilder $projectOverviewBuilder,
+    ) {}
+
     public function dashboard(
         Request $request,
         EmployeeDashboardStats $employeeDashboardStats,
@@ -142,7 +148,38 @@ final class AppPageController extends Controller
             'proposals' => $proposals,
             'projectOptions' => $timesheetProjectNormalizer->optionsFor($user),
             'openEntryId' => $openEntryId,
+            'prefillProjectId' => $this->resolvePrefillProjectId($request, $user),
         ]);
+    }
+
+    private function resolvePrefillProjectId(Request $request, User $user): ?int
+    {
+        $raw = $request->query('project');
+
+        if (! is_scalar($raw)) {
+            return null;
+        }
+
+        $id = filter_var($raw, FILTER_VALIDATE_INT);
+
+        if ($id === false || $id < 1) {
+            return null;
+        }
+
+        $organization = $this->organizationContext->forUser($user);
+
+        if ($organization === null) {
+            return null;
+        }
+
+        $accessible = $this->projectOverviewBuilder->findAccessible(
+            $organization,
+            $user,
+            $user->role === UserRole::Admin,
+            $id,
+        );
+
+        return $accessible?->id;
     }
 
     private function resolveTimesheetWeekMonday(Request $request): CarbonImmutable
