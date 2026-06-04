@@ -10,6 +10,7 @@ import {
     isToday,
 } from '@/components/timesheets/timesheet-helpers';
 import { TimesheetDisplayHourSelects } from '@/components/timesheets/timesheet-display-hour-selects';
+import { TimesheetMonthPicker } from '@/components/timesheets/timesheet-month-picker';
 import { cn } from '@/lib/utils';
 
 const NAV_BUTTON_CLASS =
@@ -171,19 +172,10 @@ export function TimesheetWeekHeader({
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     {calendarView === 'month' ? (
-                        <label className="flex items-center gap-2 text-sm text-gray-600">
-                            <span className="sr-only">Maand kiezen</span>
-                            <input
-                                type="month"
-                                value={monthYmd}
-                                onChange={(event) => {
-                                    if (event.target.value !== '') {
-                                        onMonthChange(event.target.value);
-                                    }
-                                }}
-                                className="rounded-lg border border-gray-200 bg-white px-2 py-2 text-sm text-gray-900 shadow-sm"
-                            />
-                        </label>
+                        <TimesheetMonthPicker
+                            value={monthYmd}
+                            onChange={onMonthChange}
+                        />
                     ) : (
                         <TimesheetDisplayHourSelects
                             startHour={startHour}
