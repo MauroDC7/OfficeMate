@@ -6,3 +6,13 @@ export const dashboardSectionClassName =
 
 export const dashboardSectionLinkClassName =
     'inline-flex shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50';
+
+export const feedbackToastBaseClassName =
+    'rounded-lg border border-gray-200 border-s-4 bg-white text-gray-900 shadow-md';
+
+export const feedbackToastVariantClassName = {
+    success: `${feedbackToastBaseClassName} border-s-emerald-600`,
+    error: `${feedbackToastBaseClassName} border-s-red-600`,
+    info: `${feedbackToastBaseClassName} border-s-gray-400`,
+    warning: `${feedbackToastBaseClassName} border-s-amber-500`,
+} as const;

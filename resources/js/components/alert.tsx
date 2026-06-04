@@ -8,6 +8,7 @@ import {
     type PropsWithChildren,
 } from 'react';
 
+import { feedbackToastVariantClassName } from '@/components/dashboard/dashboard-styles';
 import { cn } from '@/lib/utils';
 
 export type AlertVariant = 'success' | 'error' | 'info' | 'warning';
@@ -42,12 +43,7 @@ type AlertContextValue = {
     confirm: (input: AlertConfirmInput) => Promise<boolean>;
 };
 
-const toastVariantStyles: Record<AlertVariant, string> = {
-    success: 'border-emerald-200 bg-emerald-50 text-emerald-900',
-    error: 'border-red-200 bg-red-50 text-red-800',
-    info: 'border-blue-200 bg-blue-50 text-blue-900',
-    warning: 'border-amber-200 bg-amber-50 text-amber-900',
-};
+const toastVariantStyles: Record<AlertVariant, string> = feedbackToastVariantClassName;
 
 const AlertContext = createContext<AlertContextValue | null>(null);
 
@@ -75,7 +71,7 @@ function AlertToast({
         <div
             role="status"
             className={cn(
-                'pointer-events-auto w-full max-w-sm rounded-lg border px-4 py-3 text-sm shadow-md',
+                'pointer-events-auto w-full max-w-sm px-4 py-3 text-sm',
                 toastVariantStyles[variant],
                 item.className,
             )}
@@ -83,14 +79,16 @@ function AlertToast({
             <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
                     {item.title ? (
-                        <p className="mb-0.5 font-semibold">{item.title}</p>
+                        <p className="mb-0.5 font-semibold text-gray-900">{item.title}</p>
                     ) : null}
-                    <p className={item.title ? 'text-[13px] opacity-90' : undefined}>{item.message}</p>
+                    <p className={cn('text-gray-700', item.title ? 'text-[13px]' : undefined)}>
+                        {item.message}
+                    </p>
                 </div>
                 <button
                     type="button"
                     onClick={() => onDismiss(item.id)}
-                    className="shrink-0 rounded p-0.5 opacity-60 transition hover:opacity-100"
+                    className="shrink-0 rounded p-0.5 text-gray-400 transition hover:text-gray-700"
                     aria-label="Sluiten"
                 >
                     ×
