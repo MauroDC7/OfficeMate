@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 import { useAlert } from '@/components/alert';
 import { TeamFormPanel } from '@/components/teams/team-form-panel';
@@ -71,6 +71,11 @@ export default function Teams() {
     const [editingTeam, setEditingTeam] = useState<TeamCardData | null>(null);
     const [showOrganizationSettings, setShowOrganizationSettings] = useState(false);
     const [activeTab, setActiveTab] = useState<TeamsAdminTab>(initialTab);
+
+    useEffect(() => {
+        setShowCreateForm(false);
+        setEditingTeam(null);
+    }, [teamCards]);
 
     const showPeopleTab = isAdmin && people !== null;
     const showingPeople = showPeopleTab && activeTab === 'people';

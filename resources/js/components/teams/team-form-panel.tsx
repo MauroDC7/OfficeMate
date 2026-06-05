@@ -26,7 +26,7 @@ type TeamFormPanelProps = {
     onSuccess: () => void;
 };
 
-const CREATE_STEPS = ['Team', 'Leden'] as const;
+const STEPS = ['Team', 'Leden'] as const;
 
 function IconPlus({ className }: { className?: string }) {
     return (
@@ -132,7 +132,6 @@ export function TeamFormPanel({
     onSuccess,
 }: TeamFormPanelProps) {
     const isEdit = mode === 'edit';
-    const useWizard = !isEdit;
     const [step, setStep] = useState(0);
     const titleId = useId();
     const panelRef = useRef<HTMLElement>(null);
@@ -167,32 +166,26 @@ export function TeamFormPanel({
     }, [open, onClose]);
 
     useEffect(() => {
-        if (open && useWizard) {
+        if (open) {
             setStep(0);
         }
-    }, [open, useWizard]);
+    }, [open]);
+
+    useWizardFormSubmitGuard(formContainerRef, true, step, STEPS.length, setStep);
 
     if (!open || (isEdit && team === undefined)) {
         return null;
     }
 
     const formConfig = isEdit
-        ? update.form.patch({ team: team.id })
+        ? update.form.patch({ team: team!.id })
         : store.form.post();
 
     const wizardHandlers = {
         currentStep: step,
-        totalSteps: CREATE_STEPS.length,
+        totalSteps: STEPS.length,
         setStep,
     };
-
-    useWizardFormSubmitGuard(
-        formContainerRef,
-        useWizard,
-        step,
-        CREATE_STEPS.length,
-        setStep,
-    );
 
     return (
         <div
@@ -242,107 +235,33 @@ export function TeamFormPanel({
 
                 <div ref={formContainerRef}>
                     <Form
-                        key={isEdit ? team.id : 'create'}
+                        key={isEdit ? team!.id : 'create'}
                         {...formConfig}
-                        noValidate={useWizard}
-                        onKeyDown={
-                            useWizard
-                                ? (event) =>
-                                      handleWizardFormKeyDown(event, wizardHandlers)
-                                : undefined
-                        }
-                        options={{
-                        onSuccess: () => {
+                        noValidate
+                        onKeyDown={(event) => handleWizardFormKeyDown(event, wizardHandlers)}
+                        onSuccess={() => {
                             if (!isEdit) {
                                 onMemberIdsChange([]);
                             }
                             onSuccess();
                             onClose();
-                        },
-                    }}
+                        }}
                         className="space-y-5 px-5 py-5 sm:px-6"
                     >
                         {({ errors, processing, submit }) => (
-                        <>
-                            {useWizard ? (
-                                <FormStepIndicator steps={CREATE_STEPS} currentStep={step} />
-                            ) : null}
+                            <>
+                                <FormStepIndicator steps={STEPS} currentStep={step} />
 
-                            {useWizard ? (
-                                <>
-                                    <FormStepPanel step={0} currentStep={step}>
-                                        <TeamIdentityFields
-                                            isEdit={false}
-                                            nameInputRef={nameInputRef}
-                                            errors={errors}
-                                        />
-                                    </FormStepPanel>
-
-                                    <FormStepPanel step={1} currentStep={step}>
-                                        <UserPicker
-                                            users={organizationUsers}
-                                            selectedIds={selectedMemberIds}
-                                            onChange={onMemberIdsChange}
-                                            disabled={processing}
-                                        />
-                                        {selectedMemberIds.map((memberId) => (
-                                            <input
-                                                key={memberId}
-                                                type="hidden"
-                                                name="member_ids[]"
-                                                value={memberId}
-                                            />
-                                        ))}
-                                        {errors['member_ids.0'] ?? errors.member_ids ? (
-                                            <p className="-mt-3 text-xs text-red-600">
-                                                {errors['member_ids.0'] ?? errors.member_ids}
-                                            </p>
-                                        ) : null}
-                                    </FormStepPanel>
-
-                                    <FormStepFooter
-                                        currentStep={step}
-                                        totalSteps={CREATE_STEPS.length}
-                                        processing={processing}
-                                        submitLabel="Team opslaan"
-                                        onCancel={onClose}
-                                        onBack={() =>
-                                            setStep((current) => Math.max(current - 1, 0))
-                                        }
-                                        onNext={(event) => {
-                                            event.preventDefault();
-                                            const form =
-                                                event.currentTarget.closest('form');
-
-                                            if (form instanceof HTMLFormElement) {
-                                                tryAdvanceFormStep(form, wizardHandlers);
-                                            }
-                                        }}
-                                        onFinalSubmit={() => {
-                                            const form =
-                                                formContainerRef.current?.querySelector(
-                                                    'form',
-                                                );
-
-                                            if (form instanceof HTMLFormElement) {
-                                                submitWizardForm(
-                                                    form,
-                                                    wizardHandlers,
-                                                    submit,
-                                                );
-                                            }
-                                        }}
-                                    />
-                                </>
-                            ) : (
-                                <>
+                                <FormStepPanel step={0} currentStep={step}>
                                     <TeamIdentityFields
-                                        isEdit
+                                        isEdit={isEdit}
                                         team={team}
                                         nameInputRef={nameInputRef}
                                         errors={errors}
                                     />
+                                </FormStepPanel>
 
+                                <FormStepPanel step={1} currentStep={step}>
                                     <UserPicker
                                         users={organizationUsers}
                                         selectedIds={selectedMemberIds}
@@ -362,28 +281,43 @@ export function TeamFormPanel({
                                             {errors['member_ids.0'] ?? errors.member_ids}
                                         </p>
                                     ) : null}
+                                </FormStepPanel>
 
-                                    <div className="flex flex-col-reverse gap-2 border-t border-gray-200 pt-4 sm:flex-row sm:justify-end">
-                                        <button
-                                            type="button"
-                                            onClick={onClose}
-                                            disabled={processing}
-                                            className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
-                                        >
-                                            Annuleren
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={processing}
-                                            className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                            {processing ? 'Bezig…' : 'Wijzigingen opslaan'}
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </>
-                    )}
+                                <FormStepFooter
+                                    currentStep={step}
+                                    totalSteps={STEPS.length}
+                                    processing={processing}
+                                    submitLabel={isEdit ? 'Wijzigingen opslaan' : 'Team opslaan'}
+                                    onCancel={onClose}
+                                    onBack={() =>
+                                        setStep((current) => Math.max(current - 1, 0))
+                                    }
+                                    onNext={(event) => {
+                                        event.preventDefault();
+                                        const form =
+                                            event.currentTarget.closest('form');
+
+                                        if (form instanceof HTMLFormElement) {
+                                            tryAdvanceFormStep(form, wizardHandlers);
+                                        }
+                                    }}
+                                    onFinalSubmit={() => {
+                                        const form =
+                                            formContainerRef.current?.querySelector(
+                                                'form',
+                                            );
+
+                                        if (form instanceof HTMLFormElement) {
+                                            submitWizardForm(
+                                                form,
+                                                wizardHandlers,
+                                                submit,
+                                            );
+                                        }
+                                    }}
+                                />
+                            </>
+                        )}
                     </Form>
                 </div>
             </section>

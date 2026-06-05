@@ -1,6 +1,15 @@
 import { Form } from '@inertiajs/react';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
+import {
+    FormStepFooter,
+    FormStepIndicator,
+    FormStepPanel,
+    handleWizardFormKeyDown,
+    submitWizardForm,
+    tryAdvanceFormStep,
+    useWizardFormSubmitGuard,
+} from '@/components/form-step-nav';
 import { fetchWeeklyDebriefDraft } from '@/components/projects/fetch-weekly-debrief-draft';
 import { cn } from '@/lib/utils';
 import { store } from '@/routes/weekly-status';
@@ -11,6 +20,8 @@ type WeeklyStatusFormPanelProps = {
     onClose: () => void;
     onSuccess?: () => void;
 };
+
+const STEPS = ['Deze week', 'Volgende week'] as const;
 
 const inputClass =
     'mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10';
@@ -30,10 +41,12 @@ function IconClose({ className }: { className?: string }) {
 
 export function WeeklyStatusFormPanel({ weeklyStatus, onClose, onSuccess }: WeeklyStatusFormPanelProps) {
     const titleId = useId();
+    const [step, setStep] = useState(0);
     const [difficult, setDifficult] = useState(weeklyStatus.difficult_this_week ?? '');
     const [plans, setPlans] = useState(weeklyStatus.plans_next_week ?? '');
     const [draftLoading, setDraftLoading] = useState(false);
     const [draftError, setDraftError] = useState<string | null>(null);
+    const formContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const previousOverflow = document.body.style.overflow;
@@ -71,6 +84,14 @@ export function WeeklyStatusFormPanel({ weeklyStatus, onClose, onSuccess }: Week
         setPlans(result.draft.plans_next_week);
     }
 
+    const wizardHandlers = {
+        currentStep: step,
+        totalSteps: STEPS.length,
+        setStep,
+    };
+
+    useWizardFormSubmitGuard(formContainerRef, true, step, STEPS.length, setStep);
+
     return (
         <div
             className="fixed inset-0 z-[9990] flex items-end justify-center bg-gray-900/40 p-3 sm:items-center sm:p-4"
@@ -106,97 +127,140 @@ export function WeeklyStatusFormPanel({ weeklyStatus, onClose, onSuccess }: Week
                     </button>
                 </div>
 
-                <Form
-                    {...store.form.post()}
-                    key={weeklyStatus.week_start}
-                    options={{ preserveScroll: true }}
-                    onSuccess={() => {
-                        onSuccess?.();
-                        onClose();
-                    }}
-                    className="space-y-4 px-5 py-5 sm:px-6"
-                >
-                    {({ errors, processing }) => (
-                        <>
-                            <input type="hidden" name="week_start" value={weeklyStatus.week_start} />
+                <div ref={formContainerRef}>
+                    <Form
+                        {...store.form.post()}
+                        key={weeklyStatus.week_start}
+                        options={{ preserveScroll: true }}
+                        noValidate
+                        onKeyDown={(event) => handleWizardFormKeyDown(event, wizardHandlers)}
+                        onSuccess={() => {
+                            onSuccess?.();
+                            onClose();
+                        }}
+                        className="space-y-5 px-5 py-5 sm:px-6"
+                    >
+                        {({ errors, processing, submit }) => (
+                            <>
+                                <input
+                                    type="hidden"
+                                    name="week_start"
+                                    value={weeklyStatus.week_start}
+                                />
 
-                            {weeklyStatus.ai_draft_available ? (
-                                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
-                                    <p className="text-xs text-gray-600">
-                                        Op basis van je geregistreerde uren deze week kun je een voorstel laten
-                                        invullen. Je past het altijd zelf aan vóór je opslaat.
-                                    </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => void loadDraft()}
-                                        disabled={draftLoading || processing}
-                                        className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 disabled:opacity-60"
-                                    >
-                                        {draftLoading ? 'Voorstel laden…' : 'Vul voorstel in'}
-                                    </button>
-                                    {draftError !== null ? (
-                                        <p className="mt-2 text-xs text-red-600">{draftError}</p>
+                                <FormStepIndicator steps={STEPS} currentStep={step} />
+
+                                <FormStepPanel step={0} currentStep={step}>
+                                    {weeklyStatus.ai_draft_available ? (
+                                        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3">
+                                            <p className="text-xs text-gray-600">
+                                                Op basis van je geregistreerde uren deze week kun je een voorstel laten
+                                                invullen. Je past het altijd zelf aan vóór je opslaat.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => void loadDraft()}
+                                                disabled={draftLoading || processing}
+                                                className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm transition hover:bg-gray-50 disabled:opacity-60"
+                                            >
+                                                {draftLoading ? 'Voorstel laden…' : 'Vul voorstel in'}
+                                            </button>
+                                            {draftError !== null ? (
+                                                <p className="mt-2 text-xs text-red-600">{draftError}</p>
+                                            ) : null}
+                                        </div>
                                     ) : null}
-                                </div>
-                            ) : null}
 
-                            <div>
-                                <label htmlFor="weekly-difficult" className="text-sm font-medium text-gray-800">
-                                    Wat was er deze week moeilijk? <span className="text-red-600">*</span>
-                                </label>
-                                <textarea
-                                    id="weekly-difficult"
-                                    name="difficult_this_week"
-                                    rows={4}
-                                    required
-                                    value={difficult}
-                                    onChange={(event) => setDifficult(event.target.value)}
-                                    placeholder="Bijv. complexe bug, onduidelijke requirements…"
-                                    className={inputClass}
+                                    <div>
+                                        <label
+                                            htmlFor="weekly-difficult"
+                                            className="text-sm font-medium text-gray-800"
+                                        >
+                                            Wat was er deze week moeilijk?{' '}
+                                            <span className="text-red-600">*</span>
+                                        </label>
+                                        <textarea
+                                            id="weekly-difficult"
+                                            name="difficult_this_week"
+                                            rows={4}
+                                            required
+                                            value={difficult}
+                                            onChange={(event) => setDifficult(event.target.value)}
+                                            placeholder="Bijv. complexe bug, onduidelijke requirements…"
+                                            className={inputClass}
+                                        />
+                                        {errors.difficult_this_week ? (
+                                            <p className="mt-1 text-xs text-red-600">
+                                                {errors.difficult_this_week}
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                </FormStepPanel>
+
+                                <FormStepPanel step={1} currentStep={step}>
+                                    <div>
+                                        <label
+                                            htmlFor="weekly-plans"
+                                            className="text-sm font-medium text-gray-800"
+                                        >
+                                            Wat ga je volgende week doen?{' '}
+                                            <span className="text-red-600">*</span>
+                                        </label>
+                                        <textarea
+                                            id="weekly-plans"
+                                            name="plans_next_week"
+                                            rows={4}
+                                            required
+                                            value={plans}
+                                            onChange={(event) => setPlans(event.target.value)}
+                                            placeholder="Bijv. feature afronden, sprint planning…"
+                                            className={inputClass}
+                                        />
+                                        {errors.plans_next_week ? (
+                                            <p className="mt-1 text-xs text-red-600">
+                                                {errors.plans_next_week}
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                </FormStepPanel>
+
+                                <FormStepFooter
+                                    currentStep={step}
+                                    totalSteps={STEPS.length}
+                                    processing={processing}
+                                    submitLabel="Opslaan"
+                                    onCancel={onClose}
+                                    onBack={() =>
+                                        setStep((current) => Math.max(current - 1, 0))
+                                    }
+                                    onNext={(event) => {
+                                        event.preventDefault();
+                                        const form =
+                                            event.currentTarget.closest('form');
+
+                                        if (form instanceof HTMLFormElement) {
+                                            tryAdvanceFormStep(form, wizardHandlers);
+                                        }
+                                    }}
+                                    onFinalSubmit={() => {
+                                        const form =
+                                            formContainerRef.current?.querySelector(
+                                                'form',
+                                            );
+
+                                        if (form instanceof HTMLFormElement) {
+                                            submitWizardForm(
+                                                form,
+                                                wizardHandlers,
+                                                submit,
+                                            );
+                                        }
+                                    }}
                                 />
-                                {errors.difficult_this_week ? (
-                                    <p className="mt-1 text-xs text-red-600">{errors.difficult_this_week}</p>
-                                ) : null}
-                            </div>
-
-                            <div>
-                                <label htmlFor="weekly-plans" className="text-sm font-medium text-gray-800">
-                                    Wat ga je volgende week doen? <span className="text-red-600">*</span>
-                                </label>
-                                <textarea
-                                    id="weekly-plans"
-                                    name="plans_next_week"
-                                    rows={4}
-                                    required
-                                    value={plans}
-                                    onChange={(event) => setPlans(event.target.value)}
-                                    placeholder="Bijv. feature afronden, sprint planning…"
-                                    className={inputClass}
-                                />
-                                {errors.plans_next_week ? (
-                                    <p className="mt-1 text-xs text-red-600">{errors.plans_next_week}</p>
-                                ) : null}
-                            </div>
-
-                            <div className="flex flex-col-reverse gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-                                >
-                                    Annuleren
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
-                                >
-                                    {processing ? 'Opslaan…' : 'Opslaan'}
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </Form>
+                            </>
+                        )}
+                    </Form>
+                </div>
             </section>
         </div>
     );

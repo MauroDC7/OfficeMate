@@ -24,7 +24,7 @@ type LeaveRequestFormPanelProps = {
     request?: LeaveRequestListItem | null;
 };
 
-const CREATE_STEPS = ['Type', 'Periode', 'Extra'] as const;
+const STEPS = ['Type', 'Periode', 'Extra'] as const;
 
 function IconClose({ className }: { className?: string }) {
     return (
@@ -216,7 +216,7 @@ function LeaveExtraFields({
                             <span className="text-red-600">*</span>
                         )}
                     </label>
-                    {isEdit && request?.attachment !== null ? (
+                    {isEdit && request !== null && request.attachment !== null ? (
                         <p className="mt-1 text-xs text-gray-500">
                             Huidig bestand:{' '}
                             <a
@@ -261,7 +261,6 @@ export function LeaveRequestFormPanel({
 }: LeaveRequestFormPanelProps) {
     const titleId = useId();
     const isEdit = request !== null;
-    const useWizard = !isEdit;
     const [step, setStep] = useState(0);
     const [type, setType] = useState<LeaveType>(request?.type ?? 'vacation');
     const formContainerRef = useRef<HTMLDivElement>(null);
@@ -290,17 +289,11 @@ export function LeaveRequestFormPanel({
 
     const wizardHandlers = {
         currentStep: step,
-        totalSteps: CREATE_STEPS.length,
+        totalSteps: STEPS.length,
         setStep,
     };
 
-    useWizardFormSubmitGuard(
-        formContainerRef,
-        useWizard,
-        step,
-        CREATE_STEPS.length,
-        setStep,
-    );
+    useWizardFormSubmitGuard(formContainerRef, true, step, STEPS.length, setStep);
 
     return (
         <div
@@ -340,14 +333,9 @@ export function LeaveRequestFormPanel({
                     <Form
                         {...formProps}
                         encType="multipart/form-data"
-                        noValidate={useWizard}
+                        noValidate
                         options={{ preserveScroll: true }}
-                        onKeyDown={
-                            useWizard
-                                ? (event) =>
-                                      handleWizardFormKeyDown(event, wizardHandlers)
-                                : undefined
-                        }
+                        onKeyDown={(event) => handleWizardFormKeyDown(event, wizardHandlers)}
                         onSuccess={() => {
                             onSuccess(
                                 isEdit
@@ -359,107 +347,67 @@ export function LeaveRequestFormPanel({
                         className="space-y-5 px-5 py-5 sm:px-6"
                     >
                         {({ errors, processing, submit }) => (
-                        <>
-                            {useWizard ? (
-                                <FormStepIndicator
-                                    steps={CREATE_STEPS}
-                                    currentStep={step}
-                                />
-                            ) : null}
+                            <>
+                                <FormStepIndicator steps={STEPS} currentStep={step} />
 
-                            {useWizard ? (
-                                <>
-                                    <FormStepPanel step={0} currentStep={step}>
-                                        <LeaveTypeFields
-                                            type={type}
-                                            onTypeChange={setType}
-                                            error={errors.type}
-                                        />
-                                    </FormStepPanel>
-                                    <FormStepPanel step={1} currentStep={step}>
-                                        <LeavePeriodFields
-                                            request={request}
-                                            errors={errors}
-                                        />
-                                    </FormStepPanel>
-                                    <FormStepPanel step={2} currentStep={step}>
-                                        <LeaveExtraFields
-                                            type={type}
-                                            isEdit={false}
-                                            request={null}
-                                            errors={errors}
-                                        />
-                                    </FormStepPanel>
-                                    <FormStepFooter
-                                        currentStep={step}
-                                        totalSteps={CREATE_STEPS.length}
-                                        processing={processing}
-                                        submitLabel="Indienen"
-                                        onCancel={onClose}
-                                        onBack={() =>
-                                            setStep((current) => Math.max(current - 1, 0))
-                                        }
-                                        onNext={(event) => {
-                                            event.preventDefault();
-                                            const form =
-                                                event.currentTarget.closest('form');
-
-                                            if (form instanceof HTMLFormElement) {
-                                                tryAdvanceFormStep(form, wizardHandlers);
-                                            }
-                                        }}
-                                        onFinalSubmit={() => {
-                                            const form =
-                                                formContainerRef.current?.querySelector(
-                                                    'form',
-                                                );
-
-                                            if (form instanceof HTMLFormElement) {
-                                                submitWizardForm(
-                                                    form,
-                                                    wizardHandlers,
-                                                    submit,
-                                                );
-                                            }
-                                        }}
-                                    />
-                                </>
-                            ) : (
-                                <>
+                                <FormStepPanel step={0} currentStep={step}>
                                     <LeaveTypeFields
                                         type={type}
                                         onTypeChange={setType}
                                         error={errors.type}
                                     />
+                                </FormStepPanel>
+
+                                <FormStepPanel step={1} currentStep={step}>
                                     <LeavePeriodFields
                                         request={request}
                                         errors={errors}
                                     />
+                                </FormStepPanel>
+
+                                <FormStepPanel step={2} currentStep={step}>
                                     <LeaveExtraFields
                                         type={type}
-                                        isEdit
+                                        isEdit={isEdit}
                                         request={request}
                                         errors={errors}
                                     />
-                                    <div className="flex flex-col-reverse gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
-                                        <button
-                                            type="button"
-                                            onClick={onClose}
-                                            className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-                                        >
-                                            Annuleren
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={processing}
-                                            className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
-                                        >
-                                            {processing ? 'Bezig…' : 'Opslaan'}
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </>
+                                </FormStepPanel>
+
+                                <FormStepFooter
+                                    currentStep={step}
+                                    totalSteps={STEPS.length}
+                                    processing={processing}
+                                    submitLabel={isEdit ? 'Opslaan' : 'Indienen'}
+                                    onCancel={onClose}
+                                    onBack={() =>
+                                        setStep((current) => Math.max(current - 1, 0))
+                                    }
+                                    onNext={(event) => {
+                                        event.preventDefault();
+                                        const form =
+                                            event.currentTarget.closest('form');
+
+                                        if (form instanceof HTMLFormElement) {
+                                            tryAdvanceFormStep(form, wizardHandlers);
+                                        }
+                                    }}
+                                    onFinalSubmit={() => {
+                                        const form =
+                                            formContainerRef.current?.querySelector(
+                                                'form',
+                                            );
+
+                                        if (form instanceof HTMLFormElement) {
+                                            submitWizardForm(
+                                                form,
+                                                wizardHandlers,
+                                                submit,
+                                            );
+                                        }
+                                    }}
+                                />
+                            </>
                         )}
                     </Form>
                 </div>

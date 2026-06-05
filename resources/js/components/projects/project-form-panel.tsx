@@ -27,7 +27,7 @@ type ProjectFormPanelProps = {
     onSuccess: (message: string) => void;
 };
 
-const CREATE_STEPS = ['Basis', 'Type', 'Planning'] as const;
+const STEPS = ['Basis', 'Type', 'Planning'] as const;
 
 function IconClose({ className }: { className?: string }) {
     return (
@@ -116,7 +116,6 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
     const formContainerRef = useRef<HTMLDivElement>(null);
 
     const isEdit = project !== null;
-    const useWizard = !isEdit;
     const [step, setStep] = useState(0);
     const [type, setType] = useState<ProjectType>(project?.type ?? 'external');
     const [selectedTeamIds, setSelectedTeamIds] = useState<number[]>(
@@ -150,17 +149,11 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
 
     const wizardHandlers = {
         currentStep: step,
-        totalSteps: CREATE_STEPS.length,
+        totalSteps: STEPS.length,
         setStep,
     };
 
-    useWizardFormSubmitGuard(
-        formContainerRef,
-        useWizard,
-        step,
-        CREATE_STEPS.length,
-        setStep,
-    );
+    useWizardFormSubmitGuard(formContainerRef, true, step, STEPS.length, setStep);
 
     return (
         <div
@@ -201,13 +194,8 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                         {...formProps}
                         options={{ preserveScroll: true }}
                         encType="multipart/form-data"
-                        noValidate={useWizard}
-                        onKeyDown={
-                            useWizard
-                                ? (event) =>
-                                      handleWizardFormKeyDown(event, wizardHandlers)
-                                : undefined
-                        }
+                        noValidate
+                        onKeyDown={(event) => handleWizardFormKeyDown(event, wizardHandlers)}
                         onSuccess={() => {
                             onSuccess(isEdit ? 'Project bijgewerkt.' : 'Project aangemaakt.');
                             onClose();
@@ -215,163 +203,10 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                         className="space-y-5 px-5 py-5 sm:px-6"
                     >
                         {({ errors, processing, submit }) => (
-                        <>
-                            {useWizard ? (
-                                <FormStepIndicator steps={CREATE_STEPS} currentStep={step} />
-                            ) : null}
+                            <>
+                                <FormStepIndicator steps={STEPS} currentStep={step} />
 
-                            {useWizard ? (
-                                <>
-                                    <FormStepPanel step={0} currentStep={step}>
-                                        <div>
-                                            <label
-                                                htmlFor="project-name"
-                                                className="text-sm font-medium text-gray-800"
-                                            >
-                                                Projectnaam <span className="text-red-600">*</span>
-                                            </label>
-                                            <input
-                                                ref={nameInputRef}
-                                                id="project-name"
-                                                name="name"
-                                                required
-                                                placeholder="bijv. NFC Betaalsysteem"
-                                                className={inputClass}
-                                            />
-                                            {errors.name !== undefined ? (
-                                                <p className="mt-1 text-xs text-red-600">
-                                                    {errors.name}
-                                                </p>
-                                            ) : null}
-                                        </div>
-
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-800">Logo</p>
-                                            <p className="mt-0.5 text-xs text-gray-500">
-                                                Optioneel. JPEG, PNG, WebP of GIF, max. 2&nbsp;MB.
-                                            </p>
-                                            <input
-                                                id="project-logo"
-                                                type="file"
-                                                name="logo"
-                                                accept="image/jpeg,image/png,image/webp,image/gif"
-                                                className="mt-3 max-w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-800 hover:file:bg-gray-200"
-                                            />
-                                            {errors.logo !== undefined ? (
-                                                <p className="mt-1 text-xs text-red-600">
-                                                    {errors.logo}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </FormStepPanel>
-
-                                    <FormStepPanel step={1} currentStep={step}>
-                                        <ProjectTypeFields
-                                            type={type}
-                                            onTypeChange={setType}
-                                            project={null}
-                                            errors={errors}
-                                        />
-                                    </FormStepPanel>
-
-                                    <FormStepPanel step={2} currentStep={step}>
-                                        <div className="grid gap-4 sm:grid-cols-2">
-                                            <div>
-                                                <label
-                                                    htmlFor="project-status"
-                                                    className="text-sm font-medium text-gray-800"
-                                                >
-                                                    Status
-                                                </label>
-                                                <select
-                                                    id="project-status"
-                                                    name="status"
-                                                    defaultValue="in_progress"
-                                                    className={inputClass}
-                                                >
-                                                    {PROJECT_STATUS_OPTIONS.map((option) => (
-                                                        <option
-                                                            key={option.value}
-                                                            value={option.value}
-                                                        >
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                {errors.status !== undefined ? (
-                                                    <p className="mt-1 text-xs text-red-600">
-                                                        {errors.status}
-                                                    </p>
-                                                ) : null}
-                                            </div>
-
-                                            <div>
-                                                <label
-                                                    htmlFor="project-budget"
-                                                    className="text-sm font-medium text-gray-800"
-                                                >
-                                                    Urenbudget
-                                                </label>
-                                                <input
-                                                    id="project-budget"
-                                                    name="hours_budget"
-                                                    type="number"
-                                                    min={0}
-                                                    placeholder="bijv. 1200"
-                                                    className={inputClass}
-                                                />
-                                                {errors.hours_budget !== undefined ? (
-                                                    <p className="mt-1 text-xs text-red-600">
-                                                        {errors.hours_budget}
-                                                    </p>
-                                                ) : null}
-                                            </div>
-                                        </div>
-
-                                        <TeamPicker
-                                            teams={teams}
-                                            selectedIds={selectedTeamIds}
-                                            onChange={setSelectedTeamIds}
-                                            disabled={processing}
-                                        />
-                                    </FormStepPanel>
-
-                                    <FormStepFooter
-                                        currentStep={step}
-                                        totalSteps={CREATE_STEPS.length}
-                                        processing={processing}
-                                        submitLabel="Project opslaan"
-                                        onCancel={onClose}
-                                        onBack={() =>
-                                            setStep((current) => Math.max(current - 1, 0))
-                                        }
-                                        onNext={(event) => {
-                                            event.preventDefault();
-                                            const form =
-                                                event.currentTarget.closest('form');
-
-                                            if (form instanceof HTMLFormElement) {
-                                                tryAdvanceFormStep(form, wizardHandlers);
-                                            }
-                                        }}
-                                        onFinalSubmit={() => {
-                                            const form =
-                                                formContainerRef.current?.querySelector(
-                                                    'form',
-                                                );
-
-                                            if (form instanceof HTMLFormElement) {
-                                                submitWizardForm(
-                                                    form,
-                                                    wizardHandlers,
-                                                    submit,
-                                                );
-                                            }
-                                        }}
-                                    />
-                                </>
-                            ) : (
-                                <>
+                                <FormStepPanel step={0} currentStep={step}>
                                     <div>
                                         <label
                                             htmlFor="project-name"
@@ -384,12 +219,14 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                                             id="project-name"
                                             name="name"
                                             required
-                                            defaultValue={project.name}
+                                            defaultValue={project?.name}
                                             placeholder="bijv. NFC Betaalsysteem"
                                             className={inputClass}
                                         />
                                         {errors.name !== undefined ? (
-                                            <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+                                            <p className="mt-1 text-xs text-red-600">
+                                                {errors.name}
+                                            </p>
                                         ) : null}
                                     </div>
 
@@ -398,7 +235,7 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                                         <p className="mt-0.5 text-xs text-gray-500">
                                             Optioneel. JPEG, PNG, WebP of GIF, max. 2&nbsp;MB.
                                         </p>
-                                        {project.logo !== null ? (
+                                        {project?.logo != null ? (
                                             <img
                                                 src={project.logo}
                                                 alt=""
@@ -413,9 +250,11 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                                             className="mt-3 max-w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-800 hover:file:bg-gray-200"
                                         />
                                         {errors.logo !== undefined ? (
-                                            <p className="mt-1 text-xs text-red-600">{errors.logo}</p>
+                                            <p className="mt-1 text-xs text-red-600">
+                                                {errors.logo}
+                                            </p>
                                         ) : null}
-                                        {project.logo !== null ? (
+                                        {project?.logo != null ? (
                                             <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-red-600">
                                                 <input
                                                     type="checkbox"
@@ -427,14 +266,18 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                                             </label>
                                         ) : null}
                                     </div>
+                                </FormStepPanel>
 
+                                <FormStepPanel step={1} currentStep={step}>
                                     <ProjectTypeFields
                                         type={type}
                                         onTypeChange={setType}
                                         project={project}
                                         errors={errors}
                                     />
+                                </FormStepPanel>
 
+                                <FormStepPanel step={2} currentStep={step}>
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div>
                                             <label
@@ -446,11 +289,14 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                                             <select
                                                 id="project-status"
                                                 name="status"
-                                                defaultValue={project.status}
+                                                defaultValue={project?.status ?? 'in_progress'}
                                                 className={inputClass}
                                             >
                                                 {PROJECT_STATUS_OPTIONS.map((option) => (
-                                                    <option key={option.value} value={option.value}>
+                                                    <option
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
                                                         {option.label}
                                                     </option>
                                                 ))}
@@ -474,7 +320,7 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                                                 name="hours_budget"
                                                 type="number"
                                                 min={0}
-                                                defaultValue={project.hours_budget ?? ''}
+                                                defaultValue={project?.hours_budget ?? ''}
                                                 placeholder="bijv. 1200"
                                                 className={inputClass}
                                             />
@@ -492,28 +338,43 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                                         onChange={setSelectedTeamIds}
                                         disabled={processing}
                                     />
+                                </FormStepPanel>
 
-                                    <div className="flex flex-col-reverse gap-2 border-t border-gray-200 pt-4 sm:flex-row sm:justify-end">
-                                        <button
-                                            type="button"
-                                            onClick={onClose}
-                                            disabled={processing}
-                                            className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
-                                        >
-                                            Annuleren
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={processing}
-                                            className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-                                        >
-                                            {processing ? 'Bezig…' : 'Wijzigingen opslaan'}
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </>
-                    )}
+                                <FormStepFooter
+                                    currentStep={step}
+                                    totalSteps={STEPS.length}
+                                    processing={processing}
+                                    submitLabel={isEdit ? 'Wijzigingen opslaan' : 'Project opslaan'}
+                                    onCancel={onClose}
+                                    onBack={() =>
+                                        setStep((current) => Math.max(current - 1, 0))
+                                    }
+                                    onNext={(event) => {
+                                        event.preventDefault();
+                                        const form =
+                                            event.currentTarget.closest('form');
+
+                                        if (form instanceof HTMLFormElement) {
+                                            tryAdvanceFormStep(form, wizardHandlers);
+                                        }
+                                    }}
+                                    onFinalSubmit={() => {
+                                        const form =
+                                            formContainerRef.current?.querySelector(
+                                                'form',
+                                            );
+
+                                        if (form instanceof HTMLFormElement) {
+                                            submitWizardForm(
+                                                form,
+                                                wizardHandlers,
+                                                submit,
+                                            );
+                                        }
+                                    }}
+                                />
+                            </>
+                        )}
                     </Form>
                 </div>
             </section>
