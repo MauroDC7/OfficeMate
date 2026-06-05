@@ -27,7 +27,7 @@ class AdminTimesheetReportRequest extends FormRequest
             'user_id' => ['nullable', 'integer'],
             'project_id' => ['nullable', 'integer'],
             'team_id' => ['nullable', 'integer'],
-            'format' => ['nullable', 'string', 'in:csv'],
+            'format' => ['nullable', 'string', 'in:csv,pdf'],
         ];
     }
 

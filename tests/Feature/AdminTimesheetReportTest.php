@@ -180,6 +180,35 @@ it('rejects export filters outside the organization', function () {
         ->assertSessionHasErrors('user_id');
 });
 
+it('exports filtered timesheet rows as branded pdf', function () {
+    [$organization, $admin] = timesheetReportAdmin();
+
+    $employee = User::factory()->forOrganization($organization)->create([
+        'role' => UserRole::Employee,
+        'first_name' => 'Anna',
+        'last_name' => 'Smet',
+    ]);
+
+    TimesheetEntry::factory()->for($employee)->create([
+        'worked_on' => '2026-06-02',
+        'title' => 'Rapportage werk',
+        'start_minutes' => 9 * 60,
+        'end_minutes' => 11 * 60,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin.timesheetReport.export', [
+            'starts_on' => '2026-06-02',
+            'ends_on' => '2026-06-02',
+            'format' => 'pdf',
+        ]));
+
+    $response->assertOk()
+        ->assertHeader('content-type', 'application/pdf');
+
+    expect($response->getContent())->toStartWith('%PDF');
+});
+
 it('rejects unsupported export formats', function () {
     [, $admin] = timesheetReportAdmin();
 
@@ -187,7 +216,7 @@ it('rejects unsupported export formats', function () {
         ->get(route('admin.timesheetReport.export', [
             'starts_on' => '2026-06-02',
             'ends_on' => '2026-06-02',
-            'format' => 'pdf',
+            'format' => 'xlsx',
         ]))
         ->assertSessionHasErrors('format');
 });

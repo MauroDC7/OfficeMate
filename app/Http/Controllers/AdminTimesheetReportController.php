@@ -12,9 +12,9 @@ use App\Services\TimesheetReport\TimesheetReportExporterResolver;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Inertia\Response;
+use Inertia\Response as InertiaResponse;
 use InvalidArgumentException;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 final class AdminTimesheetReportController extends Controller
 {
@@ -25,7 +25,7 @@ final class AdminTimesheetReportController extends Controller
         private readonly TimesheetReportExporterResolver $timesheetReportExporterResolver,
     ) {}
 
-    public function index(Request $request): Response
+    public function index(Request $request): InertiaResponse
     {
         $user = $request->user();
         abort_unless($user instanceof User && $user->role === UserRole::Admin, 403);
@@ -38,7 +38,7 @@ final class AdminTimesheetReportController extends Controller
         );
     }
 
-    public function export(AdminTimesheetReportRequest $request): StreamedResponse
+    public function export(AdminTimesheetReportRequest $request): HttpResponse
     {
         $user = $request->user();
         abort_unless($user instanceof User && $user->role === UserRole::Admin, 403);

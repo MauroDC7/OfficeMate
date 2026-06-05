@@ -15,11 +15,14 @@ const selectClassName =
 
 const labelClassName = 'block text-xs font-semibold tracking-wide text-gray-500 uppercase';
 
-function buildExportUrl(filters: AdminTimesheetReportPageProps['filters']): string {
+function buildExportUrl(
+    filters: AdminTimesheetReportPageProps['filters'],
+    format: 'csv' | 'pdf',
+): string {
     const params = new URLSearchParams({
         starts_on: filters.starts_on,
         ends_on: filters.ends_on,
-        format: 'csv',
+        format,
     });
 
     if (filters.user_id !== null) {
@@ -84,15 +87,26 @@ export default function AdminTimesheetReport() {
                                 : 'Goedgekeurde timesheet-uren van je organisatie.'}
                         </p>
                     </div>
-                    <a
-                        href={buildExportUrl(filters)}
-                        className={cn(
-                            dashboardSectionLinkClassName,
-                            'inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold shadow-sm transition hover:bg-gray-50',
-                        )}
-                    >
-                        CSV exporteren
-                    </a>
+                    <div className="flex flex-wrap gap-2">
+                        <a
+                            href={buildExportUrl(filters, 'csv')}
+                            className={cn(
+                                dashboardSectionLinkClassName,
+                                'inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold shadow-sm transition hover:bg-gray-50',
+                            )}
+                        >
+                            CSV exporteren
+                        </a>
+                        <a
+                            href={buildExportUrl(filters, 'pdf')}
+                            className={cn(
+                                dashboardSectionLinkClassName,
+                                'inline-flex items-center justify-center rounded-lg border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800',
+                            )}
+                        >
+                            PDF exporteren
+                        </a>
+                    </div>
                 </div>
 
                 <section className="mt-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
@@ -186,7 +200,7 @@ export default function AdminTimesheetReport() {
                             Toepassen
                         </button>
                         <p className="text-xs text-gray-500">
-                            PDF-export komt later via hetzelfde filterscherm.
+                            CSV en PDF gebruiken dezelfde filters.
                         </p>
                     </div>
                 </section>
@@ -301,7 +315,6 @@ export default function AdminTimesheetReport() {
                             )}
                         >
                             {format.label}
-                            {!format.available ? ' — binnenkort' : ''}
                         </span>
                     ))}
                 </div>

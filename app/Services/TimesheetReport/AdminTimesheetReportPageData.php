@@ -75,7 +75,7 @@ final class AdminTimesheetReportPageData
             ),
             'exportFormats' => [
                 ['value' => 'csv', 'label' => 'CSV', 'available' => true],
-                ['value' => 'pdf', 'label' => 'PDF (branded)', 'available' => false],
+                ['value' => 'pdf', 'label' => 'PDF (branded)', 'available' => true],
             ],
         ];
     }

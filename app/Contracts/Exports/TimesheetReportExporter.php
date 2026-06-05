@@ -5,7 +5,7 @@ namespace App\Contracts\Exports;
 use App\Models\Organization;
 use App\Services\TimesheetReport\TimesheetReportFilters;
 use App\Services\TimesheetReport\TimesheetReportRow;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 interface TimesheetReportExporter
 {
@@ -22,5 +22,5 @@ interface TimesheetReportExporter
         Organization $organization,
         TimesheetReportFilters $filters,
         array $rows,
-    ): StreamedResponse;
+    ): Response;
 }
