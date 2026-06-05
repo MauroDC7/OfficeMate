@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { useEffect, useState, type PropsWithChildren } from 'react';
 
+import { AppFooter } from '@/components/app/app-footer';
 import { AppHeader } from '@/components/app/app-header';
 import { AppSidebar } from '@/components/app/app-sidebar';
 import { ChatbotWidget } from '@/components/chatbot/chatbot-widget';
@@ -50,7 +51,8 @@ export function AppLayout({ children }: PropsWithChildren) {
             />
             <div className="flex min-h-dvh min-w-0 flex-col md:ps-64">
                 <AppHeader onOpenMobileSidebar={() => setSidebarOpen(true)} />
-                <div className="pb-24">{children}</div>
+                <div className="pb-12">{children}</div>
+                <AppFooter />
             </div>
             <FlashAlerts />
             <ChatbotWidget />

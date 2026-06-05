@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminTimesheetReportController;
 use App\Http\Controllers\AdminWeeklyDebriefController;
 use App\Http\Controllers\AppPageController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -101,6 +102,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/admin/leave-requests', [AppPageController::class, 'adminLeaveRequests'])
         ->middleware('admin')
         ->name('admin.leaveRequests');
+    Route::get('/admin/timesheet-report', [AdminTimesheetReportController::class, 'index'])
+        ->middleware('admin')
+        ->name('admin.timesheetReport');
+    Route::get('/admin/timesheet-report/export', [AdminTimesheetReportController::class, 'export'])
+        ->middleware('admin')
+        ->name('admin.timesheetReport.export');
     Route::get('/admin/weekly-debrief', [AdminWeeklyDebriefController::class, 'index'])
         ->middleware('admin')
         ->name('admin.weeklyDebrief');

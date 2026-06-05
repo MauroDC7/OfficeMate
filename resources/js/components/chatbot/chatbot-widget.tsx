@@ -197,9 +197,20 @@ export function ChatbotWidget() {
                 return;
             }
 
+            const optimisticMessageId = -Date.now();
+            const optimisticUserMessage: TimyMessage = {
+                id: optimisticMessageId,
+                role: 'user',
+                content: trimmed,
+                actions: null,
+                pending_action: null,
+                created_at: new Date().toISOString(),
+            };
+
             setIsSending(true);
             setError(null);
             setDraft('');
+            setMessages((current) => [...current, optimisticUserMessage]);
 
             const result = await sendTimyMessage(
                 activeConversation.id,
@@ -210,13 +221,19 @@ export function ChatbotWidget() {
             setIsSending(false);
 
             if ('error' in result) {
+                setMessages((current) =>
+                    current.filter((message) => message.id !== optimisticMessageId),
+                );
                 setError(result.error);
                 setDraft(trimmed);
 
                 return;
             }
 
-            setMessages((current) => [...current, ...result.messages]);
+            setMessages((current) => [
+                ...current.filter((message) => message.id !== optimisticMessageId),
+                ...result.messages,
+            ]);
             applyContextHints(setTips, setAiConfigured, result);
         },
         [conversation, ensureConversation, isSending, pagePath, user],

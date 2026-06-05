@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { AppFooter } from '@/components/app/app-footer';
 import { FlashAlerts } from '@/components/flash-alerts';
 
 export const authInputClassName =
@@ -86,37 +87,40 @@ type AuthPageProps = {
 
 export function AuthPage({ title, subtitle, headerExtra, children }: AuthPageProps): ReactNode {
     return (
-        <div className="relative flex min-h-svh flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 px-4 py-8 sm:py-16">
+        <div className="relative flex min-h-svh flex-col overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100">
             <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(220,38,38,0.06),transparent)]"
             />
 
-            <div className="relative w-full max-w-[400px]">
-                <header className="mb-6 flex flex-col items-center text-center sm:mb-10">
-                    <img
-                        src="/img/logoTransparent.png"
-                        alt="TimeTraq"
-                        className="mb-4 size-14 object-contain sm:size-16"
-                        width={64}
-                        height={64}
-                        decoding="async"
-                        draggable={false}
-                    />
-                    <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">
-                        {title}
-                    </h1>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-500">{subtitle}</p>
-                    {headerExtra !== undefined ? (
-                        <div className="mt-3">{headerExtra}</div>
-                    ) : null}
-                </header>
+            <div className="relative flex flex-1 items-center justify-center px-4 py-8 sm:py-16">
+                <div className="w-full max-w-[400px]">
+                    <header className="mb-6 flex flex-col items-center text-center sm:mb-10">
+                        <img
+                            src="/img/logoTransparent.png"
+                            alt="TimeTraq"
+                            className="mb-4 size-14 object-contain sm:size-16"
+                            width={64}
+                            height={64}
+                            decoding="async"
+                            draggable={false}
+                        />
+                        <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">
+                            {title}
+                        </h1>
+                        <p className="mt-2 text-sm leading-relaxed text-gray-500">{subtitle}</p>
+                        {headerExtra !== undefined ? (
+                            <div className="mt-3">{headerExtra}</div>
+                        ) : null}
+                    </header>
 
-                <div className="rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/60 ring-1 ring-gray-950/5">
-                    {children}
+                    <div className="rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/60 ring-1 ring-gray-950/5">
+                        {children}
+                    </div>
                 </div>
             </div>
 
+            <AppFooter />
             <FlashAlerts />
         </div>
     );

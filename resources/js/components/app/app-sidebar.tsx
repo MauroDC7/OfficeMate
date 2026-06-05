@@ -46,6 +46,15 @@ export function AppSidebar({ isMobileOpen, onCloseMobile }: AppSidebarProps) {
             route: role === 'admin' ? adminLeaveRequests : leaveRequests,
             src: '/img/Calendar Icons Material Outlined.png',
         },
+        ...(role === 'admin'
+            ? [
+                  {
+                      label: 'Urenrapportage',
+                      route: { url: () => '/admin/timesheet-report' },
+                      src: '/img/Timesheet Icon Collection.png',
+                  },
+              ]
+            : []),
         ...baseLinks.slice(4),
     ];
 
