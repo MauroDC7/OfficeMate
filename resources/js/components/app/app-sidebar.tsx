@@ -51,7 +51,7 @@ export function AppSidebar({ isMobileOpen, onCloseMobile }: AppSidebarProps) {
                   {
                       label: 'Urenrapportage',
                       route: { url: () => '/admin/timesheet-report' },
-                      src: '/img/Timesheet Icon Collection.png',
+                      src: '/img/Report Icon 24.png',
                   },
               ]
             : []),
