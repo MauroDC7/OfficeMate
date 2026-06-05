@@ -41,7 +41,6 @@ final class AdminTimesheetReportPageData
      *         project_name: string|null,
      *         client_name: string|null,
      *     }>,
-     *     exportFormats: list<array{value: string, label: string, available: bool}>,
      * }
      */
     public function forOrganization(Organization $organization, Request $request): array
@@ -73,10 +72,6 @@ final class AdminTimesheetReportPageData
                 ],
                 $rows,
             ),
-            'exportFormats' => [
-                ['value' => 'csv', 'label' => 'CSV', 'available' => true],
-                ['value' => 'pdf', 'label' => 'PDF (branded)', 'available' => true],
-            ],
         ];
     }
 

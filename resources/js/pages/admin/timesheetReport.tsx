@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
     dashboardSectionClassName,
@@ -8,7 +8,14 @@ import {
 import { formatDayTotal } from '@/components/timesheets/timesheet-helpers';
 import { AppLayout } from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import type { AdminTimesheetReportPageProps } from '@/types/admin-timesheet-report';
+import type {
+    AdminTimesheetReportPageProps,
+    AdminTimesheetReportRow,
+} from '@/types/admin-timesheet-report';
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
+
+type PageSize = (typeof PAGE_SIZE_OPTIONS)[number] | 'all';
 
 const selectClassName =
     'mt-1 block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none focus:border-red-500/55 focus:ring-2 focus:ring-red-500/15';
@@ -40,6 +47,52 @@ function buildExportUrl(
     return `/admin/timesheet-report/export?${params.toString()}`;
 }
 
+function paginateRows(
+    rows: AdminTimesheetReportRow[],
+    perPage: PageSize,
+    currentPage: number,
+): {
+    visibleRows: AdminTimesheetReportRow[];
+    totalPages: number;
+    safePage: number;
+    rangeStart: number;
+    rangeEnd: number;
+} {
+    const totalRows = rows.length;
+
+    if (totalRows === 0) {
+        return {
+            visibleRows: [],
+            totalPages: 1,
+            safePage: 1,
+            rangeStart: 0,
+            rangeEnd: 0,
+        };
+    }
+
+    if (perPage === 'all') {
+        return {
+            visibleRows: rows,
+            totalPages: 1,
+            safePage: 1,
+            rangeStart: 1,
+            rangeEnd: totalRows,
+        };
+    }
+
+    const totalPages = Math.max(1, Math.ceil(totalRows / perPage));
+    const safePage = Math.min(Math.max(currentPage, 1), totalPages);
+    const startIndex = (safePage - 1) * perPage;
+
+    return {
+        visibleRows: rows.slice(startIndex, startIndex + perPage),
+        totalPages,
+        safePage,
+        rangeStart: startIndex + 1,
+        rangeEnd: Math.min(startIndex + perPage, totalRows),
+    };
+}
+
 export default function AdminTimesheetReport() {
     const {
         organizationName,
@@ -47,7 +100,6 @@ export default function AdminTimesheetReport() {
         filterOptions,
         summary,
         rows,
-        exportFormats,
     } = usePage<AdminTimesheetReportPageProps>().props;
 
     const [startsOn, setStartsOn] = useState(filters.starts_on);
@@ -55,6 +107,24 @@ export default function AdminTimesheetReport() {
     const [userId, setUserId] = useState(filters.user_id?.toString() ?? '');
     const [projectId, setProjectId] = useState(filters.project_id?.toString() ?? '');
     const [teamId, setTeamId] = useState(filters.team_id?.toString() ?? '');
+    const [perPage, setPerPage] = useState<PageSize>(25);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [
+        rows,
+        filters.starts_on,
+        filters.ends_on,
+        filters.user_id,
+        filters.project_id,
+        filters.team_id,
+    ]);
+
+    const pagination = useMemo(
+        () => paginateRows(rows, perPage, currentPage),
+        [rows, perPage, currentPage],
+    );
 
     function applyFilters() {
         router.get(
@@ -199,9 +269,6 @@ export default function AdminTimesheetReport() {
                         >
                             Toepassen
                         </button>
-                        <p className="text-xs text-gray-500">
-                            CSV en PDF gebruiken dezelfde filters.
-                        </p>
                     </div>
                 </section>
 
@@ -233,11 +300,40 @@ export default function AdminTimesheetReport() {
                 </div>
 
                 <section className={cn(dashboardSectionClassName, 'mt-5')}>
-                    <div className="border-b border-gray-100 px-4 py-3 sm:px-5">
-                        <h2 className="text-sm font-semibold text-gray-900">Preview</h2>
-                        <p className="mt-0.5 text-xs text-gray-500">
-                            Alleen goedgekeurde timesheet-entries. Export gebruikt dezelfde filters.
-                        </p>
+                    <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-end sm:justify-between sm:px-5">
+                        <div>
+                            <h2 className="text-sm font-semibold text-gray-900">Preview</h2>
+                            <p className="mt-0.5 text-xs text-gray-500">
+                                Alleen goedgekeurde timesheet-entries. Export bevat alle
+                                gefilterde regels.
+                            </p>
+                        </div>
+                        {rows.length > 0 ? (
+                            <div className="w-full sm:w-auto">
+                                <label htmlFor="per-page" className={labelClassName}>
+                                    Per pagina
+                                </label>
+                                <select
+                                    id="per-page"
+                                    value={perPage}
+                                    onChange={(event) => {
+                                        const value = event.target.value;
+                                        setPerPage(
+                                            value === 'all' ? 'all' : Number(value),
+                                        );
+                                        setCurrentPage(1);
+                                    }}
+                                    className={cn(selectClassName, 'mt-1 min-w-[8rem]')}
+                                >
+                                    {PAGE_SIZE_OPTIONS.map((size) => (
+                                        <option key={size} value={size}>
+                                            {size}
+                                        </option>
+                                    ))}
+                                    <option value="all">Alles</option>
+                                </select>
+                            </div>
+                        ) : null}
                     </div>
 
                     {rows.length === 0 ? (
@@ -275,7 +371,7 @@ export default function AdminTimesheetReport() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 bg-white">
-                                    {rows.map((row) => (
+                                    {pagination.visibleRows.map((row) => (
                                         <tr key={row.id}>
                                             <td className="px-4 py-3 text-gray-900 sm:px-5">
                                                 {row.employee_name}
@@ -301,23 +397,53 @@ export default function AdminTimesheetReport() {
                             </table>
                         </div>
                     )}
-                </section>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                    {exportFormats.map((format) => (
-                        <span
-                            key={format.value}
-                            className={cn(
-                                'rounded-full px-3 py-1 text-xs font-medium',
-                                format.available
-                                    ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
-                                    : 'bg-gray-100 text-gray-500 ring-1 ring-gray-200',
-                            )}
-                        >
-                            {format.label}
-                        </span>
-                    ))}
-                </div>
+                    {rows.length > 0 && perPage !== 'all' && pagination.totalPages > 1 ? (
+                        <div className="flex flex-col gap-3 border-t border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                            <p className="text-xs text-gray-500">
+                                Toon {pagination.rangeStart}–{pagination.rangeEnd} van{' '}
+                                {rows.length} regels
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setCurrentPage((page) => Math.max(1, page - 1))
+                                    }
+                                    disabled={pagination.safePage <= 1}
+                                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    Vorige
+                                </button>
+                                <span className="text-xs font-medium text-gray-600 tabular-nums">
+                                    Pagina {pagination.safePage} van {pagination.totalPages}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setCurrentPage((page) =>
+                                            Math.min(pagination.totalPages, page + 1),
+                                        )
+                                    }
+                                    disabled={pagination.safePage >= pagination.totalPages}
+                                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    Volgende
+                                </button>
+                            </div>
+                        </div>
+                    ) : null}
+
+                    {rows.length > 0 && (perPage === 'all' || pagination.totalPages === 1) ? (
+                        <div className="border-t border-gray-100 px-4 py-3 sm:px-5">
+                            <p className="text-xs text-gray-500">
+                                {perPage === 'all'
+                                    ? `Alle ${rows.length} regels worden getoond.`
+                                    : `Toon ${pagination.rangeStart}–${pagination.rangeEnd} van ${rows.length} regels`}
+                            </p>
+                        </div>
+                    ) : null}
+                </section>
             </main>
         </AppLayout>
     );

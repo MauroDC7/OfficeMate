@@ -14,12 +14,6 @@ export type AdminTimesheetReportRow = {
     client_name: string | null;
 };
 
-export type AdminTimesheetReportExportFormat = {
-    value: string;
-    label: string;
-    available: boolean;
-};
-
 export type AdminTimesheetReportPageProps = {
     organizationName: string;
     filters: {
@@ -40,5 +34,4 @@ export type AdminTimesheetReportPageProps = {
         employee_count: number;
     };
     rows: AdminTimesheetReportRow[];
-    exportFormats: AdminTimesheetReportExportFormat[];
 };
