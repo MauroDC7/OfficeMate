@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { store as grantAdminRole } from '@/routes/settings/employees/admin-role';
 import { destroy as removeOrganizationMember } from '@/routes/settings/employees';
 import type { PresenceEmployee } from '@/types/presence';
-import type { User } from '@/types/auth';
 
 type PeopleEmployeeCardProps = {
     employee: PresenceEmployee;
@@ -46,7 +45,7 @@ export function PeopleEmployeeCard({ employee, currentUserId }: PeopleEmployeeCa
         router.post(grantAdminRole.url({ user: employee.id }), {}, {
             preserveScroll: true,
             onSuccess: () => {
-                success(`${getUserDisplayFullName(employee as User)} is nu beheerder.`);
+                success(`${getUserDisplayFullName(employee)} is nu beheerder.`);
                 reloadPeople();
             },
             onError: () => {
@@ -56,7 +55,7 @@ export function PeopleEmployeeCard({ employee, currentUserId }: PeopleEmployeeCa
     }
 
     function removeFromOrganization() {
-        const name = getUserDisplayFullName(employee as User);
+        const name = getUserDisplayFullName(employee);
 
         if (
             !window.confirm(

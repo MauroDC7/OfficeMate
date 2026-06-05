@@ -11,21 +11,13 @@ export function DashboardNotificationsPanel({
 }: DashboardNotificationsPanelProps) {
     return (
         <section className={dashboardSectionClassName}>
-            <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                <div className="min-w-0">
-                    <h2 className="text-sm font-semibold text-gray-900">
-                        Notificaties
-                    </h2>
-                    <p className="mt-0.5 text-xs text-gray-500">
-                        Je vijf meest recente meldingen.
-                    </p>
-                </div>
-                <button
-                    type="button"
-                    className="inline-flex w-full shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 sm:w-auto"
-                >
-                    Alle notificaties
-                </button>
+            <div className="border-b border-gray-100 px-4 py-3 sm:px-5">
+                <h2 className="text-sm font-semibold text-gray-900">
+                    Notificaties
+                </h2>
+                <p className="mt-0.5 text-xs text-gray-500">
+                    Je vijf meest recente meldingen.
+                </p>
             </div>
 
             {notifications.length === 0 ? (

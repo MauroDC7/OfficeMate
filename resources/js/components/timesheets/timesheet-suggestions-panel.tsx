@@ -177,8 +177,13 @@ export function TimesheetSuggestionsPanel({
             },
             {
                 preserveScroll: true,
-                onError: (errs) =>
-                    setDraftErrors(errs as Record<string, string>),
+                onError: (errs) => {
+                    const flat: Record<string, string> = {};
+                    for (const [key, value] of Object.entries(errs)) {
+                        flat[key] = Array.isArray(value) ? value[0] : String(value);
+                    }
+                    setDraftErrors(flat);
+                },
                 onSuccess: () => {
                     handleCancelEdit();
                     success('Voorstel bijgewerkt.');
@@ -613,7 +618,7 @@ function ApproveButton({
             className={cn(
                 BASE_BUTTON,
                 compact ? COMPACT_SIZE : DEFAULT_SIZE,
-                'bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600',
+                'bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:outline-emerald-600',
             )}
         >
             {children}

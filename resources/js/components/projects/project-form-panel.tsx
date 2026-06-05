@@ -197,6 +197,9 @@ export function ProjectFormPanel({ onClose, teams, project = null, onSuccess }: 
                         noValidate
                         onKeyDown={(event) => handleWizardFormKeyDown(event, wizardHandlers)}
                         onSuccess={() => {
+                            if (!isEdit) {
+                                setSelectedTeamIds([]);
+                            }
                             onSuccess(isEdit ? 'Project bijgewerkt.' : 'Project aangemaakt.');
                             onClose();
                         }}

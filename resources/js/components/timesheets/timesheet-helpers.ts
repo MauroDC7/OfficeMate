@@ -319,7 +319,7 @@ export function formatDayTotal(total: number): string {
 export function currentMinutesSinceMidnight(): number {
     const n = new Date();
 
-    return n.getHours() * 60 + n.getMinutes() + n.getSeconds() / 60;
+    return n.getHours() * 60 + n.getMinutes();
 }
 
 export function minutesToTimelineY(
