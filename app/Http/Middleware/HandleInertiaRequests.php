@@ -4,7 +4,9 @@ namespace App\Http\Middleware;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\RecentInAppNotifications;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -51,6 +53,49 @@ class HandleInertiaRequests extends Middleware
                 'proposalsStatus' => fn () => $request->session()->get('proposalsStatus'),
                 'proposalsMessage' => fn () => $request->session()->get('proposalsMessage'),
             ],
+            'webPush' => function () use ($request): ?array {
+                $publicKey = config('webpush.vapid.public_key');
+                $user = $request->user();
+
+                if (! is_string($publicKey) || $publicKey === '' || ! $user instanceof User) {
+                    return null;
+                }
+
+                return [
+                    'publicKey' => $publicKey,
+                    'subscribed' => $user->pushSubscriptions()->exists(),
+                ];
+            },
+            'broadcasting' => function () use ($request): ?array {
+                if (! $request->user() instanceof User) {
+                    return null;
+                }
+
+                if (config('broadcasting.default') !== 'pusher') {
+                    return null;
+                }
+
+                $key = config('broadcasting.connections.pusher.key');
+                $cluster = config('broadcasting.connections.pusher.options.cluster');
+
+                if (! is_string($key) || $key === '' || ! is_string($cluster) || $cluster === '') {
+                    return null;
+                }
+
+                return [
+                    'key' => $key,
+                    'cluster' => $cluster,
+                ];
+            },
+            'recentNotifications' => Inertia::always(function () use ($request): array {
+                $user = $request->user();
+
+                if (! $user instanceof User) {
+                    return [];
+                }
+
+                return app(RecentInAppNotifications::class)->forUser($user);
+            }),
         ];
     }
 }

@@ -1,4 +1,5 @@
 import type { CalendarView } from '@/components/timesheets/calendar-view';
+import { SNAP_MINUTES } from '@/components/timesheets/timesheet-entry-range';
 import {
     DEFAULT_GRID_DISPLAY,
     type TimesheetGridDisplay,
@@ -89,11 +90,56 @@ export function resolveFocusDayYmd(
     return weekStartYmd;
 }
 
+export function monthYmdFromDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+
+    return `${y}-${m}`;
+}
+
+export function monthYmdFromYmd(ymd: string): string {
+    const d = parseYmdLocal(ymd);
+
+    return monthYmdFromDate(d);
+}
+
+export function addMonthsToMonthYmd(monthYmd: string, deltaMonths: number): string {
+    const [y, m] = monthYmd.split('-').map(Number);
+    const d = new Date(y, m - 1 + deltaMonths, 1);
+
+    return monthYmdFromDate(d);
+}
+
+export function monthGridDays(monthYmd: string): Date[] {
+    const [year, month] = monthYmd.split('-').map(Number);
+    const firstOfMonth = new Date(year, month - 1, 1);
+    const lastOfMonth = new Date(year, month, 0);
+    let current = startOfMonday(firstOfMonth);
+    const gridEnd = addDays(startOfMonday(lastOfMonth), 6);
+    const days: Date[] = [];
+
+    while (current.getTime() <= gridEnd.getTime()) {
+        days.push(new Date(current));
+        current = addDays(current, 1);
+    }
+
+    return days;
+}
+
+export function isSameMonth(date: Date, monthYmd: string): boolean {
+    return monthYmdFromDate(date) === monthYmd;
+}
+
 export function calendarDaysForView(
     weekStartYmd: string,
     view: CalendarView,
     focusDayYmd: string,
+    monthYmd?: string,
 ): Date[] {
+    if (view === 'month' && monthYmd !== undefined) {
+        return monthGridDays(monthYmd);
+    }
+
     const monday = parseYmdLocal(weekStartYmd);
 
     if (view === 'day') {
@@ -129,6 +175,99 @@ export function minutesToTimeInput(total: number): string {
 
 export function formatMinutesRange(startMin: number, endMin: number): string {
     return `${minutesToTimeLabel(startMin)} – ${minutesToTimeLabel(endMin)}`;
+}
+
+export function formatDurationMinutes(startMin: number, endMin: number): string {
+    const total = Math.max(0, endMin - startMin);
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+
+    return `${h}:${String(m).padStart(2, '0')}:00`;
+}
+
+export const MIN_TIMESHEET_DURATION_MINUTES = SNAP_MINUTES;
+
+const TIMESHEET_DAY_START_MIN = 0;
+const TIMESHEET_DAY_END_MIN = 1440;
+
+export type TimesheetTimeRange = {
+    start: string;
+    end: string;
+};
+
+export function snapMinutesToQuarterHour(minutes: number): number {
+    return Math.round(minutes / SNAP_MINUTES) * SNAP_MINUTES;
+}
+
+function clampTimeRange(startMin: number, endMin: number): TimesheetTimeRange | null {
+    let start = snapMinutesToQuarterHour(startMin);
+    let end = snapMinutesToQuarterHour(endMin);
+
+    start = Math.max(
+        TIMESHEET_DAY_START_MIN,
+        Math.min(start, TIMESHEET_DAY_END_MIN - MIN_TIMESHEET_DURATION_MINUTES),
+    );
+    end = Math.max(
+        start + MIN_TIMESHEET_DURATION_MINUTES,
+        Math.min(end, TIMESHEET_DAY_END_MIN),
+    );
+
+    if (end <= start) {
+        return null;
+    }
+
+    return {
+        start: minutesToTimeInput(start),
+        end: minutesToTimeInput(end),
+    };
+}
+
+export function applyDurationFromStart(
+    start: string,
+    durationMinutes: number,
+): TimesheetTimeRange | null {
+    const startMin = parseTimeInputToMinutes(start);
+
+    if (startMin === null || durationMinutes < MIN_TIMESHEET_DURATION_MINUTES) {
+        return null;
+    }
+
+    return clampTimeRange(startMin, startMin + durationMinutes);
+}
+
+export function adjustDurationMinutes(
+    start: string,
+    end: string,
+    deltaMinutes: number,
+): TimesheetTimeRange | null {
+    const startMin = parseTimeInputToMinutes(start);
+    const endMin = parseTimeInputToMinutes(end);
+
+    if (startMin === null || endMin === null || endMin <= startMin) {
+        return null;
+    }
+
+    const duration = endMin - startMin;
+    const nextDuration = Math.max(
+        MIN_TIMESHEET_DURATION_MINUTES,
+        duration + deltaMinutes,
+    );
+
+    return clampTimeRange(startMin, startMin + nextDuration);
+}
+
+export function durationMinutesFromTimeInputs(
+    start: string,
+    end: string,
+): number | null {
+    const startMin = parseTimeInputToMinutes(start);
+    const endMin = parseTimeInputToMinutes(end);
+
+    if (startMin === null || endMin === null || endMin <= startMin) {
+        return null;
+    }
+
+    return endMin - startMin;
 }
 
 export function parseTimeInputToMinutes(value: string): number | null {
@@ -180,7 +319,7 @@ export function formatDayTotal(total: number): string {
 export function currentMinutesSinceMidnight(): number {
     const n = new Date();
 
-    return n.getHours() * 60 + n.getMinutes() + n.getSeconds() / 60;
+    return n.getHours() * 60 + n.getMinutes();
 }
 
 export function minutesToTimelineY(
@@ -259,6 +398,37 @@ export function formatShortRelativeNl(iso: string): string {
     const diffDay = Math.round(diffHour / 24);
 
     return `${diffDay} dag${diffDay === 1 ? '' : 'en'} geleden`;
+}
+
+export function entriesByDayAfterMove(
+    entriesByDay: Record<string, TimesheetEntryPayload[]>,
+    entry: TimesheetEntryPayload,
+    targetDayKey: string,
+    startMinutes: number,
+    endMinutes: number,
+): Record<string, TimesheetEntryPayload[]> {
+    const next: Record<string, TimesheetEntryPayload[]> = {};
+
+    for (const [day, list] of Object.entries(entriesByDay)) {
+        const filtered = list.filter((item) => item.id !== entry.id);
+
+        if (filtered.length > 0) {
+            next[day] = filtered;
+        }
+    }
+
+    const moved: TimesheetEntryPayload = {
+        ...entry,
+        worked_on: targetDayKey,
+        start_minutes: startMinutes,
+        end_minutes: endMinutes,
+    };
+
+    next[targetDayKey] = [...(next[targetDayKey] ?? []), moved].sort(
+        (a, b) => a.start_minutes - b.start_minutes,
+    );
+
+    return next;
 }
 
 export function timesheetProjectLabel(entry: {

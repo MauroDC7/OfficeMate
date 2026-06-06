@@ -14,7 +14,7 @@ const PAGE_SUGGESTIONS: Record<string, readonly string[]> = {
     ],
     projects: [
         'Welke projecten heb ik open?',
-        'Genereer een weekly debrief concept',
+        'Genereer een weekstatus-concept',
         'Geef een kort overzicht',
     ],
     leave_requests: [

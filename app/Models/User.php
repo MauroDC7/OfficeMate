@@ -21,6 +21,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 #[Fillable([
     'first_name',
@@ -39,12 +40,15 @@ use Laravel\Sanctum\HasApiTokens;
     'employment_setup_completed_at',
     'privacy_policy_accepted_at',
     'task_availability',
+    'tracker_use_ai_for_proposals',
+    'tracker_blocklist',
+    'tracker_tracking_enabled',
 ])]
 #[Hidden(['password', 'remember_token', 'avatar_path'])]
 class User extends Authenticatable implements CanResetPasswordContract, MustVerifyEmailContract
 {
     /** @use HasFactory<UserFactory> */
-    use CanResetPassword, HasApiTokens, HasFactory, MustVerifyEmail, Notifiable;
+    use CanResetPassword, HasApiTokens, HasFactory, HasPushSubscriptions, MustVerifyEmail, Notifiable;
 
     /**
      * @var list<string>
@@ -70,6 +74,9 @@ class User extends Authenticatable implements CanResetPasswordContract, MustVeri
             'role' => UserRole::class,
             'task_availability' => TaskAvailability::class,
             'can_create_projects' => 'boolean',
+            'tracker_use_ai_for_proposals' => 'boolean',
+            'tracker_blocklist' => 'array',
+            'tracker_tracking_enabled' => 'boolean',
         ];
     }
 

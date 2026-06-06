@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\NormalizesTimesheetProject;
+use App\Http\Requests\Concerns\TimesheetEntryValidationMessages;
+use App\Http\Requests\Concerns\ValidatesTimesheetEntryColor;
 use App\Models\TimesheetEntry;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -12,6 +14,8 @@ use Illuminate\Validation\Validator;
 class StoreTimesheetEntryRequest extends FormRequest
 {
     use NormalizesTimesheetProject;
+    use TimesheetEntryValidationMessages;
+    use ValidatesTimesheetEntryColor;
 
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
@@ -21,6 +25,7 @@ class StoreTimesheetEntryRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:10000'],
+            ...$this->timesheetColorRules(),
             ...$this->timesheetProjectRules(),
             'client_name' => ['nullable', 'string', 'max:255'],
             'worked_on' => ['required', 'date', 'before_or_equal:today'],

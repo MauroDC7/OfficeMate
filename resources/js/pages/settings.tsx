@@ -14,6 +14,7 @@ import {
     TrackerSettingsSection,
     type TrackerSettingsPayload,
 } from '@/components/settings/tracker-settings-section';
+import { WebPushSettingsSection } from '@/components/settings/web-push-settings-section';
 import { UserAvatar } from '@/components/user-avatar';
 import { AppLayout } from '@/layouts/app-layout';
 import { getUserDisplayFullName, getUserInitials } from '@/lib/user-display';
@@ -29,6 +30,7 @@ type SettingsPageProps = {
     isAdmin: boolean;
     employment: EmploymentSettingsPayload | null;
     officePresence: OfficePresenceSettingsPayload | null;
+    webPush: { publicKey: string; subscribed: boolean } | null;
 };
 
 function IconUserOutline({ className }: { className?: string }) {
@@ -83,6 +85,7 @@ export default function Settings() {
         isAdmin,
         employment,
         officePresence,
+        webPush,
     } = usePage<SettingsPageProps>().props;
     const { success } = useAlert();
     const user = auth.user;
@@ -101,7 +104,7 @@ export default function Settings() {
                     Instellingen
                 </h1>
                 <p className="mt-2 max-w-2xl text-pretty text-sm leading-relaxed text-gray-500 md:max-w-3xl lg:text-base xl:max-w-4xl 2xl:max-w-5xl">
-                    Beheer je profiel{isAdmin ? ', je team' : ''} en de desktop-tracker.
+                    Beheer je profiel{isAdmin ? ', je team' : ''} en de TimeTraq Tracker op je computer.
                 </p>
 
                 {awaitingOrganizationInvite ? (
@@ -117,7 +120,7 @@ export default function Settings() {
                 {canCreateOrganization ? <OrganizationSetupSection /> : null}
 
                 <section
-                    className="mt-5 w-full min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6 sm:rounded-2xl lg:mt-7"
+                    className="mt-5 w-full min-w-0 rounded-xl border border-gray-200 bg-white shadow-sm sm:mt-6 sm:rounded-2xl lg:mt-7"
                     aria-labelledby="account-card-title"
                 >
                     <div className="flex items-center gap-2.5 border-b border-gray-200 px-5 py-4 sm:px-6 sm:py-5">
@@ -251,6 +254,13 @@ export default function Settings() {
                         </div>
                     </div>
                 </section>
+
+                {webPush !== null ? (
+                    <WebPushSettingsSection
+                        publicKey={webPush.publicKey}
+                        subscribed={webPush.subscribed}
+                    />
+                ) : null}
 
                 {tracker !== null ? <TrackerSettingsSection tracker={tracker} /> : null}
 

@@ -10,8 +10,8 @@ enum TaskAvailability: string
     public function label(): string
     {
         return match ($this) {
-            self::OnTask => 'On task',
-            self::OpenForTasks => 'Open for tasks',
+            self::OnTask => 'Bezig met taak',
+            self::OpenForTasks => 'Open voor taken',
         };
     }
 }

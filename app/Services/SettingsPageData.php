@@ -22,7 +22,13 @@ final class SettingsPageData
      *         is_connected: bool,
      *         last_activity_at: string|null,
      *         last_activity_label: string|null,
+     *         is_active: bool,
+     *         recent_activity_count_7d: int,
+     *         use_ai_for_proposals: bool,
+     *         tracking_enabled: bool,
+     *         blocklist: list<string>,
      *         download_url: string|null,
+     *         is_admin: bool,
      *     }|null,
      *     isAdmin: bool,
      *     canCreateOrganization: bool,
@@ -63,7 +69,11 @@ final class SettingsPageData
             ? null
             : [
                 ...$this->trackerConnectionStatus->forUser($user),
+                'use_ai_for_proposals' => $user->tracker_use_ai_for_proposals ?? true,
+                'tracking_enabled' => $user->tracker_tracking_enabled ?? true,
+                'blocklist' => app(TrackerBlocklistMatcher::class)->normalizeBlocklist($user->tracker_blocklist),
                 'download_url' => config('services.timetraq.tracker_download_url'),
+                'is_admin' => $user->role === UserRole::Admin,
             ];
 
         $isAdmin = $user->role === UserRole::Admin;

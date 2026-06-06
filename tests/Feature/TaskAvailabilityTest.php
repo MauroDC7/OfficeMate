@@ -32,10 +32,11 @@ it('lets employees update their task availability', function () {
     ]);
 
     $this->actingAs($employee)
+        ->from(route('dashboard'))
         ->patch(route('dashboard.task-availability.update'), [
             'task_availability' => TaskAvailability::OnTask->value,
         ])
-        ->assertRedirect(route('projects'));
+        ->assertRedirect(route('dashboard'));
 
     expect($employee->fresh()->task_availability)->toBe(TaskAvailability::OnTask);
 });
@@ -65,5 +66,5 @@ it('exposes task availability on the people tab for admins', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->where('people.employees.1.task_availability', 'open_for_tasks')
-            ->where('people.employees.1.task_availability_label', 'Open for tasks'));
+            ->where('people.employees.1.task_availability_label', 'Open voor taken'));
 });

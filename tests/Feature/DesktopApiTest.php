@@ -17,8 +17,9 @@ it('geeft een sanctum-token terug bij correcte credentials', function (): void {
     ]);
 
     $response->assertOk()
-        ->assertJsonStructure(['access_token', 'user' => ['id']])
-        ->assertJsonPath('user.id', $user->id);
+        ->assertJsonStructure(['access_token', 'user' => ['id'], 'tracker_tracking_enabled'])
+        ->assertJsonPath('user.id', $user->id)
+        ->assertJsonPath('tracker_tracking_enabled', true);
 
     expect($user->fresh()->tokens)->toHaveCount(1);
 });

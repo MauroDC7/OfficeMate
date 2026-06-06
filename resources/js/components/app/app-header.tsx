@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 
+import { AppNotificationsMenu } from '@/components/app/app-notifications-menu';
 import { UserAvatar } from '@/components/user-avatar';
 import { getUserDisplayFullName, getUserFirstName } from '@/lib/user-display';
 import { settings } from '@/routes';
@@ -44,6 +45,7 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
             </div>
 
             <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+                <AppNotificationsMenu />
                 <Link
                     href={settings.url()}
                     className="rounded-full transition hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"

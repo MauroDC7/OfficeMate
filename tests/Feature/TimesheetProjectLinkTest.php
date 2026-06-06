@@ -51,6 +51,7 @@ it('stores a timesheet entry linked to a project and sets client name for extern
         ->post(route('timesheets.entries.store'), [
             'title' => 'Ontwikkeling',
             'description' => null,
+            'color' => '#6b7280',
             'project_id' => $project->id,
             'worked_on' => timesheetWorkedOnYmd(),
             'start_minutes' => 540,
@@ -64,6 +65,59 @@ it('stores a timesheet entry linked to a project and sets client name for extern
         'project_id' => $project->id,
         'client_name' => 'Rabobank',
     ]);
+});
+
+it('stores and updates the calendar color of a timesheet entry', function () {
+    $user = User::factory()->create();
+    $workedOn = timesheetWorkedOnYmd();
+
+    $this->actingAs($user)
+        ->post(route('timesheets.entries.store'), [
+            'title' => 'Kleur test',
+            'description' => null,
+            'color' => '#6b7280',
+            'project_id' => null,
+            'worked_on' => $workedOn,
+            'start_minutes' => 540,
+            'end_minutes' => 600,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect();
+
+    $entry = TimesheetEntry::query()->where('user_id', $user->id)->firstOrFail();
+
+    expect($entry->color)->toBe('#6b7280');
+
+    $this->actingAs($user)
+        ->patch(route('timesheets.entries.update', $entry), [
+            'title' => $entry->title,
+            'description' => null,
+            'color' => '#dc2626',
+            'project_id' => null,
+            'worked_on' => $workedOn,
+            'start_minutes' => 540,
+            'end_minutes' => 600,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect();
+
+    expect($entry->fresh()->color)->toBe('#dc2626');
+});
+
+it('rejects invalid timesheet entry colors', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('timesheets.entries.store'), [
+            'title' => 'Kleur test',
+            'description' => null,
+            'color' => 'paars',
+            'project_id' => null,
+            'worked_on' => timesheetWorkedOnYmd(),
+            'start_minutes' => 540,
+            'end_minutes' => 600,
+        ])
+        ->assertSessionHasErrors('color');
 });
 
 it('clears project and client when no project is selected', function () {
@@ -83,6 +137,7 @@ it('clears project and client when no project is selected', function () {
         ->patch(route('timesheets.entries.update', $entry), [
             'title' => $entry->title,
             'description' => null,
+            'color' => $entry->color,
             'project_id' => '',
             'worked_on' => $workedOn,
             'start_minutes' => 540,
@@ -105,6 +160,7 @@ it('rejects projects the employee cannot access', function () {
         ->post(route('timesheets.entries.store'), [
             'title' => 'Test',
             'description' => null,
+            'color' => '#6b7280',
             'project_id' => $hidden->id,
             'worked_on' => timesheetWorkedOnYmd(),
             'start_minutes' => 540,
@@ -125,6 +181,7 @@ it('allows employees to log time on projects linked to their team', function () 
         ->post(route('timesheets.entries.store'), [
             'title' => 'Intern werk',
             'description' => null,
+            'color' => '#6b7280',
             'project_id' => $project->id,
             'worked_on' => timesheetWorkedOnYmd(),
             'start_minutes' => 540,

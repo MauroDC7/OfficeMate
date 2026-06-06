@@ -23,6 +23,8 @@ final class AdminDashboardStats
 
     private const PENDING_MEMBERSHIPS_PREVIEW = 5;
 
+    private const PENDING_LEAVE_PREVIEW = 5;
+
     private const CURRENT_LEAVE_PREVIEW = 5;
 
     private const EMPLOYMENT_SETUP_PREVIEW = 5;
@@ -42,6 +44,13 @@ final class AdminDashboardStats
      *         id: int,
      *         team: array{id: int, name: string},
      *         user: array{id: int, name: string, email: string}
+     *     }>,
+     *     pendingLeaveRequests: list<array{
+     *         id: int,
+     *         starts_on: string,
+     *         ends_on: string,
+     *         type_label: string,
+     *         user: array{id: int, name: string}
      *     }>,
      *     currentLeave: list<array{
      *         id: int,
@@ -114,6 +123,23 @@ final class AdminDashboardStats
             ->where('status', LeaveRequestStatus::Pending);
 
         $pendingLeaveRequestCount = $pendingLeaveQuery->count();
+
+        $pendingLeaveRequests = (clone $pendingLeaveQuery)
+            ->with('user:id,first_name,last_name')
+            ->orderBy('created_at')
+            ->limit(self::PENDING_LEAVE_PREVIEW)
+            ->get()
+            ->map(fn (LeaveRequest $leave): array => [
+                'id' => $leave->id,
+                'starts_on' => $leave->starts_on->format('Y-m-d'),
+                'ends_on' => $leave->ends_on->format('Y-m-d'),
+                'type_label' => $leave->type->label(),
+                'user' => [
+                    'id' => $leave->user->id,
+                    'name' => $leave->user->name,
+                ],
+            ])
+            ->all();
 
         $pendingProposalCount = TimesheetEntryProposal::query()
             ->whereIn('user_id', $memberIds)
@@ -190,6 +216,7 @@ final class AdminDashboardStats
             'hoursThisWeekMinutes' => $hoursThisWeekMinutes,
             'weekStart' => $monday->toDateString(),
             'pendingMemberships' => $pendingMemberships,
+            'pendingLeaveRequests' => $pendingLeaveRequests,
             'currentLeave' => $currentLeave,
             'employmentSetupCount' => $employmentSetupCount,
             'employeesNeedingEmploymentSetup' => $employeesNeedingEmploymentSetup,

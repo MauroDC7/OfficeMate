@@ -46,6 +46,7 @@ final class DesktopAuthController extends Controller
             'user' => [
                 'id' => $user->id,
             ],
+            'tracker_tracking_enabled' => (bool) ($user->tracker_tracking_enabled ?? true),
         ]);
     }
 }

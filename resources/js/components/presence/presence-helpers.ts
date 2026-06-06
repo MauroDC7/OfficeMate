@@ -1,4 +1,36 @@
-import type { PresenceSummary } from '@/types/presence';
+import type { PresenceStatus, PresenceSummary } from '@/types/presence';
+
+export const PRESENCE_STATUS_DOT: Record<PresenceStatus, string> = {
+    in_office: 'bg-emerald-500',
+    out_of_office: 'bg-gray-400',
+    vacation: 'bg-sky-500',
+    sick: 'bg-amber-500',
+    other_leave: 'bg-violet-500',
+};
+
+export const PRESENCE_STATUS_ACCENT: Record<PresenceStatus, string> = {
+    in_office: 'bg-emerald-500',
+    out_of_office: 'bg-gray-300',
+    vacation: 'bg-sky-400',
+    sick: 'bg-amber-400',
+    other_leave: 'bg-violet-400',
+};
+
+export function formatTeamsLine(teams: string[]): string {
+    if (teams.length === 0) {
+        return 'Geen team';
+    }
+
+    if (teams.length === 1) {
+        return teams[0];
+    }
+
+    if (teams.length === 2) {
+        return `${teams[0]}, ${teams[1]}`;
+    }
+
+    return `${teams[0]} +${teams.length - 1} teams`;
+}
 
 export function formatPresenceSummary(summary: PresenceSummary): string {
     const parts = [

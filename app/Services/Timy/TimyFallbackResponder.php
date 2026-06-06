@@ -173,7 +173,7 @@ final class TimyFallbackResponder
         $weekly = $context['weekly_debrief'];
         if (! is_array($weekly)) {
             return [
-                'content' => 'Weekly debrief is beschikbaar zodra je aan een organisatie bent gekoppeld.',
+                'content' => 'Weekstatus is beschikbaar zodra je aan een organisatie bent gekoppeld.',
                 'actions' => [
                     ['label' => 'Projecten', 'href' => route('projects')],
                 ],
@@ -182,8 +182,8 @@ final class TimyFallbackResponder
 
         $filled = (bool) ($weekly['filled'] ?? false);
         $content = $filled
-            ? 'Je weekly debrief voor deze week is al ingevuld. Je kunt hem op projecten bekijken of aanpassen.'
-            : 'Je weekly debrief voor deze week is nog niet ingevuld. Op projecten kun je hem invullen of een AI-concept laten maken.';
+            ? 'Je weekstatus voor deze week is al ingevuld. Je kunt hem op projecten bekijken of aanpassen.'
+            : 'Je weekstatus voor deze week is nog niet ingevuld. Op projecten kun je hem invullen of een AI-concept laten maken.';
 
         return [
             'content' => $content,

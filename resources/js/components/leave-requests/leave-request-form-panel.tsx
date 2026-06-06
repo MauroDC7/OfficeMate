@@ -1,6 +1,15 @@
 import { Form } from '@inertiajs/react';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
+import {
+    FormStepFooter,
+    FormStepIndicator,
+    FormStepPanel,
+    handleWizardFormKeyDown,
+    submitWizardForm,
+    tryAdvanceFormStep,
+    useWizardFormSubmitGuard,
+} from '@/components/form-step-nav';
 import {
     LEAVE_TYPE_LABELS,
     LEAVE_TYPE_PRIMARY_OPTIONS,
@@ -14,6 +23,8 @@ type LeaveRequestFormPanelProps = {
     onSuccess: (message: string) => void;
     request?: LeaveRequestListItem | null;
 };
+
+const STEPS = ['Type', 'Periode', 'Extra'] as const;
 
 function IconClose({ className }: { className?: string }) {
     return (
@@ -81,6 +92,168 @@ function TypeOption({
     );
 }
 
+function LeaveTypeFields({
+    type,
+    onTypeChange,
+    error,
+}: {
+    type: LeaveType;
+    onTypeChange: (value: LeaveType) => void;
+    error?: string;
+}) {
+    return (
+        <div>
+            <span className="text-sm font-medium text-gray-800">Type</span>
+            <div className="mt-1.5 grid grid-cols-2 gap-2">
+                {LEAVE_TYPE_PRIMARY_OPTIONS.map((option) => (
+                    <TypeOption
+                        key={option.value}
+                        value={option.value}
+                        label={option.label}
+                        src={option.src}
+                        selected={type === option.value}
+                        onSelect={onTypeChange}
+                    />
+                ))}
+                <TypeOption
+                    value="other"
+                    label={LEAVE_TYPE_LABELS.other}
+                    selected={type === 'other'}
+                    onSelect={onTypeChange}
+                    spansFullWidth
+                />
+            </div>
+            {error !== undefined ? (
+                <p className="mt-1 text-xs text-red-600">{error}</p>
+            ) : null}
+        </div>
+    );
+}
+
+function LeavePeriodFields({
+    request,
+    errors,
+}: {
+    request: LeaveRequestListItem | null;
+    errors: Record<string, string>;
+}) {
+    return (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+                <label htmlFor="leave-starts-on" className="text-sm font-medium text-gray-800">
+                    Van <span className="text-red-600">*</span>
+                </label>
+                <input
+                    id="leave-starts-on"
+                    name="starts_on"
+                    type="date"
+                    required
+                    defaultValue={request?.starts_on ?? ''}
+                    className={inputClass}
+                />
+                {errors.starts_on !== undefined ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.starts_on}</p>
+                ) : null}
+            </div>
+            <div>
+                <label htmlFor="leave-ends-on" className="text-sm font-medium text-gray-800">
+                    Tot en met <span className="text-red-600">*</span>
+                </label>
+                <input
+                    id="leave-ends-on"
+                    name="ends_on"
+                    type="date"
+                    required
+                    defaultValue={request?.ends_on ?? ''}
+                    className={inputClass}
+                />
+                {errors.ends_on !== undefined ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.ends_on}</p>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+function LeaveExtraFields({
+    type,
+    isEdit,
+    request,
+    errors,
+}: {
+    type: LeaveType;
+    isEdit: boolean;
+    request: LeaveRequestListItem | null;
+    errors: Record<string, string>;
+}) {
+    return (
+        <>
+            <div>
+                <label htmlFor="leave-notes" className="text-sm font-medium text-gray-800">
+                    Opmerking
+                </label>
+                <textarea
+                    id="leave-notes"
+                    name="notes"
+                    rows={3}
+                    defaultValue={request?.notes ?? ''}
+                    placeholder="Optioneel: extra toelichting voor je beheerder"
+                    className={inputClass}
+                />
+                {errors.notes !== undefined ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.notes}</p>
+                ) : null}
+            </div>
+
+            {type === 'sick' ? (
+                <div>
+                    <label
+                        htmlFor="leave-medical-certificate"
+                        className="text-sm font-medium text-gray-800"
+                    >
+                        Doktersbrief{' '}
+                        {isEdit && request?.attachment !== null ? null : (
+                            <span className="text-red-600">*</span>
+                        )}
+                    </label>
+                    {isEdit && request !== null && request.attachment !== null ? (
+                        <p className="mt-1 text-xs text-gray-500">
+                            Huidig bestand:{' '}
+                            <a
+                                href={request.attachment.url}
+                                className="font-medium text-gray-700 underline hover:text-gray-900"
+                            >
+                                {request.attachment.name}
+                            </a>
+                            . Upload een nieuw bestand om te vervangen.
+                        </p>
+                    ) : (
+                        <p className="mt-1 text-xs text-gray-500">
+                            PDF, JPG of PNG, max. 5 MB.
+                        </p>
+                    )}
+                    <input
+                        id="leave-medical-certificate"
+                        name="medical_certificate"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                        required={!isEdit || request?.attachment === null}
+                        className={cn(
+                            inputClass,
+                            'file:me-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-gray-700',
+                        )}
+                    />
+                    {errors.medical_certificate !== undefined ? (
+                        <p className="mt-1 text-xs text-red-600">
+                            {errors.medical_certificate}
+                        </p>
+                    ) : null}
+                </div>
+            ) : null}
+        </>
+    );
+}
+
 export function LeaveRequestFormPanel({
     onClose,
     onSuccess,
@@ -88,7 +261,9 @@ export function LeaveRequestFormPanel({
 }: LeaveRequestFormPanelProps) {
     const titleId = useId();
     const isEdit = request !== null;
+    const [step, setStep] = useState(0);
     const [type, setType] = useState<LeaveType>(request?.type ?? 'vacation');
+    const formContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const previousOverflow = document.body.style.overflow;
@@ -112,6 +287,14 @@ export function LeaveRequestFormPanel({
         ? update.form.patch({ leave_request: request.id })
         : store.form.post();
 
+    const wizardHandlers = {
+        currentStep: step,
+        totalSteps: STEPS.length,
+        setStep,
+    };
+
+    useWizardFormSubmitGuard(formContainerRef, true, step, STEPS.length, setStep);
+
     return (
         <div
             className="fixed inset-0 z-[9990] flex items-end justify-center bg-gray-900/40 p-3 sm:items-center sm:p-4"
@@ -133,7 +316,7 @@ export function LeaveRequestFormPanel({
                         <p className="mt-0.5 text-sm text-gray-500">
                             {isEdit
                                 ? 'Pas type en periode aan zolang de aanvraag in behandeling is.'
-                                : 'Kies het type en de periode. Je aanvraag wordt ter goedkeuring ingediend.'}
+                                : 'Doorloop de stappen om je aanvraag in te dienen.'}
                         </p>
                     </div>
                     <button
@@ -146,166 +329,88 @@ export function LeaveRequestFormPanel({
                     </button>
                 </div>
 
-                <Form
-                    {...formProps}
-                    encType="multipart/form-data"
-                    options={{ preserveScroll: true }}
-                    onSuccess={() => {
-                        onSuccess(
-                            isEdit ? 'Verlofaanvraag bijgewerkt.' : 'Verlofaanvraag ingediend.',
-                        );
-                        onClose();
-                    }}
-                    className="space-y-5 px-5 py-5 sm:px-6"
-                >
-                    {({ errors, processing }) => (
-                        <>
-                            <div>
-                                <span className="text-sm font-medium text-gray-800">Type</span>
-                                <div className="mt-1.5 grid grid-cols-2 gap-2">
-                                    {LEAVE_TYPE_PRIMARY_OPTIONS.map((option) => (
-                                        <TypeOption
-                                            key={option.value}
-                                            value={option.value}
-                                            label={option.label}
-                                            src={option.src}
-                                            selected={type === option.value}
-                                            onSelect={setType}
-                                        />
-                                    ))}
-                                    <TypeOption
-                                        value="other"
-                                        label={LEAVE_TYPE_LABELS.other}
-                                        selected={type === 'other'}
-                                        onSelect={setType}
-                                        spansFullWidth
-                                    />
-                                </div>
-                                {errors.type ? (
-                                    <p className="mt-1 text-xs text-red-600">{errors.type}</p>
-                                ) : null}
-                            </div>
+                <div ref={formContainerRef}>
+                    <Form
+                        {...formProps}
+                        encType="multipart/form-data"
+                        noValidate
+                        options={{ preserveScroll: true }}
+                        onKeyDown={(event) => handleWizardFormKeyDown(event, wizardHandlers)}
+                        onSuccess={() => {
+                            onSuccess(
+                                isEdit
+                                    ? 'Verlofaanvraag bijgewerkt.'
+                                    : 'Verlofaanvraag ingediend.',
+                            );
+                            onClose();
+                        }}
+                        className="space-y-5 px-5 py-5 sm:px-6"
+                    >
+                        {({ errors, processing, submit }) => (
+                            <>
+                                <FormStepIndicator steps={STEPS} currentStep={step} />
 
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label
-                                        htmlFor="leave-starts-on"
-                                        className="text-sm font-medium text-gray-800"
-                                    >
-                                        Van <span className="text-red-600">*</span>
-                                    </label>
-                                    <input
-                                        id="leave-starts-on"
-                                        name="starts_on"
-                                        type="date"
-                                        required
-                                        defaultValue={request?.starts_on ?? ''}
-                                        className={inputClass}
+                                <FormStepPanel step={0} currentStep={step}>
+                                    <LeaveTypeFields
+                                        type={type}
+                                        onTypeChange={setType}
+                                        error={errors.type}
                                     />
-                                    {errors.starts_on ? (
-                                        <p className="mt-1 text-xs text-red-600">{errors.starts_on}</p>
-                                    ) : null}
-                                </div>
-                                <div>
-                                    <label
-                                        htmlFor="leave-ends-on"
-                                        className="text-sm font-medium text-gray-800"
-                                    >
-                                        Tot en met <span className="text-red-600">*</span>
-                                    </label>
-                                    <input
-                                        id="leave-ends-on"
-                                        name="ends_on"
-                                        type="date"
-                                        required
-                                        defaultValue={request?.ends_on ?? ''}
-                                        className={inputClass}
-                                    />
-                                    {errors.ends_on ? (
-                                        <p className="mt-1 text-xs text-red-600">{errors.ends_on}</p>
-                                    ) : null}
-                                </div>
-                            </div>
+                                </FormStepPanel>
 
-                            <div>
-                                <label htmlFor="leave-notes" className="text-sm font-medium text-gray-800">
-                                    Opmerking
-                                </label>
-                                <textarea
-                                    id="leave-notes"
-                                    name="notes"
-                                    rows={3}
-                                    defaultValue={request?.notes ?? ''}
-                                    placeholder="Optioneel: extra toelichting voor je beheerder"
-                                    className={inputClass}
+                                <FormStepPanel step={1} currentStep={step}>
+                                    <LeavePeriodFields
+                                        request={request}
+                                        errors={errors}
+                                    />
+                                </FormStepPanel>
+
+                                <FormStepPanel step={2} currentStep={step}>
+                                    <LeaveExtraFields
+                                        type={type}
+                                        isEdit={isEdit}
+                                        request={request}
+                                        errors={errors}
+                                    />
+                                </FormStepPanel>
+
+                                <FormStepFooter
+                                    currentStep={step}
+                                    totalSteps={STEPS.length}
+                                    processing={processing}
+                                    submitLabel={isEdit ? 'Opslaan' : 'Indienen'}
+                                    onCancel={onClose}
+                                    onBack={() =>
+                                        setStep((current) => Math.max(current - 1, 0))
+                                    }
+                                    onNext={(event) => {
+                                        event.preventDefault();
+                                        const form =
+                                            event.currentTarget.closest('form');
+
+                                        if (form instanceof HTMLFormElement) {
+                                            tryAdvanceFormStep(form, wizardHandlers);
+                                        }
+                                    }}
+                                    onFinalSubmit={() => {
+                                        const form =
+                                            formContainerRef.current?.querySelector(
+                                                'form',
+                                            );
+
+                                        if (form instanceof HTMLFormElement) {
+                                            submitWizardForm(
+                                                form,
+                                                wizardHandlers,
+                                                submit,
+                                            );
+                                        }
+                                    }}
                                 />
-                                {errors.notes ? (
-                                    <p className="mt-1 text-xs text-red-600">{errors.notes}</p>
-                                ) : null}
-                            </div>
-
-                            {type === 'sick' ? (
-                                <div>
-                                    <label
-                                        htmlFor="leave-medical-certificate"
-                                        className="text-sm font-medium text-gray-800"
-                                    >
-                                        Doktersbrief{' '}
-                                        {isEdit && request?.attachment !== null ? null : (
-                                            <span className="text-red-600">*</span>
-                                        )}
-                                    </label>
-                                    {isEdit && request?.attachment !== null ? (
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            Huidig bestand:{' '}
-                                            <a
-                                                href={request.attachment.url}
-                                                className="font-medium text-gray-700 underline hover:text-gray-900"
-                                            >
-                                                {request.attachment.name}
-                                            </a>
-                                            . Upload een nieuw bestand om te vervangen.
-                                        </p>
-                                    ) : (
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            PDF, JPG of PNG, max. 5 MB.
-                                        </p>
-                                    )}
-                                    <input
-                                        id="leave-medical-certificate"
-                                        name="medical_certificate"
-                                        type="file"
-                                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                                        required={!isEdit || request?.attachment === null}
-                                        className={cn(inputClass, 'file:me-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-gray-700')}
-                                    />
-                                    {errors.medical_certificate ? (
-                                        <p className="mt-1 text-xs text-red-600">
-                                            {errors.medical_certificate}
-                                        </p>
-                                    ) : null}
-                                </div>
-                            ) : null}
-
-                            <div className="flex flex-col-reverse gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-                                >
-                                    Annuleren
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
-                                >
-                                    {processing ? 'Bezig…' : isEdit ? 'Opslaan' : 'Indienen'}
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </Form>
+                            </>
+                        )}
+                    </Form>
+                </div>
             </section>
         </div>
     );

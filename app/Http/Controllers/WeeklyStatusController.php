@@ -65,6 +65,6 @@ final class WeeklyStatusController extends Controller
 
         return redirect()
             ->route('projects')
-            ->with('status', 'Je weekly debrief is opgeslagen.');
+            ->with('status', 'Je weekstatus is opgeslagen.');
     }
 }

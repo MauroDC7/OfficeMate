@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Team;
 use App\Models\TeamMembership;
 use App\Models\TimesheetEntry;
+use App\Models\TimesheetEntryProposal;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +17,10 @@ use Illuminate\Support\Collection;
 final class ProjectOverviewBuilder
 {
     private const MEMBER_PREVIEW_LIMIT = 4;
+
+    private const RECENT_ENTRIES_LIMIT = 15;
+
+    private const PENDING_PROPOSALS_LIMIT = 10;
 
     /**
      * @return list<array{
@@ -108,6 +113,138 @@ final class ProjectOverviewBuilder
     }
 
     /**
+     * @return array{
+     *     project: array{
+     *         id: int,
+     *         name: string,
+     *         type: string,
+     *         status: string,
+     *         client_name: string|null,
+     *         logo: string|null,
+     *         hours_budget: int|null,
+     *         is_active: bool,
+     *         created_at: string|null,
+     *         creator: array{id: int, name: string}|null,
+     *     },
+     *     teams: list<array{id: int, name: string, department: string|null}>,
+     *     members: list<array{id: int, name: string, email: string, first_name: string, last_name: string, avatar: string|null}>,
+     *     hours: array{
+     *         tracked_minutes_total: int,
+     *         tracked_minutes_week: int,
+     *         tracked_minutes_month: int,
+     *     },
+     *     hours_by_member: list<array{
+     *         user: array{id: int, name: string, avatar: string|null},
+     *         tracked_minutes: int,
+     *     }>,
+     *     recent_entries: list<array{
+     *         id: int,
+     *         title: string,
+     *         worked_on: string,
+     *         start_minutes: int,
+     *         end_minutes: int,
+     *         duration_minutes: int,
+     *         user: array{id: int, name: string}|null,
+     *     }>,
+     *     pending_proposals: list<array{
+     *         id: int,
+     *         title: string,
+     *         worked_on: string,
+     *         start_minutes: int,
+     *         end_minutes: int,
+     *         user: array{id: int, name: string},
+     *     }>,
+     *     isAdmin: bool,
+     *     canUpdate: bool,
+     * }
+     */
+    public function cardFor(Project $project): array
+    {
+        $project->load([
+            'teams' => fn ($query) => $query
+                ->orderBy('name')
+                ->with([
+                    'memberships' => fn ($membershipQuery) => $membershipQuery
+                        ->where('status', TeamMembershipStatus::Approved)
+                        ->with('user:id,first_name,last_name,email,avatar_path'),
+                ]),
+        ]);
+
+        return $this->cardPayload(
+            $project,
+            $this->trackedMinutesForProject($project->id),
+        );
+    }
+
+    public function showPageFor(Project $project, User $viewer, bool $isAdmin): array
+    {
+        $project->load([
+            'creator:id,first_name,last_name',
+            'teams' => fn ($query) => $query
+                ->orderBy('name')
+                ->with([
+                    'memberships' => fn ($membershipQuery) => $membershipQuery
+                        ->where('status', TeamMembershipStatus::Approved)
+                        ->with('user:id,first_name,last_name,email,avatar_path')
+                        ->orderBy('id'),
+                ]),
+        ]);
+
+        $members = $this->membersForProject($project);
+        $scopedUserId = $isAdmin ? null : $viewer->id;
+
+        $trackedTotal = $this->trackedMinutesForProject($project->id, null, $scopedUserId);
+        $trackedWeek = $this->trackedMinutesForProject(
+            $project->id,
+            CarbonImmutable::now()->startOfWeek(CarbonImmutable::MONDAY),
+            $scopedUserId,
+        );
+        $trackedMonth = $this->trackedMinutesForProject($project->id, $this->startOfMonth(), $scopedUserId);
+
+        return [
+            'project' => [
+                'id' => $project->id,
+                'name' => $project->name,
+                'type' => $project->type->value,
+                'status' => $project->status->value,
+                'client_name' => $project->client_name,
+                'logo' => $project->logo,
+                'hours_budget' => $project->hours_budget,
+                'is_active' => $project->is_active,
+                'created_at' => $project->created_at?->toIso8601String(),
+                'creator' => $project->creator === null
+                    ? null
+                    : [
+                        'id' => $project->creator->id,
+                        'name' => $project->creator->name,
+                    ],
+            ],
+            'teams' => $project->teams
+                ->map(fn (Team $team): array => [
+                    'id' => $team->id,
+                    'name' => $team->name,
+                    'department' => $team->department,
+                ])
+                ->all(),
+            'members' => $members
+                ->map(fn (User $user): array => $this->userPayload($user))
+                ->all(),
+            'hours' => [
+                'tracked_minutes_total' => $trackedTotal,
+                'tracked_minutes_week' => $trackedWeek,
+                'tracked_minutes_month' => $trackedMonth,
+            ],
+            'hours_by_member' => $this->hoursByMemberForProject($project->id, $isAdmin ? null : $viewer->id),
+            'recent_entries' => $this->recentEntriesForProject($project->id, $isAdmin ? null : $viewer->id),
+            'pending_proposals' => $isAdmin
+                ? $this->pendingProposalsForProject($project->id, $project->organization_id)
+                : [],
+            'isAdmin' => $isAdmin,
+            'canUpdate' => $isAdmin,
+        ];
+    }
+
+    /**
      * @return list<array{id: int, name: string, department: string|null}>
      */
     public function organizationTeams(Organization $organization): array
@@ -168,6 +305,156 @@ final class ProjectOverviewBuilder
     private function startOfMonth(): CarbonImmutable
     {
         return CarbonImmutable::now()->startOfMonth();
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    private function membersForProject(Project $project): Collection
+    {
+        /** @var Collection<int, Team> $teams */
+        $teams = $project->teams;
+
+        return $teams
+            ->flatMap(fn (Team $team): Collection => $team->memberships
+                ->map(fn (TeamMembership $membership): User => $membership->user),
+            )
+            ->filter()
+            ->unique('id')
+            ->sortBy(fn (User $user): string => $user->name)
+            ->values();
+    }
+
+    private function trackedMinutesForProject(
+        int $projectId,
+        ?CarbonImmutable $since = null,
+        ?int $userId = null,
+    ): int {
+        return (int) TimesheetEntry::query()
+            ->where('project_id', $projectId)
+            ->when($since !== null, fn ($query) => $query->where('worked_on', '>=', $since->toDateString()))
+            ->when($userId !== null, fn ($query) => $query->where('user_id', $userId))
+            ->selectRaw('COALESCE(SUM(end_minutes - start_minutes), 0) as minutes')
+            ->value('minutes');
+    }
+
+    /**
+     * @return list<array{
+     *     user: array{id: int, name: string, avatar: string|null},
+     *     tracked_minutes: int,
+     * }>
+     */
+    private function hoursByMemberForProject(int $projectId, ?int $onlyUserId): array
+    {
+        $rows = TimesheetEntry::query()
+            ->where('project_id', $projectId)
+            ->when($onlyUserId !== null, fn ($query) => $query->where('user_id', $onlyUserId))
+            ->selectRaw('user_id, SUM(end_minutes - start_minutes) as tracked_minutes')
+            ->groupBy('user_id')
+            ->orderByDesc('tracked_minutes')
+            ->get();
+
+        $users = User::query()
+            ->whereIn('id', $rows->pluck('user_id'))
+            ->get(['id', 'first_name', 'last_name', 'avatar_path'])
+            ->keyBy('id');
+
+        return $rows
+            ->map(function (TimesheetEntry $row) use ($users): ?array {
+                $user = $users->get($row->user_id);
+
+                if (! $user instanceof User) {
+                    return null;
+                }
+
+                return [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'avatar' => $user->avatar,
+                    ],
+                    'tracked_minutes' => (int) $row->tracked_minutes,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array{
+     *     id: int,
+     *     title: string,
+     *     worked_on: string,
+     *     start_minutes: int,
+     *     end_minutes: int,
+     *     duration_minutes: int,
+     *     user: array{id: int, name: string}|null,
+     * }>
+     */
+    private function recentEntriesForProject(int $projectId, ?int $onlyUserId): array
+    {
+        return TimesheetEntry::query()
+            ->where('project_id', $projectId)
+            ->when($onlyUserId !== null, fn ($query) => $query->where('user_id', $onlyUserId))
+            ->with('user:id,first_name,last_name')
+            ->orderByDesc('worked_on')
+            ->orderByDesc('start_minutes')
+            ->limit(self::RECENT_ENTRIES_LIMIT)
+            ->get()
+            ->map(fn (TimesheetEntry $entry): array => [
+                'id' => $entry->id,
+                'title' => $entry->title,
+                'worked_on' => $entry->worked_on->format('Y-m-d'),
+                'start_minutes' => $entry->start_minutes,
+                'end_minutes' => $entry->end_minutes,
+                'duration_minutes' => $entry->end_minutes - $entry->start_minutes,
+                'user' => $entry->user === null
+                    ? null
+                    : [
+                        'id' => $entry->user->id,
+                        'name' => $entry->user->name,
+                    ],
+            ])
+            ->all();
+    }
+
+    /**
+     * @return list<array{
+     *     id: int,
+     *     title: string,
+     *     worked_on: string,
+     *     start_minutes: int,
+     *     end_minutes: int,
+     *     user: array{id: int, name: string},
+     * }>
+     */
+    private function pendingProposalsForProject(int $projectId, int $organizationId): array
+    {
+        $memberIds = User::query()
+            ->where('organization_id', $organizationId)
+            ->pluck('id');
+
+        return TimesheetEntryProposal::query()
+            ->where('project_id', $projectId)
+            ->whereIn('user_id', $memberIds)
+            ->with('user:id,first_name,last_name')
+            ->orderByDesc('worked_on')
+            ->orderByDesc('start_minutes')
+            ->limit(self::PENDING_PROPOSALS_LIMIT)
+            ->get()
+            ->map(fn (TimesheetEntryProposal $proposal): array => [
+                'id' => $proposal->id,
+                'title' => $proposal->title,
+                'worked_on' => $proposal->worked_on->format('Y-m-d'),
+                'start_minutes' => $proposal->start_minutes,
+                'end_minutes' => $proposal->end_minutes,
+                'user' => [
+                    'id' => $proposal->user->id,
+                    'name' => $proposal->user->name,
+                ],
+            ])
+            ->all();
     }
 
     /**

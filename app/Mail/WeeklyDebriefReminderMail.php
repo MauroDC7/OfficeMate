@@ -20,7 +20,7 @@ final class WeeklyDebriefReminderMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Weekly debrief invullen',
+            subject: 'Weekstatus invullen',
         );
     }
 

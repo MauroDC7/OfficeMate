@@ -9,6 +9,7 @@ export type TimesheetEntryPayload = {
     id: number;
     title: string;
     description: string | null;
+    color: string;
     project_id: number | null;
     project_name: string | null;
     client_name: string | null;

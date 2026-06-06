@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import { Link } from '@inertiajs/react';
 
+import { AppFooter } from '@/components/app/app-footer';
 import { FlashAlerts } from '@/components/flash-alerts';
 import { login } from '@/routes';
 
@@ -19,7 +20,7 @@ export function LegalDocumentLayout({
     footer,
 }: LegalDocumentLayoutProps): ReactNode {
     return (
-        <div className="relative min-h-svh bg-gradient-to-br from-gray-50 via-white to-gray-100 px-4 py-8 sm:py-12">
+        <div className="relative flex min-h-svh flex-col bg-gradient-to-br from-gray-50 via-white to-gray-100 px-4 py-8 sm:py-12">
             <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(220,38,38,0.06),transparent)]"
@@ -61,6 +62,7 @@ export function LegalDocumentLayout({
                 </div>
             </div>
 
+            <AppFooter />
             <FlashAlerts />
         </div>
     );

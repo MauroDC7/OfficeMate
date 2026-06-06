@@ -13,7 +13,7 @@ afterEach(function () {
     CarbonImmutable::setTestNow();
 });
 
-it('shows colleague leave on the employee dashboard for the current week', function () {
+it('shows colleague leave on the employee dashboard for today', function () {
     $organization = Organization::factory()->create();
     $user = User::factory()->forOrganization($organization)->create();
     $colleague = User::factory()->forOrganization($organization)->create([
@@ -21,16 +21,11 @@ it('shows colleague leave on the employee dashboard for the current week', funct
         'last_name' => 'Peeters',
     ]);
 
-    $monday = CarbonImmutable::now()->startOfWeek(CarbonImmutable::MONDAY);
+    $today = CarbonImmutable::now('Europe/Brussels')->startOfDay();
 
     LeaveRequest::factory()->for($colleague)->approved()->vacation()->create([
-        'starts_on' => $monday->addDay()->toDateString(),
-        'ends_on' => $monday->addDays(2)->toDateString(),
-    ]);
-
-    LeaveRequest::factory()->for($user)->approved()->create([
-        'starts_on' => $monday->toDateString(),
-        'ends_on' => $monday->toDateString(),
+        'starts_on' => $today->toDateString(),
+        'ends_on' => $today->addDay()->toDateString(),
     ]);
 
     $this->actingAs($user)
@@ -39,8 +34,8 @@ it('shows colleague leave on the employee dashboard for the current week', funct
         ->assertInertia(fn ($page) => $page
             ->component('dashboard')
             ->where('hasOrganization', true)
-            ->has('teamLeaveThisWeek', 1)
-            ->where('teamLeaveThisWeek.0.user.name', 'Noor Peeters'));
+            ->has('teamLeaveToday', 1)
+            ->where('teamLeaveToday.0.user.name', 'Noor Peeters'));
 });
 
 it('shows upcoming colleague leave on the leave requests page', function () {
