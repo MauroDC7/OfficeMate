@@ -106,10 +106,11 @@ final class TimesheetProposalGenerator
         }
 
         $hasKey = ! blank(config('services.openai.key'));
+        $useAi = (bool) $user->tracker_use_ai_for_proposals;
         $status = 'ready';
         $normalised = [];
 
-        if ($hasKey) {
+        if ($hasKey && $useAi) {
             try {
                 $raw = $this->requestProposals($rangeStart, $rangeEnd, $blocks);
                 $normalised = $this->normaliseAndFilterProposals($user, $rangeStart, $rangeEnd, $raw);
@@ -122,8 +123,10 @@ final class TimesheetProposalGenerator
                 ]);
                 $status = 'error';
             }
-        } else {
+        } elseif (! $hasKey) {
             $status = 'unconfigured';
+        } else {
+            $status = 'manual';
         }
 
         if ($normalised === []) {
@@ -162,6 +165,7 @@ final class TimesheetProposalGenerator
     {
         return match ($status) {
             'ready' => $count.' AI-voorstel(len) aangemaakt.',
+            'manual' => $count.' voorstel(len) gemaakt uit tracker-data (AI uitgeschakeld in instellingen).',
             'unconfigured' => 'OPENAI_API_KEY ontbreekt; '.$count.' voorstel(len) gemaakt uit ruwe tracker-data.',
             'error' => 'AI-oproep mislukt; '.$count.' voorstel(len) gemaakt uit ruwe tracker-data.',
             default => $count.' voorstel(len) aangemaakt.',

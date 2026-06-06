@@ -1,8 +1,8 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
-import { TimesheetSuggestionsPanel } from '@/components/timesheets/timesheet-suggestions-panel';
 import { TIMESHEET_LIST_PROPS } from '@/components/timesheets/timesheet-list-props';
+import { TimesheetSuggestionsPanel } from '@/components/timesheets/timesheet-suggestions-panel';
 import { TimesheetWeekCalendar } from '@/components/timesheets/timesheet-week-calendar';
 import { AppLayout } from '@/layouts/app-layout';
 import { usePrivateChannel } from '@/lib/use-private-channel';
@@ -16,11 +16,13 @@ import type {
 
 type TimesheetsPageProps = {
     weekStart: string;
+    month: string;
     entriesByDay: Record<string, TimesheetEntryPayload[]>;
     recentActivity: TimesheetActivityItem[];
     proposals: TimesheetProposalPayload[];
     projectOptions: TimesheetProjectOption[];
     openEntryId: number | null;
+    prefillProjectId: number | null;
     auth: { user: { id: number } | null };
 };
 
@@ -28,6 +30,7 @@ export default function Timesheets() {
     const page = usePage<TimesheetsPageProps>();
     const {
         weekStart,
+        month,
         entriesByDay,
         recentActivity,
         proposals,
@@ -36,8 +39,25 @@ export default function Timesheets() {
     } = page.props;
     const userId = page.props.auth.user?.id ?? null;
 
+    const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     const onTimesheetChanged = useCallback(() => {
-        router.reload({ only: [...TIMESHEET_LIST_PROPS] });
+        if (reloadTimerRef.current !== null) {
+            clearTimeout(reloadTimerRef.current);
+        }
+
+        reloadTimerRef.current = setTimeout(() => {
+            reloadTimerRef.current = null;
+            router.reload({ only: [...TIMESHEET_LIST_PROPS] });
+        }, 250);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (reloadTimerRef.current !== null) {
+                clearTimeout(reloadTimerRef.current);
+            }
+        };
     }, []);
 
     const onNavigateToEntryEdit = useCallback(
@@ -68,7 +88,10 @@ export default function Timesheets() {
         [weekStart, entriesByDay],
     );
 
+    const broadcasting = page.props.broadcasting ?? null;
+
     usePrivateChannel(
+        broadcasting,
         userId !== null ? `user.${userId}` : null,
         'timesheet.changed',
         onTimesheetChanged,
@@ -90,7 +113,9 @@ export default function Timesheets() {
                         onNavigateToEntryEdit={onNavigateToEntryEdit}
                     />
                     <TimesheetWeekCalendar
+                        key={`${weekStart}-${month}`}
                         weekStart={weekStart}
+                        month={month}
                         entriesByDay={entriesByDay}
                         openEntryId={openEntryId}
                     />

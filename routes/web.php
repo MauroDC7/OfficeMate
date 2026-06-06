@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminTimesheetReportController;
 use App\Http\Controllers\AdminWeeklyDebriefController;
 use App\Http\Controllers\AppPageController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -22,9 +23,11 @@ use App\Http\Controllers\Settings\OrganizationEmploymentDefaultsController;
 use App\Http\Controllers\Settings\OrganizationInviteController;
 use App\Http\Controllers\Settings\OrganizationOfficeIpsController;
 use App\Http\Controllers\Settings\OrganizationSettingsController;
+use App\Http\Controllers\Settings\PushSubscriptionController;
 use App\Http\Controllers\Settings\RemoveOrganizationMemberController;
 use App\Http\Controllers\Settings\StartNewOrganizationController;
 use App\Http\Controllers\Settings\StoreOrganizationController;
+use App\Http\Controllers\Settings\TrackerSettingsController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMembershipController;
 use App\Http\Controllers\TimesheetEntryController;
@@ -88,6 +91,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/timesheets/proposals/{timesheet_entry_proposal}/approve', [TimesheetEntryProposalController::class, 'approve'])->name('timesheets.proposals.approve');
     Route::delete('/timesheets/proposals/{timesheet_entry_proposal}', [TimesheetEntryProposalController::class, 'destroy'])->name('timesheets.proposals.destroy');
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects');
+    Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
     Route::patch('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
@@ -98,6 +102,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/admin/leave-requests', [AppPageController::class, 'adminLeaveRequests'])
         ->middleware('admin')
         ->name('admin.leaveRequests');
+    Route::get('/admin/timesheet-report', [AdminTimesheetReportController::class, 'index'])
+        ->middleware('admin')
+        ->name('admin.timesheetReport');
+    Route::get('/admin/timesheet-report/export', [AdminTimesheetReportController::class, 'export'])
+        ->middleware('admin')
+        ->name('admin.timesheetReport.export');
     Route::get('/admin/weekly-debrief', [AdminWeeklyDebriefController::class, 'index'])
         ->middleware('admin')
         ->name('admin.weeklyDebrief');
@@ -131,6 +141,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->name('leaveRequests.revertRejection');
     Route::get('/settings', [AppPageController::class, 'settings'])->name('settings');
     Route::patch('/settings/account', AccountSettingsController::class)->name('settings.account.update');
+    Route::post('/settings/push-subscription', [PushSubscriptionController::class, 'store'])
+        ->name('settings.push-subscription.store');
+    Route::delete('/settings/push-subscription', [PushSubscriptionController::class, 'destroy'])
+        ->name('settings.push-subscription.destroy');
+    Route::patch('/settings/tracker', TrackerSettingsController::class)
+        ->name('settings.tracker.update');
     Route::post('/settings/organization', StoreOrganizationController::class)->name('settings.organization.store');
     Route::patch('/settings/organization/employment-defaults', OrganizationEmploymentDefaultsController::class)
         ->middleware('admin')

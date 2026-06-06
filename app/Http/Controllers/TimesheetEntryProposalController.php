@@ -102,6 +102,7 @@ final class TimesheetEntryProposalController extends Controller
                 'worked_on' => $timesheetEntryProposal->worked_on->toDateString(),
                 'title' => $timesheetEntryProposal->title,
                 'description' => $timesheetEntryProposal->description,
+                'color' => '#6b7280',
                 'project_id' => $timesheetEntryProposal->project_id,
                 'client_name' => $timesheetEntryProposal->client_name,
                 'start_minutes' => $timesheetEntryProposal->start_minutes,

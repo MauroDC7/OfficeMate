@@ -180,7 +180,7 @@ export function ChatbotPanel({
             exit="exit"
             transition={panelTransition}
             className={cn(
-                'fixed end-3 bottom-[4.5rem] z-[60] flex h-[min(32rem,calc(100svh-6rem))] w-[min(100vw-1.5rem,24rem)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl sm:end-5 sm:bottom-[5rem] sm:w-[26rem]',
+                'fixed end-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] z-[100] flex h-[min(32rem,calc(100dvh-6rem))] w-[min(100vw-1.5rem,24rem)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl sm:end-5 sm:bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:w-[26rem]',
             )}
         >
             <header className="relative shrink-0 overflow-hidden border-b border-gray-200 bg-gray-50/90 px-4 py-3.5">

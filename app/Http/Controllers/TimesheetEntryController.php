@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateTimesheetEntryRequest;
 use App\Models\TimesheetEntry;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 final class TimesheetEntryController extends CrudController
 {
@@ -17,7 +18,7 @@ final class TimesheetEntryController extends CrudController
 
         TimesheetEntryChanged::dispatch($entry->user_id);
 
-        return $this->redirectToWeek($entry->worked_on->toDateString());
+        return $this->redirectAfterChange($request, $entry->worked_on->toDateString());
     }
 
     public function update(UpdateTimesheetEntryRequest $request, TimesheetEntry $timesheetEntry): RedirectResponse
@@ -28,7 +29,7 @@ final class TimesheetEntryController extends CrudController
 
         TimesheetEntryChanged::dispatch($timesheetEntry->user_id);
 
-        return $this->redirectToWeek($timesheetEntry->worked_on->toDateString());
+        return $this->redirectAfterChange($request, $timesheetEntry->worked_on->toDateString());
     }
 
     public function destroy(TimesheetEntry $timesheetEntry): RedirectResponse
@@ -42,7 +43,7 @@ final class TimesheetEntryController extends CrudController
 
         TimesheetEntryChanged::dispatch($userId);
 
-        return $this->redirectToWeek($workedOn);
+        return $this->redirectAfterChange(request(), $workedOn);
     }
 
     /**
@@ -53,6 +54,7 @@ final class TimesheetEntryController extends CrudController
         return $request->safe()->only([
             'title',
             'description',
+            'color',
             'project_id',
             'client_name',
             'worked_on',
@@ -61,8 +63,12 @@ final class TimesheetEntryController extends CrudController
         ]);
     }
 
-    private function redirectToWeek(string $workedOnYmd): RedirectResponse
+    private function redirectAfterChange(Request $request, string $workedOnYmd): RedirectResponse
     {
+        if ($request->inertia()) {
+            return back();
+        }
+
         $week = CarbonImmutable::parse($workedOnYmd)
             ->startOfWeek(CarbonImmutable::MONDAY)
             ->toDateString();

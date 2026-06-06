@@ -1,18 +1,34 @@
 import { usePage } from '@inertiajs/react';
 import { useEffect, useState, type PropsWithChildren } from 'react';
 
+import { AppFooter } from '@/components/app/app-footer';
 import { AppHeader } from '@/components/app/app-header';
 import { AppSidebar } from '@/components/app/app-sidebar';
 import { ChatbotWidget } from '@/components/chatbot/chatbot-widget';
 import { FlashAlerts } from '@/components/flash-alerts';
+import { useInAppNotificationRealtime } from '@/hooks/use-in-app-notification-realtime';
+import { registerWebPushServiceWorker } from '@/lib/web-push';
+
+type AppLayoutSharedProps = {
+    webPush?: { publicKey: string } | null;
+};
 
 export function AppLayout({ children }: PropsWithChildren) {
     const pageUrl = usePage().url;
+    const webPush = (usePage().props as AppLayoutSharedProps).webPush;
     const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+    useInAppNotificationRealtime();
 
     useEffect(() => {
         setSidebarOpen(false);
     }, [pageUrl]);
+
+    useEffect(() => {
+        if (webPush?.publicKey) {
+            void registerWebPushServiceWorker();
+        }
+    }, [webPush?.publicKey]);
 
     useEffect(() => {
         if (!isSidebarOpen) {
@@ -28,16 +44,15 @@ export function AppLayout({ children }: PropsWithChildren) {
     }, [isSidebarOpen]);
 
     return (
-        <div className="flex h-svh min-h-0 overflow-hidden bg-white">
+        <div className="min-h-dvh bg-gray-50/40">
             <AppSidebar
                 isMobileOpen={isSidebarOpen}
                 onCloseMobile={() => setSidebarOpen(false)}
             />
-            <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-dvh min-w-0 flex-col md:ps-64">
                 <AppHeader onOpenMobileSidebar={() => setSidebarOpen(true)} />
-                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain bg-gray-50/40">
-                    {children}
-                </div>
+                <div className="pb-12">{children}</div>
+                <AppFooter />
             </div>
             <FlashAlerts />
             <ChatbotWidget />

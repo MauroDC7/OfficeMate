@@ -54,7 +54,19 @@ final class TimyLeaveRequestProposer
 
     public function looksLikeLeaveIntentWithoutDates(string $message): bool
     {
-        return $this->mentionsLeave($message) && $this->extractParams($message) === null;
+        if ($this->extractParams($message) !== null) {
+            return false;
+        }
+
+        if (! $this->mentionsLeave($message)) {
+            return false;
+        }
+
+        if ($this->looksLikeInformationalLeaveQuestion($message)) {
+            return false;
+        }
+
+        return $this->looksLikeLeaveSubmissionIntent($message);
     }
 
     private function looksLikeLeaveIntent(string $message): bool
@@ -70,13 +82,39 @@ final class TimyLeaveRequestProposer
     {
         $normalized = Str::lower($message);
 
-        foreach (['verlof', 'vakantie', 'vrij nemen', 'vrijnemen', 'dag vrij', 'aanvragen', 'ziek'] as $verb) {
-            if (str_contains($normalized, $verb)) {
+        foreach (['verlof', 'vakantie', 'vrij nemen', 'vrijnemen', 'dag vrij', 'aanvragen', 'ziek'] as $keyword) {
+            if (str_contains($normalized, $keyword)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private function looksLikeInformationalLeaveQuestion(string $message): bool
+    {
+        $normalized = Str::lower(trim($message));
+
+        if (preg_match('/^(hoe|wat|waar|wanneer|kan ik|mag ik|is er|heb ik|status|overzicht)\b/u', $normalized) === 1) {
+            return true;
+        }
+
+        return str_contains($normalized, 'status van')
+            || str_contains($normalized, 'hoeveel')
+            || str_contains($normalized, 'openstaand');
+    }
+
+    private function looksLikeLeaveSubmissionIntent(string $message): bool
+    {
+        $normalized = Str::lower($message);
+
+        foreach (['vraag', 'dien in', 'dien', 'aanvraag', 'plan', 'neem', 'boek', 'registreer', 'stuur', 'zet'] as $verb) {
+            if (str_contains($normalized, $verb)) {
+                return true;
+            }
+        }
+
+        return preg_match('/verlof\s+(aan|voor|van)\b/u', $normalized) === 1;
     }
 
     /**

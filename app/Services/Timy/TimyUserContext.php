@@ -102,7 +102,7 @@ final class TimyUserContext
         ];
 
         if ($isAdmin) {
-            $links[] = ['label' => 'Weekly debrief', 'href' => route('admin.weeklyDebrief')];
+            $links[] = ['label' => 'Weekstatus', 'href' => route('admin.weeklyDebrief')];
             $links[] = ['label' => 'Teams', 'href' => route('teams')];
         }
 
@@ -119,7 +119,7 @@ final class TimyUserContext
                 ['label' => 'Verlofbeheer', 'href' => route($isAdmin ? 'admin.leaveRequests' : 'leaveRequests')],
             ],
             'admin_weekly_debrief' => [
-                ['label' => 'Weekly debrief', 'href' => route('admin.weeklyDebrief')],
+                ['label' => 'Weekstatus', 'href' => route('admin.weeklyDebrief')],
             ],
             default => array_slice($links, 0, 4),
         };
@@ -182,7 +182,7 @@ final class TimyUserContext
 
         $weekly = $context['weekly_debrief'];
         if (is_array($weekly) && ($weekly['reminder_due'] ?? false) === true) {
-            $tips[] = 'Je weekly debrief voor deze week is nog niet ingevuld.';
+            $tips[] = 'Je weekstatus voor deze week is nog niet ingevuld.';
         }
 
         $admin = $context['admin'];

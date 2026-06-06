@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\UserRole;
+use App\Events\InAppNotificationChanged;
 use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Notifications\LeaveRequestApprovedNotification;
@@ -36,6 +37,7 @@ final class LeaveRequestNotifier
 
         foreach ($admins as $admin) {
             $this->sendSafely($admin, $notification);
+            InAppNotificationChanged::dispatch($admin->id);
         }
     }
 
@@ -68,6 +70,8 @@ final class LeaveRequestNotifier
         }
 
         $this->sendSafely($leaveRequest->user, $notification);
+
+        InAppNotificationChanged::dispatch($leaveRequest->user->id);
     }
 
     private function sendSafely(User $user, Notification $notification): void

@@ -11,6 +11,10 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
+beforeEach(function () {
+    $this->withoutVite();
+});
+
 it('shows projects an employee is involved in through their team', function () {
     $organization = Organization::factory()->create();
     $employee = User::factory()->forOrganization($organization)->create();
@@ -143,7 +147,7 @@ it('allows admins to update a project status', function () {
             'client_name' => $project->client_name,
             'status' => ProjectStatus::Done->value,
         ])
-        ->assertRedirect(route('projects'));
+        ->assertRedirect(route('projects.show', $project));
 
     expect($project->fresh()->status)->toBe(ProjectStatus::Done);
 });
@@ -172,6 +176,62 @@ it('allows admins to delete a project', function () {
         ->assertRedirect(route('projects'));
 
     $this->assertDatabaseMissing('projects', ['id' => $project->id]);
+});
+
+it('shows a project detail page to admins', function () {
+    $admin = User::factory()->admin()->create();
+    $organization = Organization::query()->findOrFail($admin->organization_id);
+    $project = Project::factory()->for($organization)->create([
+        'name' => 'Detail Project',
+        'client_name' => 'Acme',
+        'hours_budget' => 100,
+    ]);
+
+    TimesheetEntry::factory()->for($admin)->create([
+        'project_id' => $project->id,
+        'start_minutes' => 540,
+        'end_minutes' => 600,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('projects.show', $project))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('projects/show')
+            ->where('project.name', 'Detail Project')
+            ->where('project.client_name', 'Acme')
+            ->where('hours.tracked_minutes_total', 60)
+            ->where('canUpdate', true)
+            ->has('hours_by_member', 1));
+});
+
+it('shows a project detail page to employees on linked teams', function () {
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->forOrganization($organization)->create();
+    $team = Team::factory()->for($organization)->create();
+    TeamMembership::factory()->for($team)->for($employee)->approved()->create();
+
+    $project = Project::factory()->for($organization)->create(['name' => 'Team Project']);
+    $project->teams()->attach($team);
+
+    $this->actingAs($employee)
+        ->get(route('projects.show', $project))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('projects/show')
+            ->where('project.name', 'Team Project')
+            ->where('canUpdate', false)
+            ->where('isAdmin', false));
+});
+
+it('forbids viewing projects outside team access for employees', function () {
+    $organization = Organization::factory()->create();
+    $employee = User::factory()->forOrganization($organization)->create();
+    $project = Project::factory()->for($organization)->create();
+
+    $this->actingAs($employee)
+        ->get(route('projects.show', $project))
+        ->assertForbidden();
 });
 
 it('allows admins to grant project creation rights', function () {
@@ -241,7 +301,7 @@ it('replaces and removes a project logo on update', function () {
             'status' => $project->status->value,
             'logo' => $newLogo,
         ])
-        ->assertRedirect(route('projects'));
+        ->assertRedirect(route('projects.show', $project));
 
     $project->refresh();
     $newPath = $project->logo_path;
@@ -257,7 +317,7 @@ it('replaces and removes a project logo on update', function () {
             'status' => $project->status->value,
             'remove_logo' => true,
         ])
-        ->assertRedirect(route('projects'));
+        ->assertRedirect(route('projects.show', $project));
 
     expect($project->fresh()->logo_path)->toBeNull();
     Storage::disk('public')->assertMissing($newPath);

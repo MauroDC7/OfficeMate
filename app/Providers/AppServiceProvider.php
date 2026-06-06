@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -23,8 +24,18 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureBroadcasting();
         $this->configureHttpMacros();
         $this->configureSocialiteProviders();
+    }
+
+    protected function configureBroadcasting(): void
+    {
+        Broadcast::routes([
+            'middleware' => ['web', 'auth'],
+        ]);
+
+        require base_path('routes/channels.php');
     }
 
     protected function configureSocialiteProviders(): void

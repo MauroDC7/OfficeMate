@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @use HasFactory<TimesheetEntryFactory>
  */
-#[Fillable(['project_id', 'title', 'description', 'client_name', 'worked_on', 'start_minutes', 'end_minutes'])]
+#[Fillable(['project_id', 'title', 'description', 'color', 'client_name', 'worked_on', 'start_minutes', 'end_minutes'])]
 class TimesheetEntry extends Model
 {
     /** @use HasFactory<TimesheetEntryFactory> */

@@ -1,6 +1,15 @@
 import { Form } from '@inertiajs/react';
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 
+import {
+    FormStepFooter,
+    FormStepIndicator,
+    FormStepPanel,
+    handleWizardFormKeyDown,
+    submitWizardForm,
+    tryAdvanceFormStep,
+    useWizardFormSubmitGuard,
+} from '@/components/form-step-nav';
 import { UserPicker } from '@/components/teams/user-picker';
 import { cn } from '@/lib/utils';
 import { store, update } from '@/routes/teams';
@@ -16,6 +25,8 @@ type TeamFormPanelProps = {
     onMemberIdsChange: (ids: number[]) => void;
     onSuccess: () => void;
 };
+
+const STEPS = ['Team', 'Leden'] as const;
 
 function IconPlus({ className }: { className?: string }) {
     return (
@@ -60,6 +71,56 @@ function IconClose({ className }: { className?: string }) {
 const inputClass =
     'mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10';
 
+function TeamIdentityFields({
+    isEdit,
+    team,
+    nameInputRef,
+    errors,
+}: {
+    isEdit: boolean;
+    team?: TeamCard;
+    nameInputRef: RefObject<HTMLInputElement | null>;
+    errors: Record<string, string>;
+}) {
+    return (
+        <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+                <label htmlFor="team-name" className="text-sm font-medium text-gray-800">
+                    Teamnaam <span className="text-red-600">*</span>
+                </label>
+                <input
+                    ref={nameInputRef}
+                    id="team-name"
+                    name="name"
+                    required
+                    defaultValue={isEdit ? team?.name : undefined}
+                    placeholder="bijv. Logistiek A"
+                    className={inputClass}
+                />
+                {errors.name !== undefined ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+                ) : null}
+            </div>
+
+            <div className="sm:col-span-2">
+                <label htmlFor="team-department" className="text-sm font-medium text-gray-800">
+                    Afdeling
+                </label>
+                <input
+                    id="team-department"
+                    name="department"
+                    defaultValue={isEdit ? (team?.department ?? '') : undefined}
+                    placeholder="bijv. Operationeel"
+                    className={inputClass}
+                />
+                {errors.department !== undefined ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.department}</p>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
 export function TeamFormPanel({
     mode,
     team,
@@ -71,9 +132,11 @@ export function TeamFormPanel({
     onSuccess,
 }: TeamFormPanelProps) {
     const isEdit = mode === 'edit';
+    const [step, setStep] = useState(0);
     const titleId = useId();
     const panelRef = useRef<HTMLElement>(null);
     const nameInputRef = useRef<HTMLInputElement>(null);
+    const formContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!open) {
@@ -102,13 +165,27 @@ export function TeamFormPanel({
         };
     }, [open, onClose]);
 
+    useEffect(() => {
+        if (open) {
+            setStep(0);
+        }
+    }, [open]);
+
+    useWizardFormSubmitGuard(formContainerRef, true, step, STEPS.length, setStep);
+
     if (!open || (isEdit && team === undefined)) {
         return null;
     }
 
     const formConfig = isEdit
-        ? update.form.patch({ team: team.id })
+        ? update.form.patch({ team: team!.id })
         : store.form.post();
+
+    const wizardHandlers = {
+        currentStep: step,
+        totalSteps: STEPS.length,
+        setStep,
+    };
 
     return (
         <div
@@ -142,7 +219,7 @@ export function TeamFormPanel({
                             <p className="mt-0.5 text-sm text-gray-500">
                                 {isEdit
                                     ? 'Pas naam, afdeling of leden aan.'
-                                    : 'Maak een team aan en voeg collega’s toe.'}
+                                    : 'Eerst de teamgegevens, daarna de leden.'}
                             </p>
                         </div>
                     </div>
@@ -156,101 +233,85 @@ export function TeamFormPanel({
                     </button>
                 </div>
 
-                <Form
-                    key={isEdit ? team.id : 'create'}
-                    {...formConfig}
-                    options={{
-                        onSuccess: () => {
+                <div ref={formContainerRef}>
+                    <Form
+                        key={isEdit ? team!.id : 'create'}
+                        {...formConfig}
+                        noValidate
+                        onKeyDown={(event) => handleWizardFormKeyDown(event, wizardHandlers)}
+                        onSuccess={() => {
                             if (!isEdit) {
                                 onMemberIdsChange([]);
                             }
                             onSuccess();
                             onClose();
-                        },
-                    }}
-                    className="space-y-5 px-5 py-5 sm:px-6"
-                >
-                    {({ errors, processing }) => (
-                        <>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div className="sm:col-span-2">
-                                    <label htmlFor="team-name" className="text-sm font-medium text-gray-800">
-                                        Teamnaam <span className="text-red-600">*</span>
-                                    </label>
-                                    <input
-                                        ref={nameInputRef}
-                                        id="team-name"
-                                        name="name"
-                                        required
-                                        defaultValue={isEdit ? team.name : undefined}
-                                        placeholder="bijv. Logistiek A"
-                                        className={inputClass}
-                                    />
-                                    {errors.name ? (
-                                        <p className="mt-1 text-xs text-red-600">{errors.name}</p>
-                                    ) : null}
-                                </div>
+                        }}
+                        className="space-y-5 px-5 py-5 sm:px-6"
+                    >
+                        {({ errors, processing, submit }) => (
+                            <>
+                                <FormStepIndicator steps={STEPS} currentStep={step} />
 
-                                <div className="sm:col-span-2">
-                                    <label
-                                        htmlFor="team-department"
-                                        className="text-sm font-medium text-gray-800"
-                                    >
-                                        Afdeling
-                                    </label>
-                                    <input
-                                        id="team-department"
-                                        name="department"
-                                        defaultValue={isEdit ? (team.department ?? '') : undefined}
-                                        placeholder="bijv. Operationeel"
-                                        className={inputClass}
+                                <FormStepPanel step={0} currentStep={step}>
+                                    <TeamIdentityFields
+                                        isEdit={isEdit}
+                                        team={team}
+                                        nameInputRef={nameInputRef}
+                                        errors={errors}
                                     />
-                                    {errors.department ? (
-                                        <p className="mt-1 text-xs text-red-600">{errors.department}</p>
-                                    ) : null}
-                                </div>
-                            </div>
+                                </FormStepPanel>
 
-                            <UserPicker
-                                users={organizationUsers}
-                                selectedIds={selectedMemberIds}
-                                onChange={onMemberIdsChange}
-                                disabled={processing}
-                            />
-                            {selectedMemberIds.map((memberId) => (
-                                <input
-                                    key={memberId}
-                                    type="hidden"
-                                    name="member_ids[]"
-                                    value={memberId}
+                                <FormStepPanel step={1} currentStep={step}>
+                                    <UserPicker
+                                        users={organizationUsers}
+                                        selectedIds={selectedMemberIds}
+                                        onChange={onMemberIdsChange}
+                                        disabled={processing}
+                                    />
+                                    {errors['member_ids.0'] ?? errors.member_ids ? (
+                                        <p className="-mt-3 text-xs text-red-600">
+                                            {errors['member_ids.0'] ?? errors.member_ids}
+                                        </p>
+                                    ) : null}
+                                </FormStepPanel>
+
+                                <FormStepFooter
+                                    currentStep={step}
+                                    totalSteps={STEPS.length}
+                                    processing={processing}
+                                    submitLabel={isEdit ? 'Wijzigingen opslaan' : 'Team opslaan'}
+                                    onCancel={onClose}
+                                    onBack={() =>
+                                        setStep((current) => Math.max(current - 1, 0))
+                                    }
+                                    onNext={(event) => {
+                                        event.preventDefault();
+                                        const form =
+                                            event.currentTarget.closest('form');
+
+                                        if (form instanceof HTMLFormElement) {
+                                            tryAdvanceFormStep(form, wizardHandlers);
+                                        }
+                                    }}
+                                    onFinalSubmit={() => {
+                                        const form =
+                                            formContainerRef.current?.querySelector(
+                                                'form',
+                                            );
+
+                                        if (form instanceof HTMLFormElement) {
+                                            submitWizardForm(
+                                                form,
+                                                wizardHandlers,
+                                                submit,
+                                            );
+                                        }
+                                    }}
                                 />
-                            ))}
-                            {errors['member_ids.0'] ?? errors.member_ids ? (
-                                <p className="-mt-3 text-xs text-red-600">
-                                    {errors['member_ids.0'] ?? errors.member_ids}
-                                </p>
-                            ) : null}
-
-                            <div className="flex flex-col-reverse gap-2 border-t border-gray-200 pt-4 sm:flex-row sm:justify-end">
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    disabled={processing}
-                                    className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
-                                >
-                                    Annuleren
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    {isEdit ? 'Wijzigingen opslaan' : 'Team opslaan'}
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </Form>
+                            </>
+                        )}
+                    </Form>
+                </div>
             </section>
         </div>
     );

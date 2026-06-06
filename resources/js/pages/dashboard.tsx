@@ -1,75 +1,36 @@
 import { Head, usePage } from '@inertiajs/react';
 
 import { DashboardNotificationsPanel } from '@/components/dashboard/dashboard-notifications-panel';
-import { DashboardStatCard } from '@/components/dashboard/dashboard-stat-card';
-import { DashboardTeamAgendaSnippet } from '@/components/dashboard/dashboard-team-agenda-snippet';
-import { formatDayTotal } from '@/components/timesheets/timesheet-helpers';
+import { EmployeeDashboardActionInbox } from '@/components/dashboard/employee-dashboard-action-inbox';
+import { EmployeeDashboardSnapshot } from '@/components/dashboard/employee-dashboard-snapshot';
+import { EmployeeDashboardToday } from '@/components/dashboard/employee-dashboard-today';
+import { EmployeeDashboardTrackerBanner } from '@/components/dashboard/employee-dashboard-tracker-banner';
+import { EmployeeDashboardWeekHours } from '@/components/dashboard/employee-dashboard-week-hours';
+import { EmployeeDashboardWeekStatus } from '@/components/dashboard/employee-dashboard-week-status';
 import { AppLayout } from '@/layouts/app-layout';
-import { leaveRequests, projects, timesheets } from '@/routes';
-import type { EmployeeDashboardProps } from '@/types/dashboard';
-
-function projectDetail(projects: EmployeeDashboardProps['activeProjects']): string {
-    if (projects.length === 0) {
-        return 'Geen actieve projecten';
-    }
-
-    const preview = projects
-        .slice(0, 3)
-        .map((project) =>
-            project.client_name !== null
-                ? `${project.name} (${project.client_name})`
-                : project.name,
-        )
-        .join(' · ');
-
-    if (projects.length > 3) {
-        return `${preview} · +${projects.length - 3}`;
-    }
-
-    return preview;
-}
-
-function pendingDetail(count: number): string {
-    if (count === 0) {
-        return 'Geen voorstellen om te bevestigen';
-    }
-
-    if (count === 1) {
-        return '1 AI-voorstel wacht op goedkeuring';
-    }
-
-    return `${count} AI-voorstellen wachten op goedkeuring`;
-}
-
-function leaveDetail(
-    openLeaveDays: number,
-    pendingLeaveRequestCount: number,
-): string {
-    if (pendingLeaveRequestCount > 0) {
-        return pendingLeaveRequestCount === 1
-            ? '1 aanvraag in behandeling'
-            : `${pendingLeaveRequestCount} aanvragen in behandeling`;
-    }
-
-    if (openLeaveDays === 0) {
-        return 'Geen goedgekeurd verlof gepland';
-    }
-
-    return 'Goedgekeurd verlof vanaf vandaag';
-}
+import type { DashboardNotification, EmployeeDashboardProps } from '@/types/dashboard';
 
 export default function Dashboard() {
+    const page = usePage<EmployeeDashboardProps>();
     const {
-        activeProjects,
+        actionCount,
         pendingTimesheetCount,
         hoursThisWeekMinutes,
-        openLeaveDays,
         pendingLeaveRequestCount,
+        openLeaveDays,
+        weeklyStatus,
+        weeklyStatusReminderDue,
         weekStart,
-        teamLeaveThisWeek,
+        myLeaveThisWeek,
+        teamLeaveToday,
+        taskAvailability,
+        trackerIsConnected,
         hasOrganization,
-        recentNotifications,
-    } = usePage<EmployeeDashboardProps>().props;
+    } = page.props;
+
+    const recentNotifications =
+        (page.props.recentNotifications as DashboardNotification[] | undefined) ??
+        [];
 
     return (
         <AppLayout>
@@ -79,46 +40,48 @@ export default function Dashboard() {
                     Dashboard
                 </h1>
                 <p className="mt-1 text-sm text-gray-500">
-                    Overzicht van je projecten, timesheets, verlof en meldingen.
+                    Wat je nu moet doen, je uren en je team in één overzicht.
                 </p>
 
-                <div className="mt-5 space-y-5">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                        <DashboardStatCard
-                            label="Actieve projecten"
-                            value={activeProjects.length}
-                            detail={projectDetail(activeProjects)}
-                            href={projects.url()}
-                        />
-                        <DashboardStatCard
-                            label="Te bevestigen"
-                            value={pendingTimesheetCount}
-                            detail={pendingDetail(pendingTimesheetCount)}
-                            href={timesheets.url()}
-                        />
-                        <DashboardStatCard
-                            label="Uren deze week"
-                            value={formatDayTotal(hoursThisWeekMinutes)}
-                            detail={`Week vanaf ${weekStart}`}
-                            href={timesheets.url({
-                                query: { week: weekStart },
-                            })}
-                        />
-                        <DashboardStatCard
-                            label="Open verlofdagen"
-                            value={openLeaveDays}
-                            detail={leaveDetail(
-                                openLeaveDays,
-                                pendingLeaveRequestCount,
-                            )}
-                            href={leaveRequests.url()}
-                        />
-                    </div>
-
-                    <DashboardTeamAgendaSnippet
-                        teamLeaveThisWeek={teamLeaveThisWeek}
-                        hasOrganization={hasOrganization}
+                <div className="mt-5 space-y-6">
+                    <EmployeeDashboardSnapshot
+                        actionCount={actionCount}
+                        pendingTimesheetCount={pendingTimesheetCount}
+                        hoursThisWeekMinutes={hoursThisWeekMinutes}
+                        weekStart={weekStart}
+                        pendingLeaveRequestCount={pendingLeaveRequestCount}
+                        openLeaveDays={openLeaveDays}
                     />
+
+                    <EmployeeDashboardActionInbox
+                        actionCount={actionCount}
+                        pendingTimesheetCount={pendingTimesheetCount}
+                        pendingLeaveRequestCount={pendingLeaveRequestCount}
+                        weeklyStatusReminderDue={weeklyStatusReminderDue}
+                        weekStart={weekStart}
+                    />
+
+                    <div>
+                        <h2 className="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                            Deze week
+                        </h2>
+                        <div className="space-y-5">
+                            <EmployeeDashboardWeekHours
+                                hoursThisWeekMinutes={hoursThisWeekMinutes}
+                                pendingTimesheetCount={pendingTimesheetCount}
+                                myLeaveThisWeek={myLeaveThisWeek}
+                                weekStart={weekStart}
+                            />
+                            <EmployeeDashboardWeekStatus weeklyStatus={weeklyStatus} />
+                            <EmployeeDashboardToday
+                                taskAvailability={taskAvailability}
+                                teamLeaveToday={teamLeaveToday}
+                            />
+                            <EmployeeDashboardTrackerBanner
+                                show={hasOrganization && !trackerIsConnected}
+                            />
+                        </div>
+                    </div>
 
                     <DashboardNotificationsPanel
                         notifications={recentNotifications}

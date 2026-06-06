@@ -186,7 +186,7 @@ export default function Projects() {
                                         href={adminWeeklyDebrief.url()}
                                         className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 sm:w-auto"
                                     >
-                                        Weekly debrief
+                                        Weekstatus
                                     </Link>
                                 ) : weeklyStatus !== null ? (
                                     <button
@@ -194,7 +194,7 @@ export default function Projects() {
                                         onClick={() => setShowWeeklyStatus(true)}
                                         className="relative inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 sm:w-auto"
                                     >
-                                        Weekly debrief
+                                        Weekstatus
                                         {weeklyStatusPending || weeklyStatus.reminder_due ? (
                                             <span
                                                 className="absolute -top-1 -end-1 size-2.5 rounded-full bg-red-600 ring-2 ring-white"
@@ -340,7 +340,7 @@ export default function Projects() {
                 <WeeklyStatusFormPanel
                     weeklyStatus={weeklyStatus}
                     onClose={() => setShowWeeklyStatus(false)}
-                    onSuccess={() => success('Weekly debrief opgeslagen.')}
+                    onSuccess={() => success('Weekstatus opgeslagen.')}
                 />
             ) : null}
         </AppLayout>

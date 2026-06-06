@@ -31,6 +31,32 @@ beforeEach(function () {
     Http::preventStrayRequests();
 });
 
+it('creates fallback proposals with status manual when ai is disabled in tracker preferences', function () {
+    Config::set('services.openai.key', 'sk-test');
+
+    $user = User::factory()->create([
+        'tracker_use_ai_for_proposals' => false,
+    ]);
+
+    DesktopActivity::factory()->for($user)->create([
+        'app_name' => 'Cursor',
+        'window_title' => 'OfficeMate',
+        'started_at' => '2026-05-11 09:00:00',
+        'ended_at' => '2026-05-11 10:00:00',
+        'duration_seconds' => 3600,
+    ]);
+
+    Http::fake();
+
+    $result = app(TimesheetProposalGenerator::class)
+        ->generateForDay($user, CarbonImmutable::parse('2026-05-11'));
+
+    expect($result['status'])->toBe('manual')
+        ->and($result['proposals'])->toHaveCount(1)
+        ->and($result['message'])->toContain('AI uitgeschakeld');
+    Http::assertNothingSent();
+});
+
 it('creates fallback proposals with status unconfigured when OPENAI_API_KEY is missing', function () {
     Config::set('services.openai.key', null);
 

@@ -16,7 +16,7 @@ trait FormatsLeaveRequestDetails
             return $start;
         }
 
-        return "{$start} – {$end}";
+        return "{$start} tot {$end}";
     }
 
     protected function leaveRequestEmployeeName(LeaveRequest $leaveRequest): string

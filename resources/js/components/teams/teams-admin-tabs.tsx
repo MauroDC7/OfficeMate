@@ -4,7 +4,7 @@ export type TeamsAdminTab = 'teams' | 'people';
 
 const TABS: { value: TeamsAdminTab; label: string }[] = [
     { value: 'teams', label: 'Teams' },
-    { value: 'people', label: 'People' },
+    { value: 'people', label: 'Medewerkers' },
 ];
 
 type TeamsAdminTabsProps = {

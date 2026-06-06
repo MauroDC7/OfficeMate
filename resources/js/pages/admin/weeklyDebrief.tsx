@@ -74,12 +74,12 @@ export default function AdminWeeklyDebrief() {
 
     return (
         <AppLayout>
-            <Head title="Weekly debrief" />
+            <Head title="Weekstatus" />
             <main className="mx-auto box-border w-full min-w-0 max-w-5xl px-4 py-4 sm:px-6 sm:py-6 lg:max-w-6xl">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <h1 className="text-lg font-semibold tracking-tight text-gray-900 sm:text-xl lg:text-2xl">
-                            Weekly debrief
+                            Weekstatus
                         </h1>
                         <p className="mt-1 text-sm text-gray-500">
                             Overzicht per week voor {organizationName}.
@@ -228,7 +228,7 @@ export default function AdminWeeklyDebrief() {
                                     </div>
                                 ) : (
                                     <p className="mt-4 text-sm text-gray-500">
-                                        Nog geen weekly debrief voor week {weekStart}.
+                                        Nog geen weekstatus voor week {weekStart}.
                                     </p>
                                 )}
                             </article>

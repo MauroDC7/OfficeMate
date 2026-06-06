@@ -1,36 +1,40 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
-import { getEcho } from '@/lib/echo';
+import { getEcho, type BroadcastingConfig } from '@/lib/echo';
 
 /**
- * Subscribes to a private broadcast channel for the lifetime of the component
- * and invokes `onEvent` with payloads for the given event name.
- *
- * - No-ops when Echo is not configured (e.g. missing VITE_PUSHER_* / VITE_REVERB_* vars).
- * - Skips when `channel` is null (e.g. unauthenticated user).
+ * Subscribes to a private broadcast channel for the lifetime of the component.
  */
 export function usePrivateChannel<TPayload>(
+    broadcasting: BroadcastingConfig | null | undefined,
     channel: string | null,
     eventName: string,
     onEvent: (payload: TPayload) => void,
 ): void {
+    const onEventRef = useRef(onEvent);
+    onEventRef.current = onEvent;
+
     useEffect(() => {
         if (channel === null || channel === '') {
             return;
         }
 
-        const echo = getEcho();
+        const echo = getEcho(broadcasting);
 
         if (echo === null) {
             return;
         }
 
+        const handler = (payload: TPayload): void => {
+            onEventRef.current(payload);
+        };
+
         const subscription = echo.private(channel);
-        subscription.listen(`.${eventName}`, onEvent);
+        subscription.listen(`.${eventName}`, handler);
 
         return () => {
-            subscription.stopListening(`.${eventName}`, onEvent);
+            subscription.stopListening(`.${eventName}`, handler);
             echo.leave(`private-${channel}`);
         };
-    }, [channel, eventName, onEvent]);
+    }, [broadcasting, channel, eventName]);
 }
