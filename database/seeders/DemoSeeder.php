@@ -903,7 +903,7 @@ class DemoSeeder extends Seeder
                 'browser_tab_title' => null,
                 'started_at'       => $start,
                 'ended_at'         => $end,
-                'duration_seconds' => $end->diffInSeconds($start),
+                'duration_seconds' => abs($end->timestamp - $start->timestamp),
                 'created_at'       => $start,
                 'updated_at'       => $end,
             ]);
