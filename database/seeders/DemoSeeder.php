@@ -26,9 +26,21 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::statement('PRAGMA foreign_keys=OFF;');
+        $isMysql = DB::getDriverName() === 'mysql';
+
+        if ($isMysql) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        } else {
+            DB::statement('PRAGMA foreign_keys=OFF;');
+        }
+
         $this->truncate();
-        DB::statement('PRAGMA foreign_keys=ON;');
+
+        if ($isMysql) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        } else {
+            DB::statement('PRAGMA foreign_keys=ON;');
+        }
 
         $org      = $this->organization();
         $profiles = $this->employmentProfiles($org);
