@@ -268,14 +268,6 @@ export function TeamFormPanel({
                                         onChange={onMemberIdsChange}
                                         disabled={processing}
                                     />
-                                    {selectedMemberIds.map((memberId) => (
-                                        <input
-                                            key={memberId}
-                                            type="hidden"
-                                            name="member_ids[]"
-                                            value={memberId}
-                                        />
-                                    ))}
                                     {errors['member_ids.0'] ?? errors.member_ids ? (
                                         <p className="-mt-3 text-xs text-red-600">
                                             {errors['member_ids.0'] ?? errors.member_ids}

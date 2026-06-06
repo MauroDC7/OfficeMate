@@ -306,43 +306,29 @@ export default function Teams() {
                 {!showingPeople ? (
                 <section className="mt-5">
                     {filteredTeams.length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-gray-200 bg-white px-4 py-8 shadow-sm sm:px-8 sm:py-10">
-                            {showFeaturedOrganizationSettings ? (
-                                <OrganizationSettingsPanel
-                                    organization={organization}
-                                    onSuccess={(message) => success(message)}
-                                    mode="featured"
-                                />
+                        <div className="rounded-xl border border-dashed border-gray-200 bg-white px-4 py-10 text-center shadow-sm sm:px-8">
+                            <p className="text-sm font-semibold text-gray-900">
+                                {search.trim() !== ""
+                                    ? "Geen teams gevonden voor je zoekopdracht."
+                                    : isAdmin
+                                      ? "Nog geen teams aangemaakt"
+                                      : "Je zit nog in geen team"}
+                            </p>
+                            <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
+                                {isAdmin
+                                    ? "Voeg je eerste team toe om collega’s te groeperen."
+                                    : "Vraag je beheerder om je toe te voegen aan een team."}
+                            </p>
+                            {isAdmin && search.trim() === "" ? (
+                                <button
+                                    type="button"
+                                    onClick={openCreateForm}
+                                    className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+                                >
+                                    <IconPlus />
+                                    Team toevoegen
+                                </button>
                             ) : null}
-                            <div
-                                className={cn(
-                                    showFeaturedOrganizationSettings &&
-                                        'border-t border-gray-200 pt-10 text-center',
-                                )}
-                            >
-                                <p className="text-sm font-semibold text-gray-900">
-                                    {search.trim() !== ''
-                                        ? 'Geen teams gevonden voor je zoekopdracht.'
-                                        : isAdmin
-                                          ? 'Nog geen teams aangemaakt'
-                                          : 'Je zit nog in geen team'}
-                                </p>
-                                <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
-                                    {isAdmin
-                                        ? 'Voeg je eerste team toe om collega’s te groeperen.'
-                                        : 'Vraag je beheerder om je toe te voegen aan een team.'}
-                                </p>
-                                {isAdmin ? (
-                                    <button
-                                        type="button"
-                                        onClick={openCreateForm}
-                                        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
-                                    >
-                                        <IconPlus />
-                                        Team toevoegen
-                                    </button>
-                                ) : null}
-                            </div>
                         </div>
                     ) : (
                         <div
