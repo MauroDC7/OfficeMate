@@ -63,7 +63,12 @@ class DemoSeeder extends Seeder
         $this->command->table(
             ['Email', 'Naam', 'Rol', 'Wachtwoord'],
             array_map(
-                fn(User $u) => [$u->email, $u->first_name.' '.$u->last_name, $u->role->value, 'password'],
+                fn(User $u) => [
+                    $u->email,
+                    $u->first_name.' '.$u->last_name,
+                    $u->role->value,
+                    in_array($u->email, ['mauro@admin.be', 'mauro@employee.be']) ? 'mauro112' : 'password',
+                ],
                 array_values($users),
             ),
         );
@@ -135,9 +140,10 @@ class DemoSeeder extends Seeder
     /** @return array<string, User> */
     private function users(Organization $org, array $profiles): array
     {
-        $pw      = Hash::make('password');
-        $joined  = CarbonImmutable::parse('2025-09-01 08:00:00');
-        $inOffice = CarbonImmutable::parse('2026-06-05 08:45:00');
+        $pw        = Hash::make('password');
+        $mauroP    = Hash::make('mauro112');
+        $joined    = CarbonImmutable::parse('2025-09-01 08:00:00');
+        $inOffice  = CarbonImmutable::parse('2026-06-05 08:45:00');
 
         $make = fn(array $fields) => User::create(array_merge([
             'password'                   => $pw,
@@ -228,7 +234,32 @@ class DemoSeeder extends Seeder
                 'annual_leave_days'             => 25,
                 'task_availability'             => TaskAvailability::OpenForTasks,
                 'organization_joined_at'        => CarbonImmutable::parse('2026-04-01 08:00:00'),
-                'employment_setup_completed_at' => null, // zichtbaar in admin-inbox
+                'employment_setup_completed_at' => null,
+            ]),
+            'mauro_admin' => $make([
+                'first_name'                    => 'Mauro',
+                'last_name'                     => 'Admin',
+                'email'                         => 'mauro@admin.be',
+                'password'                      => $mauroP,
+                'role'                          => UserRole::Admin,
+                'can_create_projects'           => true,
+                'employment_profile_id'         => $profiles['voltijds']->id,
+                'weekly_work_hours'             => 40,
+                'annual_leave_days'             => 25,
+                'task_availability'             => TaskAvailability::OpenForTasks,
+                'employment_setup_completed_at' => $joined,
+            ]),
+            'mauro_employee' => $make([
+                'first_name'                    => 'Mauro',
+                'last_name'                     => 'Employee',
+                'email'                         => 'mauro@employee.be',
+                'password'                      => $mauroP,
+                'role'                          => UserRole::Employee,
+                'employment_profile_id'         => $profiles['voltijds']->id,
+                'weekly_work_hours'             => 40,
+                'annual_leave_days'             => 25,
+                'task_availability'             => TaskAvailability::OpenForTasks,
+                'employment_setup_completed_at' => $joined,
             ]),
         ];
     }
@@ -270,7 +301,9 @@ class DemoSeeder extends Seeder
             [$users['emma'],     $teams['backend'],    $a],
             [$users['nathalie'], $teams['design'],     $a],
             [$users['thomas'],   $teams['marketing'],  $a],
-            [$users['jens'],     $teams['backend'],    $p], // open lidmaatschapsaanvraag
+            [$users['jens'],        $teams['backend'],    $p],
+            [$users['mauro_admin'], $teams['management'], $a],
+            [$users['mauro_employee'], $teams['frontend'], $a],
         ] as [$user, $team, $status]) {
             TeamMembership::create([
                 'team_id' => $team->id,
