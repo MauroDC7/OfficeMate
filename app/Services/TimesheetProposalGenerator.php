@@ -142,7 +142,7 @@ final class TimesheetProposalGenerator
             return [
                 'status' => 'no_activity',
                 'proposals' => [],
-                'message' => 'Geen bruikbare werkblokken na filtering (weekend of overlap met bestaande timesheets?).',
+                'message' => 'Geen bruikbare werkblokken na filtering (overlap met bestaande timesheets?).',
             ];
         }
 
@@ -259,8 +259,7 @@ Nederlandse timesheet-voorstellen. De input is een lijst van werkblokken
 (datum + tijdsbereik + dominantste applicaties/vensters per blok).
 
 Voor elk voorstel geef je terug:
-- worked_on: ISO datum (YYYY-MM-DD), uitsluitend werkdagen (maandag t/m vrijdag),
-  binnen het opgegeven datumbereik
+- worked_on: ISO datum (YYYY-MM-DD), binnen het opgegeven datumbereik
 - start: "HH:MM" 24-uurs
 - end: "HH:MM" 24-uurs, altijd strikt na start
 - title: korte zakelijke titel in het Nederlands (max 60 tekens)
@@ -272,7 +271,6 @@ Voor elk voorstel geef je terug:
 Regels:
 - Combineer aansluitende blokken aan hetzelfde project tot één voorstel zolang
   dat niet langer dan ~3 uur duurt; splits anders op een natuurlijk moment.
-- Sla zaterdag en zondag volledig over.
 - Negeer overduidelijk niet-werkmateriaal (chat, social media, eigen ontspanning).
 - Geen overlap tussen voorstellen op dezelfde dag.
 - Rond start/end af op kwartieren wanneer dat de leesbaarheid helpt.
@@ -351,10 +349,6 @@ PROMPT;
         }
 
         if ($day->lessThan($rangeStart) || $day->greaterThanOrEqualTo($rangeEndExclusive)) {
-            return null;
-        }
-
-        if ($day->isWeekend()) {
             return null;
         }
 
